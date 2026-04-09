@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商用客服營運戰情室 | VIP Care Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+    <!-- §5: Inter + Noto Sans TC -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Inter"', '"Noto Sans TC"', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        steam: { body:'#171a21', content:'#1b2838', card:'#2a475e', hover:'#3d6c8e' },
+                        brand: '#1a9fff',
+                        disc: '#a2db12',
+                        txt: { head:'#ffffff', body:'#c7d5e0', sec:'#8f98a0', muted:'#556772' },
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* §2.1: Body Level 0 */
+        body { font-family: 'Inter', 'Noto Sans TC', system-ui, sans-serif; background: #171a21; }
+        /* §6: Steam 捲軸 */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #1b2838; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #3d6c8e; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #4d8db5; }
+        ::-webkit-scrollbar{width:6px} ::-webkit-scrollbar-track{background:#1b2838}
+        ::-webkit-scrollbar-thumb{background:#3d6c8e;border-radius:3px} ::-webkit-scrollbar-thumb:hover{background:#4d8db5}
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
+    </style>
+</head>
+<body class="bg-[#171a21]">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useCallback, useMemo } = React;
+
+        // ── Lucide Icon 組件 ──
+        const Icon = ({ name, className = '', size = 24 }) => {
+            const lucideInstance = window.lucide || {};
+            let iconData = lucideInstance.icons
+                ? (lucideInstance.icons[name] || lucideInstance.icons[name.charAt(0).toLowerCase() + name.slice(1)])
+                : null;
+            if (!iconData) return <div style={{ width: size, height: size }} className={className}></div>;
+            const [tag, attrs, children] = iconData;
+            const safeChildren = Array.isArray(children) ? children : [];
+            return React.createElement(tag, {
+                ...attrs, width: size, height: size, className,
+                dangerouslySetInnerHTML: {
+                    __html: safeChildren.map(child => {
+                        const [cTag, cAttrs] = child;
+                        const attrStr = Object.entries(cAttrs).map(([k, v]) => `${k}="${v}"`).join(' ');
+                        return `<${cTag} ${attrStr}></${cTag}>`;
+                    }).join('')
+                }
+            });
+        };
+
+        // ── 日期工具 ──
+        const formatDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const formatShort = (d) => `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
+        const addDays = (d, n) => { const r = new Date(d); r.setDate(r.getDate() + n); return r; };
+        const parseDate = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+
+        // ── 基於日期產生模擬資料 (seeded random) ──
+        const seedRandom = (seed) => {
+            let s = seed;
+            return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+        };
+
+        const generateDailyData = (dateStr) => {
+            const d = parseDate(dateStr);
+            const seed = d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+            const rng = seedRandom(seed);
+            const r = (min, max) => Math.floor(rng() * (max - min + 1)) + min;
+
+            const total = r(120, 220);
+            const earlyShift = r(30, 60);
+            const midShift = r(40, 80);
+            const lateShift = total - earlyShift - midShift;
+
+            const games = [
+                { name: '金好運(MY)', color: 'bg-blue-500' },
+                { name: '金猴爺', color: 'bg-yellow-500' },
+                { name: '金好運(TW)', color: 'bg-red-500' },
+                { name: '金好運(JP)', color: 'bg-purple-500' },
+                { name: '金虎爺', color: 'bg-orange-400' },
+            ];
+            let remaining = total;
+            const gameData = games.map((g, i) => {
+                const count = i < games.length - 1 ? r(Math.floor(remaining * 0.1), Math.floor(remaining * 0.4)) : remaining;
+                remaining -= count;
+                return { ...g, count, percent: Math.round((count / total) * 100) };
+            }).sort((a, b) => b.count - a.count);
+
+            // 7 日趨勢
+            const trend7 = [];
+            for (let i = 6; i >= 0; i--) {
+                const td = addDays(d, -i);
+                const tSeed = td.getFullYear() * 10000 + (td.getMonth() + 1) * 100 + td.getDate();
+                const tRng = seedRandom(tSeed);
+                const cnt = Math.floor(tRng() * 100) + 120;
+                trend7.push({ date: formatShort(td), count: cnt, alert: cnt > 200 });
+            }
+
+            // 三週同期比較
+            const w1 = addDays(d, -14);
+            const w2 = addDays(d, -7);
+            const w1Seed = w1.getFullYear() * 10000 + (w1.getMonth() + 1) * 100 + w1.getDate();
+            const w2Seed = w2.getFullYear() * 10000 + (w2.getMonth() + 1) * 100 + w2.getDate();
+            const w1Count = Math.floor(seedRandom(w1Seed)() * 12);
+            const w2Count = Math.floor(seedRandom(w2Seed)() * 12);
+            const todayIssue = r(0, 15);
+
+            const prevTotal = trend7[5]?.count || total;
+
+            return {
+                kpi: {
+                    total: { current: total, previous: prevTotal, label: '進線總量' },
+                    calls: { current: r(3, 15), previous: r(3, 15), label: '金好運電話' },
+                    alerts: { current: r(0, 3), previous: r(0, 3), label: '警示信數量' },
+                    tickets: { current: r(3, 10), previous: r(3, 10), label: '每日回單量' },
+                },
+                shifts: [
+                    { name: '早班', count: earlyShift, icon: '☀️', alert: earlyShift > 55 },
+                    { name: '中班', count: midShift, icon: '🌤️', alert: midShift > 65 },
+                    { name: '晚班', count: Math.max(0, lateShift), icon: '🌙', alert: lateShift > 55 },
+                ],
+                games: gameData,
+                trend7,
+                weeklyCompare: [
+                    { label: `兩週前(${formatShort(w1)})`, count: w1Count },
+                    { label: `上週(${formatShort(w2)})`, count: w2Count },
+                    { label: `今日(${formatShort(d)})`, count: todayIssue, alert: todayIssue > w1Count * 1.5 && todayIssue > w2Count * 1.5 },
+                ],
+                hasAlert: todayIssue > 8 && todayIssue > w1Count * 1.5,
+                alertCount: todayIssue,
+            };
+        };
+
+        // ── 任務資料 ──
+        const INITIAL_TASKS = [
+            {
+                id: 't1', status: 'todo', game: '金好運(JP)', title: '帳號異常登出與連線不穩',
+                time: '14:30 (中班)', reporter: 11, vipCount: 3, category: '帳號問題',
+                owner: '蔡筑琁', priority: 'high',
+                checklist: [
+                    { id: 'c1', text: '確認伺服器連線狀態 (已通報 IT 單位，單號: IT-0315-01)', checked: true },
+                    { id: 'c2', text: '撈取受影響區間的系統 Log，確認異常範圍與發生區間', checked: true },
+                    { id: 'c3', text: '交叉比對受影響玩家名單，篩選出高價值客戶 (目前撈出 3 名黑鑽級)', checked: true },
+                    { id: 'c4', text: '啟動高價值客戶主動關懷 (透過專線/專屬 Line 發送致歉與進度說明)', checked: false },
+                    { id: 'c5', text: '擬定並執行補償發放作業 (預估發放: 補償金幣 50,000 + 轉運道具)', checked: false },
+                ],
+                logs: [
+                    { author: '黃婷鈺 (中班組長)', time: '2026/03/15 15:10', text: 'IT 確認是跨海路由節點瞬斷，目前已切換備援線路，遊戲登入已恢復正常。已將受影響的 3 名高價值客戶帳號記錄在附件 Excel 中。晚班接手後，請協助確認補償是否順利派發。' },
+                    { author: '李珮君 (晚班組長)', time: '2026/03/15 16:05', text: '已接手，正在確認補償派發名單與流程。' },
+                ],
+            },
+            {
+                id: 't2', status: 'inProgress', game: '金猴爺', title: 'VIP 儲值未到帳 (Apple Pay)',
+                time: '11:15 (早班)', reporter: 1, vipCount: 1, category: '儲值相關問題',
+                owner: '黃婷鈺', priority: 'medium',
+                checklist: [
+                    { id: 'c1', text: '確認玩家提供之扣款收據', checked: true },
+                    { id: 'c2', text: '查詢金流後台訂單狀態', checked: true },
+                    { id: 'c3', text: '手動補發金幣與 VIP 點數', checked: false },
+                ],
+                logs: [
+                    { author: '曾雪妮 (早班組長)', time: '2026/03/15 11:30', text: '玩家已附上 Apple 收據，但後台無訂單，已提報給平台方確認。' },
+                ],
+            },
+            {
+                id: 't3', status: 'done', game: '海王寶藏', title: '活動點數未進',
+                time: '昨日晚班', reporter: 4, vipCount: 0, category: '活動領獎問題',
+                owner: '李珮君', priority: 'low',
+                checklist: [
+                    { id: 'c1', text: '活動條件資格審核', checked: true },
+                    { id: 'c2', text: '補發活動點數', checked: true },
+                ],
+                logs: [
+                    { author: '李珮君 (晚班組長)', time: '2026/03/14 23:45', text: '點數已全數補發完畢，結案。' },
+                ],
+            },
+        ];
+
+        // ── TaskCard 卡片元件 ──
+        function TaskCard({ task, onClick }) {
+            const completed = task.checklist.filter(c => c.checked).length;
+            const total = task.checklist.length;
+            return (
+                <div onClick={onClick} className={`bg-steam-card/40 hover:bg-steam-hover/60 p-4 rounded border cursor-pointer transition-all duration-200 group ${task.priority === 'high' ? 'border-red-500/50 shadow-[0_0_10px_rgba(239,68,68,0.1)]' : 'border-steam-card hover:border-steam-hover'}`}>
+                    <div className="flex justify-between items-start mb-2">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-sm ${task.priority === 'high' ? 'bg-red-500 text-white' : 'bg-steam-card text-txt-body'}`}>{task.game}</span>
+                        <span className="text-xs text-txt-sec flex items-center"><Icon name="clock" size={12} className="mr-1" /> {task.time.split(' ')[0]}</span>
+                    </div>
+                    <h4 className="text-sm font-bold text-white mb-2 leading-snug group-hover:text-brand transition-colors">{task.title}</h4>
+                    <div className="text-xs text-txt-sec mb-3 line-clamp-1">分類: {task.category} | 影響: {task.reporter}人</div>
+                    <div className="flex justify-between items-center pt-3 border-t border-steam-card/50">
+                        <div className="flex items-center text-xs text-txt-sec"><Icon name="user" size={12} className="mr-1" /> {task.owner}</div>
+                        <div className={`text-xs font-medium flex items-center ${completed === total ? 'text-emerald-400' : 'text-txt-sec'}`}><Icon name="check-square" size={12} className="mr-1" /> {completed}/{total}</div>
+                    </div>
+                </div>
+            );
+        }
+
+        // ── 主應用 ──
+        function App() {
+            const today = formatDate(new Date());
+            const [selectedDate, setSelectedDate] = useState('2026-03-15');
+            const [tasks, setTasks] = useState(INITIAL_TASKS);
+            const [activeTask, setActiveTask] = useState(null);
+            const [newLog, setNewLog] = useState('');
+            const [isPeacefulDay, setIsPeacefulDay] = useState(false);
+
+            // 日期切換
+            const goDay = useCallback((offset) => {
+                setSelectedDate(prev => formatDate(addDays(parseDate(prev), offset)));
+            }, []);
+
+            // 依據選中日期產生對應的模擬資料
+            const dailyData = useMemo(() => generateDailyData(selectedDate), [selectedDate]);
+
+            // 趨勢顏色
+            const getTrendColor = (current, previous) => {
+                if (current === previous) return 'text-slate-400';
+                return current < previous ? 'text-emerald-400' : 'text-red-400';
+            };
+
+            // Checklist 切換
+            const toggleChecklist = (taskId, checkId) => {
+                if (activeTask && activeTask.id === taskId) {
+                    const updated = activeTask.checklist.map(c => c.id === checkId ? { ...c, checked: !c.checked } : c);
+                    setActiveTask({ ...activeTask, checklist: updated });
+                    setTasks(tasks.map(t => t.id === taskId ? { ...t, checklist: updated } : t));
+                }
+            };
+
+            // 新增處理紀錄
+            const handleAddLog = () => {
+                if (!newLog.trim() || !activeTask) return;
+                const logEntry = { author: '當前使用者 (主管)', time: new Date().toLocaleString('zh-TW', { hour12: false }), text: newLog };
+                const updatedTask = { ...activeTask, logs: [...activeTask.logs, logEntry] };
+                setActiveTask(updatedTask);
+                setTasks(tasks.map(t => t.id === activeTask.id ? updatedTask : t));
+                setNewLog('');
+            };
+
+            const kpiIcons = { total: 'activity', calls: 'phone', alerts: 'alert-circle', tickets: 'mail' };
+
+            return (
+                <div className="min-h-screen bg-[#171a21] text-txt-body font-sans overflow-hidden flex flex-col">
+
+                    {/* ── Header ── */}
+                    <header className="bg-[#1b2838]/95 backdrop-blur-xl border-b border-white/[0.06] px-6 py-4 flex justify-between items-center shrink-0">
+                        <div className="flex items-center space-x-3">
+                            <Icon name="activity" size={24} className="text-brand" />
+                            <h1 className="text-xl font-bold text-white tracking-wide">商用客服營運戰情室 <span className="text-sm font-normal text-txt-sec ml-2">VIP Care Dashboard</span></h1>
+                        </div>
+                        <div className="flex items-center space-x-4 text-sm">
+                            {/* ★ 日期切換器 ★ */}
+                            <div className="flex items-center bg-steam-card/80 rounded-sm border border-white/10 overflow-hidden">
+                                <button onClick={() => goDay(-1)} className="px-3 py-2 hover:bg-steam-hover text-txt-body hover:text-white transition-colors font-bold text-lg" title="上一日">‹</button>
+                                <div className="flex items-center px-2 border-l border-r border-white/10">
+                                    <Icon name="calendar" size={14} className="text-brand mr-2" />
+                                    <input
+                                        type="date"
+                                        value={selectedDate}
+                                        onChange={e => setSelectedDate(e.target.value)}
+                                        className="bg-transparent text-white text-sm font-medium focus:outline-none cursor-pointer w-[120px]"
+                                    />
+                                </div>
+                                <button onClick={() => goDay(1)} className="px-3 py-2 hover:bg-steam-hover text-txt-body hover:text-white transition-colors font-bold text-lg" title="下一日">›</button>
+                            </div>
+                            <button onClick={() => setSelectedDate(today)} className="text-xs bg-brand/90 hover:bg-brand text-white px-3 py-1.5 rounded-sm font-bold transition-colors">
+                                今日
+                            </button>
+                            <div className="relative ml-2">
+                                <Icon name="bell" size={20} className="text-txt-body hover:text-white cursor-pointer" />
+                                {dailyData.hasAlert && !isPeacefulDay && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold px-1.5 rounded-full">!</span>}
+                            </div>
+                            <div className="flex items-center space-x-2 border-l border-white/10 pl-4 cursor-pointer">
+                                <div className="bg-brand rounded-sm w-8 h-8 flex items-center justify-center font-bold text-white text-sm">主</div>
+                                <span className="font-medium text-txt-body">主管視角</span>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* 模擬狀態切換 */}
+                    <div className="bg-[#1b2838] border-b border-white/[0.06] px-6 py-2 flex justify-end">
+                        <button onClick={() => setIsPeacefulDay(!isPeacefulDay)} className={`text-xs px-3 py-1.5 rounded-sm font-bold transition-colors flex items-center ${isPeacefulDay ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50' : 'bg-steam-card text-txt-body border border-white/10 hover:bg-steam-hover'}`}>
+                            {isPeacefulDay ? '🟢 模擬狀態：本日無重大異常 (點擊切換)' : '🔴 模擬狀態：突發事件爆發 (點擊切換)'}
+                        </button>
+                    </div>
+
+                    {/* ── Main Content ── */}
+                    <main className="flex-1 overflow-auto p-6 space-y-6">
+
+                        {/* KPI Cards */}
+                        <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            {Object.entries(dailyData.kpi).map(([key, data]) => {
+                                const diff = data.current - data.previous;
+                                const percent = data.previous === 0 ? 0 : Math.abs(Math.round((diff / data.previous) * 100));
+                                const iconName = kpiIcons[key] || 'activity';
+                                return (
+                                    <div key={key} className="bg-[#1b2838] rounded p-5 border border-white/[0.06] shadow-lg shadow-black/40 flex flex-col">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className="text-txt-sec font-medium">{data.label}</span>
+                                            <div className="p-2 rounded-sm bg-steam-card/50"><Icon name={iconName} size={20} className="text-txt-body" /></div>
+                                        </div>
+                                        <div className="flex items-end space-x-3">
+                                            <span className="text-3xl font-bold text-white">{data.current}</span>
+                                            <div className={`flex items-center mb-1 text-sm font-medium ${getTrendColor(data.current, data.previous)}`}>
+                                                <Icon name={diff < 0 ? 'trending-down' : diff > 0 ? 'trending-up' : 'minus'} size={16} className="mr-1" />
+                                                {diff !== 0 ? `${percent}%` : '-'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </section>
+
+                        {/* Alert Section */}
+                        <section>
+                            {isPeacefulDay || !dailyData.hasAlert ? (
+                                <div className="bg-emerald-500/10 border border-emerald-500/50 rounded p-4 flex items-center shadow-lg shadow-black/40">
+                                    <Icon name="check-circle-2" size={28} className="text-emerald-400 mr-3 shrink-0" />
+                                    <div className="flex-1">
+                                        <h3 className="text-emerald-400 font-bold text-lg mb-0.5">系統預警監控：🟢 營運狀態良好</h3>
+                                        <p className="text-emerald-200 text-sm">{selectedDate} 各遊戲進線數據皆在正常範圍內，無偵測到突增異常，維持常態監控。</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="bg-red-500/10 border border-red-500/50 rounded p-4 flex items-start">
+                                    <Icon name="alert-triangle" size={24} className="text-red-400 mt-0.5 mr-3 shrink-0" />
+                                    <div className="flex-1">
+                                        <h3 className="text-red-400 font-bold text-lg mb-1">系統異常預警監控 (基於近三週同期比對)</h3>
+                                        <p className="text-red-200 text-sm"><span className="font-bold">[金好運 JP] 帳號問題達 {dailyData.alertCount} 件</span> —— 顯著高於近兩週同期平均，疑似特定線路異常，請立即關注。</p>
+                                    </div>
+                                    <button onClick={() => setActiveTask(tasks.find(t => t.id === 't1'))} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-sm text-sm font-bold transition-colors whitespace-nowrap">立即查看面板</button>
+                                </div>
+                            )}
+                        </section>
+
+                        {/* Kanban */}
+                        <section>
+                            <div className="flex justify-between items-center mb-4 mt-2">
+                                <h2 className="text-xl font-bold text-white flex items-center"><Icon name="file-text" size={20} className="mr-2 text-brand" />重大事件與交接看板 (Kanban)</h2>
+                                <button className="bg-brand/90 hover:bg-brand text-white px-4 py-2 rounded-sm text-sm font-bold flex items-center transition-colors">➕ 新增追蹤卡片</button>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {[
+                                    { key: 'todo', label: '待處理 / 新事件', color: 'text-txt-body', badgeCls: 'bg-steam-card', emptyIcon: 'check-square', emptyMsg: '目前無待處理事件' },
+                                    { key: 'inProgress', label: '處理中 / 跨班追蹤', color: 'text-brand', badgeCls: 'bg-brand/20 text-brand', emptyIcon: 'clock', emptyMsg: '無跨班交接事項' },
+                                    { key: 'done', label: '已結案 (近3日)', color: 'text-emerald-400', badgeCls: 'bg-emerald-900/50 text-emerald-300', emptyIcon: 'check-circle-2', emptyMsg: '近三日無結案紀錄' },
+                                ].map(col => {
+                                    const filtered = isPeacefulDay ? [] : tasks.filter(t => t.status === col.key);
+                                    return (
+                                        <div key={col.key} className="bg-[#1b2838]/50 rounded p-4 border border-white/[0.06] flex flex-col shadow-lg shadow-black/40">
+                                            <h3 className={`${col.color} font-bold mb-4 flex justify-between items-center border-b border-white/[0.06] pb-2 shrink-0`}>
+                                                {col.label}
+                                                <span className={`${col.badgeCls} text-xs px-2 py-1 rounded-sm`}>{filtered.length}</span>
+                                            </h3>
+                                            <div className="space-y-3 flex-1 overflow-y-auto max-h-[300px] pr-1 custom-scrollbar">
+                                                {filtered.length === 0 ? (
+                                                    <div className="flex flex-col items-center justify-center py-8 text-slate-500 h-full">
+                                                        <Icon name={col.emptyIcon} size={40} className="mb-3 opacity-20" />
+                                                        <p className="text-sm font-medium">{col.emptyMsg}</p>
+                                                    </div>
+                                                ) : filtered.map(task => (
+                                                    <TaskCard key={task.id} task={task} onClick={() => setActiveTask(task)} />
+                                                ))}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </section>
+
+                        {/* Trend Section */}
+                        <section>
+                            <h2 className="text-xl font-bold text-white mb-4 mt-2 flex items-center"><Icon name="bar-chart-3" size={20} className="mr-2 text-brand" />長期趨勢與問題分析</h2>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* 7-Day Trend */}
+                                <div className="bg-[#1b2838] rounded p-6 border border-white/[0.06] shadow-lg shadow-black/40">
+                                    <h3 className="text-lg font-bold text-white mb-4">近七日進線量趨勢</h3>
+                                    <div className="flex items-end justify-between h-48 pt-4 border-b border-white/[0.06] pb-2">
+                                        {dailyData.trend7.map((day, idx) => {
+                                            const maxCount = 250;
+                                            const heightPercent = (day.count / maxCount) * 100;
+                                            return (
+                                                <div key={idx} className="flex flex-col items-center w-full group relative">
+                                                    <span className="absolute -top-6 text-xs font-bold text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity">{day.count}</span>
+                                                    <div className={`w-8 md:w-10 rounded-t-sm transition-all duration-300 ${day.alert && !isPeacefulDay ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'bg-brand group-hover:bg-brand/80'}`} style={{ height: `${heightPercent}%` }}></div>
+                                                    <span className="text-[10px] md:text-xs text-txt-sec mt-3">{day.date}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <p className="mt-4 text-xs text-txt-muted">※ 紅色標記代表進線量突破 200 件的異常日期。</p>
+                                </div>
+
+                                {/* 3-Week Compare */}
+                                <div className="bg-[#1b2838] rounded p-6 border border-white/[0.06] shadow-lg shadow-black/40 flex flex-col">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <h3 className="text-lg font-bold text-white">近三週同期特定問題比較</h3>
+                                        <select className="bg-steam-card border border-white/10 text-xs md:text-sm text-txt-body rounded-sm p-1.5 focus:outline-none focus:border-brand">
+                                            <option>金好運(JP) - 帳號問題</option>
+                                            <option>金猴爺 - 儲值相關問題</option>
+                                            <option>金虎爺 - 反應與建議</option>
+                                        </select>
+                                    </div>
+                                    <div className="flex items-end justify-around h-48 pt-4 border-b border-white/[0.06] pb-2 flex-1">
+                                        {dailyData.weeklyCompare.map((week, idx) => {
+                                            const maxCount = 20;
+                                            const heightPercent = (week.count / maxCount) * 100;
+                                            return (
+                                                <div key={idx} className="flex flex-col items-center w-24 group relative">
+                                                    <span className="absolute -top-6 text-sm font-bold text-white">{week.count} 件</span>
+                                                    <div className={`w-12 md:w-16 rounded-t-sm transition-all duration-300 ${week.alert && !isPeacefulDay ? 'bg-orange-500' : 'bg-steam-card'}`} style={{ height: `${Math.max(heightPercent, 3)}%` }}></div>
+                                                    <span className="text-[10px] md:text-xs text-txt-sec mt-3 whitespace-nowrap text-center">{week.label}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    {!isPeacefulDay && dailyData.hasAlert && (
+                                        <p className="mt-4 text-xs text-slate-400 flex items-center"><Icon name="alert-triangle" size={12} className="text-orange-400 mr-1" />今日帳號問題 ({dailyData.alertCount}件) 顯著高於過去兩週同期平均。</p>
+                                    )}
+                                </div>
+                            </div>
+                        </section>
+
+                        {/* Charts Section */}
+                        <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {/* Shift Heatmap */}
+                            <div className="bg-[#1b2838] rounded p-6 border border-white/[0.06] shadow-lg shadow-black/40">
+                                <h2 className="text-lg font-bold text-white mb-4 flex items-center"><Icon name="clock" size={20} className="mr-2 text-brand" />班別進線負載熱區</h2>
+                                <div className="space-y-4">
+                                    {dailyData.shifts.map(shift => (
+                                        <div key={shift.name} className="flex items-center">
+                                            <div className="w-20 text-txt-body flex items-center"><span className="mr-2">{shift.icon}</span> {shift.name}</div>
+                                            <div className="flex-1 ml-4 relative h-6 bg-steam-card rounded-sm overflow-hidden">
+                                                <div className={`h-full ${shift.alert && !isPeacefulDay ? 'bg-orange-500 animate-pulse' : 'bg-brand'}`} style={{ width: `${Math.min((shift.count / 100) * 100, 100)}%` }}></div>
+                                            </div>
+                                            <div className={`w-16 text-right font-bold ${shift.alert && !isPeacefulDay ? 'text-orange-400' : 'text-txt-body'}`}>{shift.count} 件</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Game Distribution */}
+                            <div className="bg-[#1b2838] rounded p-6 border border-white/[0.06] shadow-lg shadow-black/40">
+                                <h2 className="text-lg font-bold text-white mb-4 flex items-center"><Icon name="check-square" size={20} className="mr-2 text-brand" />遊戲別客訴佔比 (Top 5)</h2>
+                                <div className="space-y-3">
+                                    {dailyData.games.map(game => (
+                                        <div key={game.name}>
+                                            <div className="flex justify-between text-sm mb-1">
+                                                <span className="text-txt-body">{game.name}</span>
+                                                <span className="text-txt-sec font-medium">{game.count} 件 ({game.percent}%)</span>
+                                            </div>
+                                            <div className="w-full h-2 bg-steam-card rounded-sm overflow-hidden">
+                                                <div className={`h-full ${game.color}`} style={{ width: `${game.percent}%` }}></div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </section>
+                    </main>
+
+                    {/* ── Task Detail Slide Panel ── */}
+                    {activeTask && (
+                        <>
+                            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={() => setActiveTask(null)}></div>
+                            <div className="fixed right-0 top-0 h-full w-full md:w-[600px] lg:w-[700px] bg-[#1b2838] border-l border-white/[0.06] shadow-2xl z-50 flex flex-col">
+                                {/* Panel Header */}
+                                <div className="bg-[#171a21] p-5 border-b border-white/[0.06] flex justify-between items-start shrink-0">
+                                    <div>
+                                        <div className="flex items-center space-x-2 mb-2">
+                                            <span className={`text-xs font-bold px-2 py-1 rounded-sm ${activeTask.priority === 'high' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-steam-card text-txt-body'}`}>{activeTask.game}</span>
+                                            <span className="text-txt-sec text-sm">{activeTask.category}</span>
+                                        </div>
+                                        <h2 className="text-2xl font-bold text-white tracking-wide">{activeTask.title}</h2>
+                                    </div>
+                                    <button onClick={() => setActiveTask(null)} className="text-txt-sec hover:text-white bg-steam-content hover:bg-steam-card p-2 rounded-sm transition-colors"><Icon name="x" size={20} /></button>
+                                </div>
+
+                                {/* Panel Content */}
+                                <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+                                    {/* Info Grid */}
+                                    <div className="grid grid-cols-2 gap-4 bg-steam-content border border-white/[0.06] rounded p-4">
+                                        <div><p className="text-xs text-txt-sec mb-1">發生時間</p><p className="text-sm font-medium text-txt-body">{activeTask.time}</p></div>
+                                        <div><p className="text-xs text-txt-sec mb-1">影響人數</p><p className="text-sm font-medium text-txt-body">{activeTask.reporter} 人 <span className="text-orange-400 font-bold text-xs ml-1">(含 {activeTask.vipCount} 名 VVIP)</span></p></div>
+                                        <div><p className="text-xs text-txt-sec mb-1">負責人</p><p className="text-sm font-medium text-brand flex items-center"><Icon name="user" size={12} className="mr-1" /> {activeTask.owner}</p></div>
+                                        <div><p className="text-xs text-txt-sec mb-1">系統關聯警示</p>{activeTask.priority === 'high' ? <p className="text-xs font-medium text-red-400 flex items-center"><Icon name="alert-triangle" size={12} className="mr-1" /> 異常飆高達均值 3 倍</p> : <p className="text-xs font-medium text-txt-muted">- 無 -</p>}</div>
+                                    </div>
+
+                                    {/* SOP Checklist */}
+                                    <div>
+                                        <div className="flex justify-between items-end mb-4">
+                                            <h3 className="text-lg font-bold text-white flex items-center"><Icon name="check-square" size={20} className="mr-2 text-brand" />風險評估與 SOP 檢核表</h3>
+                                            <span className="text-sm font-bold text-txt-sec">進度: {Math.round((activeTask.checklist.filter(c => c.checked).length / activeTask.checklist.length) * 100)}%</span>
+                                        </div>
+                                        <div className="w-full h-2 bg-steam-card rounded-sm mb-4 overflow-hidden">
+                                            <div className="h-full bg-emerald-500 transition-all duration-500" style={{ width: `${(activeTask.checklist.filter(c => c.checked).length / activeTask.checklist.length) * 100}%` }}></div>
+                                        </div>
+                                        <div className="bg-[#171a21]/50 rounded border border-white/[0.06] p-2">
+                                            {activeTask.checklist.map((item, idx) => (
+                                                <label key={item.id} className={`flex items-start p-3 rounded-sm cursor-pointer transition-colors ${item.checked ? 'bg-steam-content/50 opacity-70' : 'hover:bg-steam-content'}`}>
+                                                    <div className="mt-0.5 mr-3 shrink-0">
+                                                        <input type="checkbox" className="w-4 h-4 rounded-sm border-steam-card bg-steam-card text-brand accent-[#1a9fff]" checked={item.checked} onChange={() => toggleChecklist(activeTask.id, item.id)} />
+                                                    </div>
+                                                    <span className={`text-sm ${item.checked ? 'text-slate-400 line-through' : 'text-slate-200'}`}>{idx + 1}. {item.text}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Activity Log */}
+                                    <div>
+                                        <h3 className="text-lg font-bold text-white flex items-center mb-4"><Icon name="message-square" size={20} className="mr-2 text-brand" />處理歷程與跨班交接紀錄</h3>
+                                        <div className="space-y-4 mb-6">
+                                            {activeTask.logs.map((log, idx) => (
+                                                <div key={idx} className="flex items-start space-x-3">
+                                                    <div className="flex items-center justify-center w-10 h-10 rounded-sm bg-steam-card text-txt-body shrink-0 shadow border-2 border-white/10">
+                                                        <Icon name="user" size={16} />
+                                                    </div>
+                                                    <div className="flex-1 bg-steam-content p-4 rounded border border-white/[0.06] shadow-md shadow-black/30">
+                                                        <div className="flex justify-between items-center mb-1">
+                                                            <span className="font-bold text-sm text-brand">{log.author}</span>
+                                                            <span className="text-xs text-slate-500">{log.time}</span>
+                                                        </div>
+                                                        <p className="text-sm text-slate-300 leading-relaxed">{log.text}</p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        {/* New Log Input */}
+                                        <div className="bg-[#171a21] p-3 rounded border border-white/[0.06]">
+                                            <textarea value={newLog} onChange={e => setNewLog(e.target.value)} className="w-full bg-steam-content border border-white/10 rounded-sm p-3 text-sm text-white placeholder-txt-muted focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand resize-none" rows="3" placeholder="輸入最新處理進度、風險觀察或交接事項..."></textarea>
+                                            <div className="flex justify-end mt-2 space-x-2">
+                                                <button className="text-txt-sec hover:text-white px-3 py-1.5 text-sm transition-colors flex items-center"><Icon name="file-text" size={16} className="mr-1" /> 夾帶附件</button>
+                                                <button onClick={handleAddLog} disabled={!newLog.trim()} className="bg-brand/90 hover:bg-brand disabled:bg-steam-card disabled:text-txt-muted text-white px-4 py-1.5 rounded-sm text-sm font-bold transition-colors flex items-center"><Icon name="save" size={16} className="mr-1" /> 送出紀錄</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Panel Footer */}
+                                <div className="bg-[#171a21] p-4 border-t border-white/[0.06] flex justify-between shrink-0">
+                                    <button className="text-txt-sec hover:text-white px-4 py-2 text-sm transition-colors flex items-center"><Icon name="more-horizontal" size={20} className="mr-1" /> 更多操作</button>
+                                    <button onClick={() => setActiveTask(null)} className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-sm text-sm font-bold flex items-center transition-colors"><Icon name="check-circle-2" size={16} className="mr-2" /> 標記為結案</button>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>R&D Insight Dashboard | 團隊效能監控</title>
+
+    <!-- 1. 載入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- 2. 載入 Babel -->
+    <script src="https://unpkg.com/@babel/standalone@7.23.9/babel.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #818cf8;
+            --indigo-600: #4f46e5;
+            --emerald-500: #10b981;
+            --rose-500: #f43f5e;
+            --slate-50: #f8fafc;
+            --glass: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.4);
+        }
+
+        body {
+            background-color: var(--slate-50);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(244, 63, 94, 0.05) 0px, transparent 50%);
+            min-height: 100vh;
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            color: #1e293b;
+        }
+
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 2.5rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            transform: translateY(-6px) scale(1.01);
+            box-shadow: 0 30px 40px -10px rgba(79, 70, 229, 0.1);
+            border-color: rgba(255, 255, 255, 0.8);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 20px;
+            border: 2px solid var(--slate-50);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .loading-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: radial-gradient(circle at center, #ffffff 0%, var(--slate-50) 100%);
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root">
+        <div class="loading-screen">
+            <div class="relative w-24 h-24 mb-6">
+                <div class="absolute inset-0 border-4 border-indigo-100 rounded-full"></div>
+                <div class="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
+            </div>
+            <p className="text-lg font-black tracking-widest text-slate-800 uppercase">Initializing Intelligence...</p>
+        </div>
+    </div>
+
+    <!-- 3. React 應用程式邏輯 -->
+    <script type="text/babel" data-type="module" data-presets="react">
+        import React, { useState, useEffect, useMemo } from 'https://esm.sh/react@18.2.0';
+        import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+
+        import {
+            BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend
+        } from 'https://esm.sh/recharts@2.12.0?deps=react@18.2.0,react-dom@18.2.0';
+
+        import {
+            LayoutDashboard, Calendar, Database, Users, Briefcase, UserCheck,
+            Grid3X3, Activity, Sparkles, Bot, Send, Loader2, Target, Layers,
+            TrendingUp, AlertCircle, Filter, X, Bug, FileWarning, ListTodo, FileText, Table, FileBarChart, CalendarRange
+        } from 'https://esm.sh/lucide-react@0.344.0?deps=react@18.2.0,react-dom@18.2.0';
+
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/168G3AtI3lIdgIv6q75Fz9BtM_u11yC1G-cz1NTJApbo/export?format=csv&gid=0';
+
+        const FALLBACK_DATA_CSV = `日期,組別,作者,專案,議題,回應,小時,LINK,副組別
+2025-12-09,品檢,OLD_TS品檢呂孟軒,【品檢組】網頁組,"功能 #71137: 【品檢組】專案進度確認,工作事項交接",工作事項交接,2,,品檢_早班
+2025-12-10,品檢,OLD_TS品檢呂孟軒,【品檢組】網頁組,"測試 #221233: [智能行銷]20251211版更品檢測試,測試項目數：84",問題回報：8,7,,品檢_早班
+2025-12-10,品檢,OLD_TS品檢周啟堂,【品檢組】金銀島,測試 #220900: 金銀島遊戲測試_Cash balloon,測試項目數：128,5.5,,品檢_中班
+2025-12-11,網頁組,OLD_TS網頁王敦德,SLAM888(大滿貫),"《大滿貫》聊天室、排行榜美術介面,調整",遊戲Bar條破版問題調整,5.8,,網頁系統_前端
+2025-12-11,網頁組,OLD_TS網頁王琮郁,DARA(Joya、GDCoins),TaDaSSS_遊戲說明頁歷程需求,說明頁頁面製作中,2.2,,網頁美術
+2025-12-11,網頁組,OLD_TS網頁陳姝姝,滿貫大亨,滿貫12/10活動頁製作-辣椒圓舞曲,各環境已更新,0.6,,網頁美術
+2025-12-11,網頁組,OLD_TS網頁陳葳,gametower,20251211組內事務,了解公司環境,2.2,,網頁系統_緯創
+2025-12-11,網頁組,OLD_TS網頁傅琬鈞,DARA(Joya、GDCoins),TaDaSSS_遊戲說明頁歷程需求,製作歷程前後端程式,3.1,,網頁系統_緯創
+2025-12-11,網頁組,OLD_TS網頁黃汶淑,VegasFrenzy(錢進大亨),VF_大富翁聖誕節換皮,頁面建置完成,5.6,,網頁美術
+2025-12-11,網頁組,OLD_TS網頁葉子羿,gametower,AI 重構提詞流程框架設計,協助 C# 重構 Golang,2.4,,網頁系統_實習生
+2025-12-11,網頁組,OLD_TS資源整合應用詹庭語,滿貫大亨,滿貫大亨_20251224 消費活動-幸運之森(ingame),ingame確認,0.7,,資源整合應用_企劃
+2025-12-11,網頁組,OLD_TS網頁詹景評,gametower,個資查詢可疑警示機制「Admin2」,新增個資監控機制,6.8,,網頁系統_後端
+2025-12-11,網頁組,OLD_TS網頁劉宇庭,gametower,[企劃]百站引流階段二 - 規格書,持續製作規格書,8.5,,資源整合應用_企劃
+2025-12-11,網頁組,OLD_TS網頁盧泛菲,滿貫大亨,滿貫大亨_20251231消費活動-賓果,活動頁主視覺設計,7.2,,網頁美術
+2025-12-11,網頁組,OLD_TS網頁謝佩岑,gametower,[實習生研究]kapa.ai,研究替代工具,8,,網頁系統_實習生
+2025-12-11,網頁組,OLD_TS網頁謝昇富,gametower,Log&伺服器監控,整理 log,6.3,,網頁系統_後端
+2025-12-11,網頁組,OLD_TS網頁魏嘉男,gametower,服務不中斷改版「登入：訪客」,與Mongo原廠討論問題,6.8,,網頁系統_後端
+2025-12-12,客服組,OLD_TS客服李依璇,明星3缺1,功能 #222107: 【客服組】明星3缺1值班工作事務,高V服務-值機,5,,客服_VIP
+2025-12-12,客服組,OLD_TS客服曾雪妮,明星3缺1,功能 #222107: 【客服組】明星3缺1值班工作事務,例行事務,1.72,,客服_值班者
+2025-12-12,客服組,OLD_TS客服黃婷鈺,明星3缺1,功能 #222107: 【客服組】明星3缺1值班工作事務,執常態明星事務,0.48,,客服_值班者
+2025-12-13,客服組,OLD_TS客服蔡筑琁,明星3缺1,功能 #222107: 【客服組】明星3缺1值班工作事務,iOS總退,0.65,,客服_值班者
+2025-12-14,客服組,OLD_TS客服蘇清源,共用,功能 #222103: 【客服組】專案進度確認及工作任務交接,新人教育訓練,3.5,,客服_值班者
+2025-12-14,資料庫組,OLD_TS資料庫組王大明,DB維護,例行檢查,正常,4,,資料庫_維運
+2025-12-14,資料庫組,OLD_TS資料庫組陳小美,DB優化,索引調整,完成,3.5,,資料庫_開發`;
+
+        const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
+
+        // --- 資料處理 Hook ---
+        const useTimesheetData = (csvUrl, dateRange, filters) => {
+            const [rawData, setRawData] = useState([]);
+            const [isDataLoading, setIsDataLoading] = useState(true);
+            const [dataMsg, setDataMsg] = useState('');
+            const [skippedRows, setSkippedRows] = useState([]);
+            const [rawDataStats, setRawDataStats] = useState({});
+
+            const parseCSVLine = (line) => {
+                const result = [];
+                let startValueIndex = 0;
+                let inQuotes = false;
+                for (let i = 0; i < line.length; i++) {
+                    if (line[i] === '"') inQuotes = !inQuotes;
+                    else if (line[i] === ',' && !inQuotes) {
+                        let val = line.substring(startValueIndex, i).trim();
+                        if (val.startsWith('"') && val.endsWith('"')) val = val.substring(1, val.length - 1).replace(/""/g, '"');
+                        result.push(val);
+                        startValueIndex = i + 1;
+                    }
+                }
+                let lastVal = line.substring(startValueIndex).trim();
+                if (lastVal.startsWith('"') && lastVal.endsWith('"')) lastVal = lastVal.substring(1, lastVal.length - 1).replace(/""/g, '"');
+                result.push(lastVal);
+                return result;
+            };
+
+            const parseCSV = (csvText) => {
+                const rawLines = csvText.split(/\r\n|\n|\r/);
+                const mergedLines = [];
+                let currentBuffer = '';
+                for (let i = 0; i < rawLines.length; i++) {
+                    let line = rawLines[i];
+                    currentBuffer = currentBuffer ? currentBuffer + '\n' + line : line;
+                    const quoteCount = (currentBuffer.match(/"/g) || []).length;
+                    if (quoteCount % 2 === 0) {
+                        if (currentBuffer.trim()) mergedLines.push(currentBuffer);
+                        currentBuffer = '';
+                    }
+                }
+                
+                const startIndex = mergedLines.findIndex(l => l.includes('日期') && l.includes('組別'));
+                if (startIndex === -1) return [];
+                
+                const data = [];
+                const skipped = [];
+                const stats = {};
+
+                for (let i = startIndex + 1; i < mergedLines.length; i++) {
+                    const row = parseCSVLine(mergedLines[i]);
+                    if (row.length < 7) {
+                        skipped.push({ line: i, reason: '欄位不足', content: mergedLines[i] });
+                        continue;
+                    }
+                    const dateMatch = (row[0] || '').trim().match(/^(\d{4}[-/]\d{1,2}[-/]\d{1,2})/);
+                    if (!dateMatch) {
+                        skipped.push({ line: i, reason: '日期無效', content: row[0] });
+                        continue;
+                    }
+                    const validDateStr = dateMatch[1].replace(/\//g, '-');
+                    const hours = parseFloat(row[6]);
+                    if (isNaN(hours)) {
+                        skipped.push({ line: i, reason: '工時無效', content: row[6] });
+                        continue;
+                    }
+                    let teamName = (row[1] || '').trim();
+                    if (teamName.includes('{')) continue;
+
+                    let authorRaw = row[2] || '';
+                    let cleanAuthor = authorRaw.replace(/^OLD_TS/, '').replace(/^(品檢|網頁|客服|技術|資源整合應用|資料庫)/, '').trim();
+
+                    if (!stats[teamName]) stats[teamName] = { count: 0, totalHours: 0, authors: new Set() };
+                    stats[teamName].count += 1;
+                    stats[teamName].totalHours += hours;
+                    stats[teamName].authors.add(cleanAuthor);
+
+                    data.push({
+                        date: validDateStr,
+                        team: teamName,
+                        author: cleanAuthor,
+                        project: row[3],
+                        issue: row[4],
+                        response: row[5],
+                        hours: hours,
+                        subteam: row[8] || teamName
+                    });
+                }
+                setSkippedRows(skipped);
+                setRawDataStats(stats);
+                return data.sort((a, b) => new Date(a.date) - new Date(b.date));
+            };
+
+            useEffect(() => {
+                const fetchData = async () => {
+                    setIsDataLoading(true);
+                    try {
+                        const response = await fetch(csvUrl);
+                        if (!response.ok) throw new Error();
+                        const text = await response.text();
+                        const parsed = parseCSV(text);
+                        setRawData(parsed);
+                        setDataMsg('已成功連線至即時數據');
+                    } catch (e) {
+                        const parsed = parseCSV(FALLBACK_DATA_CSV);
+                        setRawData(parsed);
+                        setDataMsg('顯示備份數據');
+                    } finally {
+                        setIsDataLoading(false);
+                    }
+                };
+                fetchData();
+            }, [csvUrl]);
+
+            const finalData = useMemo(() => {
+                if (rawData.length === 0) return { filteredData: [], uniqueTeams: [], uniqueProjects: [] };
+                
+                // --- 1. 偵測數據中的最新日期 ---
+                const rawDates = rawData.map(d => new Date(d.date)).filter(d => !isNaN(d.getTime()));
+                const maxRawDate = rawDates.length > 0 ? new Date(Math.max(...rawDates)) : new Date();
+                
+                let data = rawData;
+                const today = new Date();
+                
+                if (filters.isCustomDate && filters.customStartDate && filters.customEndDate) {
+                    data = data.filter(d => d.date >= filters.customStartDate && d.date <= filters.customEndDate);
+                } else {
+                    // --- 2. 智慧偵測：判斷今日區間是否有數據 ---
+                    const startDateForToday = new Date();
+                    startDateForToday.setDate(today.getDate() - dateRange);
+                    const startDateForTodayStr = startDateForToday.toISOString().split('T')[0];
+                    
+                    const hasTodayData = rawData.some(d => d.date >= startDateForTodayStr);
+                    
+                    if (hasTodayData) {
+                        data = data.filter(d => d.date >= startDateForTodayStr);
+                    } else {
+                        // 智慧對齊：以數據中最大日期為基準回推
+                        const alignedStartDate = new Date(maxRawDate);
+                        alignedStartDate.setDate(maxRawDate.getDate() - dateRange);
+                        const alignedStartDateStr = alignedStartDate.toISOString().split('T')[0];
+                        data = data.filter(d => d.date >= alignedStartDateStr);
+                    }
+                }
+
+                const teams = ['All', ...new Set(rawData.map(d => d.team).filter(t => t))].sort();
+                const projects = ['All', ...new Set(rawData.map(d => d.project).filter(p => p))].sort();
+
+                if (filters.selectedTeam !== 'All') data = data.filter(d => d.team === filters.selectedTeam);
+                if (filters.selectedProject !== 'All') data = data.filter(d => d.project === filters.selectedProject);
+
+                return { filteredData: data, uniqueTeams: teams, uniqueProjects: projects };
+            }, [rawData, dateRange, filters]);
+
+            return { ...finalData, isDataLoading, dataMsg, skippedRows, rawDataStats };
+        };
+
+        // --- 主元件 ---
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('members');
+            const [dateRange, setDateRange] = useState(30);
+            const [selectedTeam, setSelectedTeam] = useState('All');
+            const [selectedProjectFilter, setSelectedProjectFilter] = useState('All');
+            const [isCustomDate, setIsCustomDate] = useState(false);
+            const [customStartDate, setCustomStartDate] = useState('');
+            const [customEndDate, setCustomEndDate] = useState('');
+            
+            const [selectedProject, setSelectedProject] = useState(null);
+            const [selectedIssue, setSelectedIssue] = useState(null);
+            const [selectedMember, setSelectedMember] = useState(null);
+            
+            const [showAiPanel, setShowAiPanel] = useState(false);
+            const [aiPrompt, setAiPrompt] = useState('');
+            const [aiResponse, setAiResponse] = useState('');
+            const [isAiLoading, setIsAiLoading] = useState(false);
+            const [showDebug, setShowDebug] = useState(false);
+
+            const { 
+                filteredData, uniqueTeams, uniqueProjects, 
+                isDataLoading, dataMsg, skippedRows, rawDataStats 
+            } = useTimesheetData(CSV_URL, dateRange, {
+                selectedTeam, 
+                selectedProject: selectedProjectFilter,
+                isCustomDate, 
+                customStartDate, 
+                customEndDate
+            });
+
+            // --- AI 分析處理 ---
+            const handleAiAnalysis = async (customPrompt, type = 'chat') => {
+                setIsAiLoading(true);
+                const query = customPrompt || aiPrompt;
+                if (!query && type === 'chat') { setIsAiLoading(false); return; }
+
+                let context = "";
+                if (type === 'report') {
+                    context = JSON.stringify({
+                        team: selectedTeam,
+                        totalHours: filteredData.reduce((acc, cur) => acc + cur.hours, 0).toFixed(1),
+                        topProjects: projectStats.slice(0, 5)
+                    });
+                } else {
+                    context = JSON.stringify(filteredData.slice(0, 20));
+                }
+
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=`, {
+                        method: 'POST',
+                        body: JSON.stringify({ contents: [{ parts: [{ text: `數據上下文：${context}\n問題：${query}` }] }] })
+                    });
+                    const res = await response.json();
+                    setAiResponse(res.candidates?.[0]?.content?.parts?.[0]?.text || "分析失敗");
+                } catch {
+                    setAiResponse("連線失敗");
+                } finally {
+                    setIsAiLoading(false);
+                }
+            };
+
+            const actualDays = useMemo(() => {
+                if (isCustomDate && customStartDate && customEndDate) {
+                    const diffTime = Math.abs(new Date(customEndDate) - new Date(customStartDate));
+                    return Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1);
+                }
+                return dateRange;
+            }, [isCustomDate, customStartDate, customEndDate, dateRange]);
+
+            const memberStats = useMemo(() => {
+                const stats = {};
+                filteredData.forEach(d => {
+                    if (!stats[d.author]) stats[d.author] = { name: d.author, team: d.subteam, totalHours: 0, projects: new Set(), tasksCount: 0 };
+                    stats[d.author].totalHours += d.hours;
+                    stats[d.author].projects.add(d.project);
+                    stats[d.author].tasksCount += 1;
+                });
+                
+                const overloadLimit = (50 / 7) * actualDays;
+                const underloadLimit = (25 / 7) * actualDays;
+
+                return Object.values(stats).sort((a, b) => b.totalHours - a.totalHours)
+                    .map(s => {
+                        let status = 'green';
+                        if (s.totalHours > overloadLimit) status = 'red';
+                        else if (s.totalHours < underloadLimit) status = 'yellow';
+                        
+                        return { 
+                            ...s, 
+                            projectCount: s.projects.size, 
+                            avgHoursPerTask: (s.totalHours / (s.tasksCount || 1)).toFixed(1),
+                            status
+                        };
+                    });
+            }, [filteredData, actualDays]);
+
+            const projectStats = useMemo(() => {
+                const stats = {};
+                filteredData.forEach(d => {
+                    if (!stats[d.project]) stats[d.project] = { name: d.project, total: 0, teams: {} };
+                    stats[d.project].total += d.hours;
+                    stats[d.project].teams[d.team] = (stats[d.project].teams[d.team] || 0) + d.hours;
+                });
+                return Object.values(stats).sort((a, b) => b.total - a.total);
+            }, [filteredData]);
+
+            const trendData = useMemo(() => {
+                const map = {};
+                const sortedDates = [...new Set(filteredData.map(d => d.date))].sort();
+                sortedDates.forEach(date => {
+                    map[date] = { date: date.substr(5), fullDate: date };
+                    uniqueTeams.filter(t => t !== 'All').forEach(t => map[date][t] = 0);
+                });
+                filteredData.forEach(d => { if (map[d.date]) map[d.date][d.team] += d.hours; });
+                return Object.values(map);
+            }, [filteredData, uniqueTeams]);
+
+            const issueStats = useMemo(() => {
+                const stats = {};
+                filteredData.forEach(d => {
+                    const key = d.issue || '未填寫';
+                    if (!stats[key]) stats[key] = { name: key, total: 0, teams: {}, projects: new Set() };
+                    stats[key].total += d.hours;
+                    stats[key].teams[d.team] = (stats[key].teams[d.team] || 0) + d.hours;
+                    stats[key].projects.add(d.project);
+                });
+                return Object.values(stats).sort((a, b) => b.total - a.total).slice(0, 20);
+            }, [filteredData]);
+
+            const displayDateRangeStr = useMemo(() => {
+                if (filteredData.length === 0) return '目前無資料';
+                const dates = filteredData.map(d => d.date).sort();
+                return `${dates[0]} ~ ${dates[dates.length - 1]}`;
+            }, [filteredData]);
+
+            if (isDataLoading) return (
+                <div className="loading-screen">
+                    <Loader2 size={48} className="animate-spin text-indigo-600 mb-4" />
+                    <p className="text-xl font-black text-slate-800 tracking-widest uppercase">Analyzing Data...</p>
+                </div>
+            );
+
+            return (
+                <div className="min-h-screen p-4 md:p-8 custom-scrollbar">
+                    <div className="max-w-7xl mx-auto animate-fade-in">
+                        
+                        {/* 玻璃擬態控制面板 */}
+                        <div className="glass-card p-8 mb-8">
+                            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
+                                <div>
+                                    <h1 className="text-3xl font-black text-slate-800 flex items-center gap-3 tracking-tight">
+                                        <div className="p-3 bg-indigo-600 rounded-3xl text-white shadow-xl shadow-indigo-100 rotate-3">
+                                            <Sparkles size={28} />
+                                        </div>
+                                        R&D Insight 2.0
+                                    </h1>
+                                    <div className="flex flex-wrap items-center gap-4 mt-6">
+                                        <div className="flex items-center gap-2 text-xs font-black text-slate-500 bg-white/60 px-4 py-2 rounded-2xl border border-white">
+                                            <Calendar className="w-4 h-4 text-indigo-500" />
+                                            <span>監控區間：<span className="text-indigo-600">{displayDateRangeStr}</span></span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-xs font-black text-emerald-600 bg-emerald-50 px-4 py-2 rounded-2xl border border-emerald-100">
+                                            <Activity className="w-4 h-4 animate-pulse" />
+                                            {dataMsg}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-wrap gap-4 items-center">
+                                    <div className="flex items-center gap-2 bg-white/90 p-2 rounded-2xl shadow-sm border border-slate-100">
+                                        <Filter className="w-4 h-4 text-slate-400 ml-2" />
+                                        <select value={selectedTeam} onChange={(e) => setSelectedTeam(e.target.value)} className="bg-transparent text-sm font-black text-slate-700 py-1 pr-6 focus:outline-none">
+                                            {uniqueTeams.map(t => <option key={t} value={t}>{t === 'All' ? '全部部門' : t}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="flex items-center gap-2 bg-white/90 p-1.5 rounded-2xl shadow-sm border border-slate-100">
+                                        <input 
+                                            type="date" 
+                                            value={customStartDate} 
+                                            onChange={(e) => { 
+                                                setCustomStartDate(e.target.value); 
+                                                setIsCustomDate(true); 
+                                            }} 
+                                            className="bg-transparent text-xs font-black text-slate-500 focus:outline-none px-2 cursor-pointer" 
+                                        />
+                                        <span className="text-slate-300 font-black">-</span>
+                                        <input 
+                                            type="date" 
+                                            value={customEndDate} 
+                                            onChange={(e) => { 
+                                                setCustomEndDate(e.target.value); 
+                                                setIsCustomDate(true); 
+                                            }} 
+                                            className="bg-transparent text-xs font-black text-slate-500 focus:outline-none px-2 cursor-pointer" 
+                                        />
+                                    </div>
+                                    <div className="hidden lg:flex items-center gap-2 bg-slate-200/40 p-1.5 rounded-2xl">
+                                        {[7, 14, 30].map(d => (
+                                            <button key={d} onClick={() => { setDateRange(d); setIsCustomDate(false); setCustomStartDate(''); setCustomEndDate(''); }} className={`px-4 py-2 rounded-xl text-xs font-black transition-all ${!isCustomDate && dateRange === d ? 'bg-white text-indigo-600 shadow-md scale-105' : 'text-slate-400 hover:text-slate-600'}`}>
+                                                {d}天
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 四大核心指標 */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                            {[
+                                { label: '總累計工時', val: Math.round(filteredData.reduce((acc, c) => acc + c.hours, 0)), unit: 'h', icon: Briefcase, color: 'indigo' },
+                                { label: '活躍開發者', val: new Set(filteredData.map(d => d.author)).size, unit: '人', icon: Users, color: 'emerald' },
+                                { label: '覆蓋專案數', val: new Set(filteredData.map(d => d.project)).size, unit: '個', icon: Target, color: 'amber' },
+                                { label: '執行議題數', val: new Set(filteredData.map(d => d.issue)).size, unit: '項', icon: Activity, color: 'rose' }
+                            ].map((s, i) => (
+                                <div key={i} className="glass-card p-6 flex items-center justify-between group overflow-hidden relative">
+                                    <div className={`absolute -right-4 -top-4 w-24 h-24 bg-${s.color}-500 opacity-[0.03] rounded-full group-hover:scale-150 transition-transform`}></div>
+                                    <div>
+                                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-1">{s.label}</p>
+                                        <h3 className="text-3xl font-black text-slate-800">{s.val}<span className="text-sm font-bold text-slate-400 ml-1">{s.unit}</span></h3>
+                                    </div>
+                                    <div className={`p-4 bg-${s.color}-50 text-${s.color}-500 rounded-3xl`}><s.icon size={24} /></div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* AI 助手看板 */}
+                        <div className="mb-10 bg-gradient-to-br from-indigo-600 to-purple-700 p-8 rounded-[3rem] shadow-2xl shadow-indigo-200 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-white/20 transition-all duration-1000"></div>
+                            <div className="relative z-10">
+                                <div className="flex items-center justify-between mb-8">
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-4 bg-white/20 backdrop-blur-md rounded-3xl text-white shadow-lg"><Bot size={28} /></div>
+                                        <div>
+                                            <h3 className="text-white text-2xl font-black">AI 智能數據助手</h3>
+                                            <p className="text-white/60 text-xs font-bold tracking-widest uppercase">Intelligence Insight Generation</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setShowAiPanel(!showAiPanel)} className="bg-white/20 backdrop-blur-md text-white px-6 py-3 rounded-2xl text-sm font-black hover:bg-white/30 transition-all">
+                                        {showAiPanel ? '收起助手' : '喚醒分析師'}
+                                    </button>
+                                </div>
+                                
+                                {showAiPanel && (
+                                    <div className="animate-in slide-in-from-top-4 space-y-6">
+                                        <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                                            {[
+                                                { label: '產出績效週報', icon: FileBarChart, type: 'report' },
+                                                { label: '診斷異常工時', icon: AlertCircle, type: 'anomaly' },
+                                                { label: '分析主要投入項目', icon: Target, prompt: '分析此區段投入最高的 3 個專案，並指出分別是哪些主要成員在處理？' }
+                                            ].map((btn, i) => (
+                                                <button key={i} onClick={() => handleAiAnalysis(btn.prompt, btn.type)} className="flex items-center gap-2 whitespace-nowrap bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-2xl text-sm font-bold transition-all border border-white/5">
+                                                    <btn.icon size={16} /> {btn.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        <div className="flex gap-4">
+                                            <input value={aiPrompt} onChange={e => setAiPrompt(e.target.value)} className="flex-1 bg-white/10 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-white/40 text-sm focus:outline-none focus:ring-2 focus:ring-white/30 font-medium" placeholder="輸入您的指令，例如：'分析各組目前的研發效率'..." />
+                                            <button onClick={() => handleAiAnalysis()} disabled={isAiLoading} className="bg-white text-indigo-700 px-8 py-4 rounded-2xl font-black hover:bg-indigo-50 transition-all shadow-xl disabled:opacity-50">
+                                                {isAiLoading ? <Loader2 className="animate-spin" /> : <Send size={20} />}
+                                            </button>
+                                        </div>
+                                        {aiResponse && (
+                                            <div className="bg-white/95 backdrop-blur-xl p-8 rounded-3xl text-slate-800 text-sm leading-relaxed shadow-inner shadow-indigo-900/20 border-l-8 border-indigo-400">
+                                                <div className="flex items-center gap-3 mb-4 text-indigo-600 font-black tracking-tighter uppercase"><Sparkles size={16} /> Analysis Report</div>
+                                                <div className="whitespace-pre-wrap font-medium text-slate-600">{aiResponse}</div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* 分頁控制 */}
+                        <div className="flex gap-4 mb-10 overflow-x-auto pb-2 scrollbar-hide">
+                            {[
+                                { id: 'members', label: '開發者產能', icon: UserCheck },
+                                { id: 'projects', label: '專案資源分析', icon: Grid3X3 },
+                                { id: 'trends', label: '研發能量趨勢', icon: Activity },
+                                { id: 'issues', label: '議題熱度追蹤', icon: ListTodo }
+                            ].map(tab => (
+                                <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-3 px-10 py-5 rounded-[2rem] font-black transition-all shadow-sm ${activeTab === tab.id ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-100 scale-105' : 'bg-white text-slate-400 hover:bg-slate-50 border border-slate-100'}`}>
+                                    <tab.icon size={20} /> {tab.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* 元件呈現區 */}
+                        <div className="min-h-[500px]">
+                            {activeTab === 'members' && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                    {memberStats.map(m => (
+                                        <div key={m.name} onClick={() => setSelectedMember(m)} className="glass-card p-8 group cursor-pointer border-t-[6px] border-t-indigo-500/20 hover:border-t-indigo-500">
+                                            <div className="flex justify-between items-start mb-6">
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-14 h-14 rounded-3xl flex items-center justify-center font-black text-xl border-2 shadow-sm ${
+                                                        m.status === 'red' ? 'bg-rose-50 text-rose-500 border-rose-200 shadow-rose-100' :
+                                                        m.status === 'yellow' ? 'bg-amber-50 text-amber-500 border-amber-200 shadow-amber-100' :
+                                                        'bg-emerald-50 text-emerald-500 border-emerald-200 shadow-emerald-100'
+                                                    }`}>{m.name.substr(0,1)}</div>
+                                                    <div>
+                                                        <h4 className="flex gap-2 flex-wrap items-center text-xl font-black text-slate-800">
+                                                            {m.name}
+                                                            <span className={`text-[9px] px-2 py-0.5 rounded-full border tracking-widest uppercase ${
+                                                                m.status === 'red' ? 'bg-rose-50 text-rose-500 border-rose-200' :
+                                                                m.status === 'yellow' ? 'bg-amber-50 text-amber-500 border-amber-200' :
+                                                                'bg-emerald-50 text-emerald-500 border-emerald-200'
+                                                            }`}>{m.status === 'red' ? '過載' : m.status === 'yellow' ? '產能未滿' : '良好'}</span>
+                                                        </h4>
+                                                        <span className="text-[10px] bg-slate-100 px-3 py-1 rounded-full font-black text-slate-400 uppercase tracking-widest mt-1 inline-block">{m.team}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <span className="text-3xl font-black text-slate-800 tracking-tighter">{Math.round(m.totalHours)}<span className="text-sm font-bold text-slate-300 ml-1">h</span></span>
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4 mb-6">
+                                                <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1">均耗時</p>
+                                                    <p className="font-black text-slate-700">{m.avgHoursPerTask}h</p>
+                                                </div>
+                                                <div className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1">參與專案</p>
+                                                    <p className="font-black text-slate-700">{m.projectCount}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {Array.from(m.projects).slice(0, 3).map(p => (
+                                                    <span key={p} className="text-[9px] font-black bg-indigo-50 text-indigo-500 px-2.5 py-1.5 rounded-lg border border-indigo-100/50 truncate max-w-[120px]">{p}</span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {activeTab === 'projects' && (
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                    <div className="glass-card p-10">
+                                        <h4 className="text-xl font-black text-slate-800 mb-10 flex items-center gap-3"><Target className="text-amber-500" /> 專案資源配置 (Top 15)</h4>
+                                        <div className="h-[500px]">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart data={projectStats.slice(0, 15)} layout="vertical" margin={{ left: 40, right: 30 }}>
+                                                    <XAxis type="number" hide />
+                                                    <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 11, fontWeight: '900', fill: '#64748b' }} axisLine={false} tickLine={false} />
+                                                    <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '2rem', border: 'none', padding: '1.5rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }} />
+                                                    <Bar dataKey="total" radius={[0, 16, 16, 0]} onClick={(d) => setSelectedProject(d)}>
+                                                        {projectStats.map((entry, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
+                                                    </Bar>
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-6">
+                                        {projectStats.slice(0, 5).map((p, i) => (
+                                            <div key={p.name} onClick={() => setSelectedProject(p)} className="glass-card p-8 border-l-[12px] cursor-pointer hover:border-l-[20px]" style={{ borderLeftColor: COLORS[i % COLORS.length] }}>
+                                                <div className="flex justify-between items-center mb-6">
+                                                    <h5 className="text-lg font-black text-slate-800 truncate max-w-[250px]">{p.name}</h5>
+                                                    <span className="text-2xl font-black text-slate-800">{Math.round(p.total)}h</span>
+                                                </div>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {Object.entries(p.teams).map(([t, h]) => (
+                                                        <span key={t} className="text-[10px] font-black bg-slate-50 text-slate-400 px-3 py-1.5 rounded-xl border border-slate-100">{t}: {h.toFixed(1)}h</span>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'trends' && (
+                                <div className="glass-card p-10">
+                                    <h4 className="text-xl font-black text-slate-800 mb-10 flex items-center gap-3"><TrendingUp className="text-indigo-600" /> 團隊每日研發能量趨勢</h4>
+                                    <div className="h-[550px]">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <LineChart data={trendData} margin={{ top: 20, right: 40, left: 20, bottom: 20 }}>
+                                                <CartesianGrid strokeDasharray="8 8" vertical={false} stroke="#f1f5f9" />
+                                                <XAxis dataKey="date" tick={{ fontSize: 12, fontWeight: '900', fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                                                <YAxis tick={{ fontSize: 12, fontWeight: '900', fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                                                <Tooltip contentStyle={{ borderRadius: '2rem', border: 'none', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)', padding: '2rem' }} />
+                                                <Legend iconType="circle" wrapperStyle={{ paddingTop: '40px' }} />
+                                                {uniqueTeams.filter(t => t !== 'All').map((team, idx) => (
+                                                    <Line key={team} type="monotone" dataKey={team} stroke={COLORS[idx % COLORS.length]} strokeWidth={6} dot={{ r: 6, strokeWidth: 3, fill: '#fff' }} activeDot={{ r: 10, strokeWidth: 0 }} />
+                                                ))}
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'issues' && (
+                                <div className="glass-card p-10">
+                                    <h4 className="text-xl font-black text-slate-800 mb-10 flex items-center gap-3"><ListTodo className="text-rose-500" /> 被頻繁討論之核心議題 (Top 20)</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {issueStats.map((issue, i) => (
+                                            <div key={i} onClick={() => setSelectedIssue(issue)} className="p-6 bg-white/60 border border-slate-50 rounded-[2rem] hover:bg-white hover:shadow-xl transition-all cursor-pointer flex items-center gap-6 group">
+                                                <div className="flex-shrink-0 w-14 h-14 flex items-center justify-center bg-slate-50 rounded-2xl font-black text-slate-300 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500">{i+1}</div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-black text-slate-700 truncate mb-1" title={issue.name}>{issue.name}</p>
+                                                    <div className="flex items-center gap-4 text-[10px] font-black text-slate-400 tracking-widest uppercase">
+                                                        <span className="flex items-center gap-1"><Layers size={10} /> {issue.projects.size} 相關專案</span>
+                                                        <span className="flex items-center gap-1 text-indigo-500"><Activity size={10} /> {Math.round(issue.total)}h 累計投入</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* 人員詳細資訊 Modal */}
+                        {selectedMember && (
+                            <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-6 backdrop-blur-xl animate-in fade-in" onClick={() => setSelectedMember(null)}>
+                                <div className="bg-white rounded-[3rem] w-full max-w-5xl max-h-[85vh] flex flex-col shadow-2xl relative" onClick={e => e.stopPropagation()}>
+                                    <button onClick={() => setSelectedMember(null)} className="absolute top-6 right-6 p-4 hover:bg-slate-100 rounded-2xl transition-all z-10"><X /></button>
+                                    
+                                    <div className="p-10 border-b border-slate-100 bg-slate-50/50 rounded-t-[3rem]">
+                                        <div className="flex items-center gap-8">
+                                            <div className="w-24 h-24 bg-indigo-600 rounded-[2rem] flex items-center justify-center text-white text-4xl font-black shadow-2xl shadow-indigo-200">{selectedMember.name.substr(0,1)}</div>
+                                            <div>
+                                                <h3 className="text-4xl font-black text-slate-800">{selectedMember.name}</h3>
+                                                <div className="flex gap-4 mt-3">
+                                                    <span className="text-xs font-black text-indigo-500 bg-white border border-indigo-100 px-4 py-1.5 rounded-full uppercase tracking-widest">{selectedMember.team}</span>
+                                                    <span className="text-xs font-black text-slate-400 bg-white border border-slate-100 px-4 py-1.5 rounded-full uppercase tracking-widest">週期總工時：{Math.round(selectedMember.totalHours)}h</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex-1 overflow-y-auto p-10 custom-scrollbar space-y-6">
+                                        <h4 className="text-xs font-black text-slate-400 uppercase tracking-[0.3em] mb-4">Task Activity History</h4>
+                                        {filteredData.filter(d => d.author === selectedMember.name).sort((a,b) => new Date(b.date) - new Date(a.date)).map((task, idx) => (
+                                            <div key={idx} className="p-8 bg-slate-50 rounded-[2.5rem] border border-slate-100 hover:border-indigo-200 hover:bg-white transition-all shadow-sm hover:shadow-xl">
+                                                <div className="flex justify-between items-start gap-8">
+                                                    <div className="flex-1">
+                                                        <div className="flex gap-3 mb-4">
+                                                            <span className="text-[10px] font-black text-slate-400 bg-white px-3 py-1.5 rounded-xl border border-slate-100">{task.date}</span>
+                                                            <span className="text-[10px] font-black text-indigo-500 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100/50">{task.project}</span>
+                                                        </div>
+                                                        <p className="text-lg font-black text-slate-700 leading-snug mb-3">{task.issue}</p>
+                                                        {task.response && <div className="p-4 bg-white rounded-2xl border border-slate-100 text-xs text-slate-400 italic font-medium leading-relaxed">「 {task.response} 」</div>}
+                                                    </div>
+                                                    <div className="text-2xl font-black text-indigo-600 bg-white w-20 h-20 flex items-center justify-center rounded-3xl shadow-sm border border-indigo-50">{task.hours}h</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 專案詳細資訊 Modal */}
+                        {selectedProject && (
+                            <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-6 backdrop-blur-xl animate-in fade-in" onClick={() => setSelectedProject(null)}>
+                                <div className="bg-white rounded-[3rem] w-full max-w-5xl max-h-[85vh] flex flex-col shadow-2xl relative" onClick={e => e.stopPropagation()}>
+                                    <button onClick={() => setSelectedProject(null)} className="absolute top-6 right-6 p-4 hover:bg-slate-100 rounded-2xl transition-all z-10"><X /></button>
+                                    
+                                    <div className="p-10 border-b border-slate-100 bg-slate-50/50 rounded-t-[3rem]">
+                                        <h3 className="text-4xl font-black text-slate-800 mb-2 truncate max-w-2xl">{selectedProject.name}</h3>
+                                        <div className="flex gap-4 mb-8">
+                                            <span className="text-xs font-black text-amber-500 bg-white border border-amber-100 px-4 py-1.5 rounded-full uppercase tracking-widest">Project deep-dive</span>
+                                            <span className="text-xs font-black text-slate-400 bg-white border border-slate-100 px-4 py-1.5 rounded-full uppercase tracking-widest">累積投入工時：{Math.round(selectedProject.total)}h</span>
+                                        </div>
+                                        <div className="h-[200px] w-full">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <LineChart data={
+                                                    useMemo(() => {
+                                                        const pData = filteredData.filter(d => d.project === selectedProject.name);
+                                                        const map = {};
+                                                        const sortedDates = [...new Set(filteredData.map(d => d.date))].sort();
+                                                        sortedDates.forEach(d => map[d] = { date: d.substr(5), hours: 0 });
+                                                        pData.forEach(d => { if(map[d.date]) map[d.date].hours += d.hours; });
+                                                        return Object.values(map);
+                                                    }, [filteredData, selectedProject])
+                                                } margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                                    <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 900 }} axisLine={false} tickLine={false} />
+                                                    <YAxis tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 900 }} axisLine={false} tickLine={false} />
+                                                    <Tooltip contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
+                                                    <Line type="monotone" dataKey="hours" stroke="#f59e0b" strokeWidth={4} dot={{ r: 4, strokeWidth: 2, fill: '#fff' }} activeDot={{ r: 6, strokeWidth: 0 }} />
+                                                </LineChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex-1 overflow-y-auto p-10 custom-scrollbar space-y-4">
+                                        {filteredData.filter(d => d.project === selectedProject.name).map((task, idx) => (
+                                            <div key={idx} className="p-6 bg-slate-50 rounded-3xl border border-slate-50 flex justify-between items-center group hover:bg-white hover:shadow-lg transition-all">
+                                                <div className="flex items-center gap-6">
+                                                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center font-black text-slate-300 border border-slate-100">{task.author.substr(0,1)}</div>
+                                                    <div>
+                                                        <p className="text-xs font-black text-slate-400 mb-1">{task.date} · <span className="text-indigo-500">{task.author}</span></p>
+                                                        <p className="font-black text-slate-700">{task.issue}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-xl font-black text-slate-800">{task.hours}h</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                    </div>
+                    <footer className="mt-20 py-10 border-t border-slate-200 text-center">
+                        <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.5em]">Antigravity Intelligence Systems © 2026</p>
+                    </footer>
+                </div>
+            );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>

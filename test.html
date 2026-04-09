@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>金好康零錢包 | 下載就有獎！輕鬆賺好禮</title>
+    <meta name="description" content="金好康零錢包 App，看廣告、完成任務即可累積積分兌換超值好禮！支援 iOS 與 Android 免費下載。">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Inter"', '"Noto Sans TC"', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: { 50:'#fff1f2', 100:'#ffe4e6', 200:'#fecdd3', 300:'#fda4af', 400:'#fb7185', 500:'#f43f5e', 600:'#e11d48', 700:'#be123c' },
+                        accent: { 50:'#fffbeb', 100:'#fef3c7', 200:'#fde68a', 300:'#fcd34d', 400:'#fbbf24', 500:'#f59e0b', 600:'#d97706' },
+                        coin: '#FFD700',
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', 'Noto Sans TC', system-ui, sans-serif; scroll-behavior: smooth; }
+        .hero-gradient { background: linear-gradient(135deg, #f43f5e 0%, #fb923c 40%, #fbbf24 100%); }
+        .card-shine { background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%); }
+        .float-anim { animation: floatY 3s ease-in-out infinite; }
+        .float-anim-delay { animation: floatY 3s ease-in-out 1.5s infinite; }
+        @keyframes floatY { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+        @keyframes pulse-glow { 0%,100%{box-shadow:0 0 20px rgba(244,63,94,0.3)} 50%{box-shadow:0 0 40px rgba(244,63,94,0.6)} }
+        .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+        @keyframes slideIn { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+        .slide-in { animation: slideIn 0.6s ease-out forwards; }
+        .reward-card:hover { transform: translateY(-8px) scale(1.02); }
+        .reward-card { transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+        .step-line::after { content:''; position:absolute; top:50%; left:100%; width:80px; height:3px; background:linear-gradient(90deg,#f43f5e,#fbbf24); }
+        ::-webkit-scrollbar{width:8px} ::-webkit-scrollbar-track{background:#fef3c7}
+        ::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#f43f5e,#fbbf24);border-radius:4px}
+        .tab-active { background: linear-gradient(135deg, #f43f5e, #fb923c); color: white; }
+        .glass-card { background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.6); }
+    </style>
+</head>
+<body class="bg-amber-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback, useMemo, useRef } = React;
+
+        // Lucide Icon 組件
+        const Icon = ({ name, className = '', size = 24 }) => {
+            const lucideInstance = window.lucide || {};
+            let iconData = lucideInstance.icons
+                ? (lucideInstance.icons[name] || lucideInstance.icons[name.charAt(0).toLowerCase() + name.slice(1)])
+                : null;
+            if (!iconData) return <div style={{ width: size, height: size }} className={className}></div>;
+            const [tag, attrs, children] = iconData;
+            const safeChildren = Array.isArray(children) ? children : [];
+            return React.createElement(tag, {
+                ...attrs, width: size, height: size, className,
+                dangerouslySetInnerHTML: {
+                    __html: safeChildren.map(child => {
+                        const [cTag, cAttrs] = child;
+                        const attrStr = Object.entries(cAttrs).map(([k, v]) => `${k}="${v}"`).join(' ');
+                        return `<${cTag} ${attrStr}></${cTag}>`;
+                    }).join('')
+                }
+            });
+        };
+
+        // ── 獎勵資料 ──
+        const REWARDS = [
+            { id: 1, name: 'Mister Donut 甜甜圈兌換券', points: 200, emoji: '🍩', color: 'from-pink-400 to-rose-500', tag: '熱門' },
+            { id: 2, name: '7-11 購物金 $100', points: 500, emoji: '🏪', color: 'from-green-400 to-emerald-500', tag: '超值' },
+            { id: 3, name: '星巴克 拿鐵兌換券', points: 350, emoji: '☕', color: 'from-amber-400 to-orange-500', tag: '' },
+            { id: 4, name: 'PS5 遊戲點數卡', points: 1200, emoji: '🎮', color: 'from-blue-400 to-indigo-500', tag: '限量' },
+            { id: 5, name: '全家 霜淇淋兌換券', points: 150, emoji: '🍦', color: 'from-cyan-400 to-sky-500', tag: '' },
+            { id: 6, name: 'LINE Points 200 點', points: 800, emoji: '💚', color: 'from-lime-400 to-green-500', tag: '人氣' },
+            { id: 7, name: '威秀電影票', points: 600, emoji: '🎬', color: 'from-purple-400 to-violet-500', tag: '' },
+            { id: 8, name: '全聯購物金 $200', points: 900, emoji: '🛒', color: 'from-red-400 to-pink-500', tag: '新品' },
+        ];
+
+        // ── 任務類型資料 ──
+        const TASK_TYPES = [
+            {
+                key: 'cpi', label: 'CPI 安裝任務', icon: 'download',
+                title: '下載指定 App 即可賺取積分',
+                desc: '只需下載並安裝推薦的應用程式，開啟後等待 30 秒即可獲得豐厚積分獎勵！',
+                steps: ['瀏覽推薦 App 列表', '點擊「下載」安裝', '開啟 App 等待 30 秒', '自動獲得積分 🎉'],
+                reward: '每次 30~100 積分',
+                color: 'from-rose-500 to-pink-600'
+            },
+            {
+                key: 'cpa', label: 'CPA 行動任務', icon: 'mouse-pointer-click',
+                title: '完成指定動作獲得高額獎勵',
+                desc: '註冊帳號、填寫問卷或完成試用，比安裝任務賺更多！',
+                steps: ['選擇行動任務', '按指引完成註冊/試用', '提交完成證明', '獲得高額積分 💰'],
+                reward: '每次 100~500 積分',
+                color: 'from-orange-500 to-amber-600'
+            },
+            {
+                key: 'cpm', label: 'CPM 觀看任務', icon: 'play-circle',
+                title: '看影片、看廣告輕鬆賺',
+                desc: '最簡單的賺分方式！觀看短影片或廣告，每日可重複累計。',
+                steps: ['進入影音任務區', '點擊播放影片', '完整觀看至結束', '積分即時入帳 ✨'],
+                reward: '每次 5~20 積分',
+                color: 'from-yellow-500 to-orange-500'
+            },
+        ];
+
+        // ── FAQ 資料 ──
+        const FAQS = [
+            { q: '金好康零錢包是免費的嗎？', a: '完全免費！下載即可開始賺取積分，無任何隱藏費用。' },
+            { q: '積分可以兌換什麼？', a: '涵蓋超商禮券、咖啡甜點、遊戲點數、電影票等超過 50 種好禮。' },
+            { q: '兌換的禮券多久會收到？', a: '電子兌換碼通常在 24 小時內寄送至您的 App 信箱；實體商品約 3-5 個工作天。' },
+            { q: '每天可以完成幾個任務？', a: 'CPI 與 CPA 任務每日不限量，CPM 觀看任務每日上限 20 次。' },
+            { q: '積分會過期嗎？', a: '積分自獲得日起 180 天內有效，請記得定期兌換好禮！' },
+        ];
+
+        // ── 模擬統計 ──
+        const STATS = [
+            { label: '累計下載數', value: '1,250,000+', icon: 'download', color: 'text-rose-500' },
+            { label: '已發放獎勵', value: '680,000+', icon: 'gift', color: 'text-amber-500' },
+            { label: '今日活躍用戶', value: '45,230', icon: 'users', color: 'text-green-500' },
+            { label: '粉絲團按讚', value: '26,700+', icon: 'heart', color: 'text-pink-500' },
+        ];
+
+        // ── 導覽元件 ──
+        function Navbar() {
+            const [scrolled, setScrolled] = useState(false);
+            const [mobileOpen, setMobileOpen] = useState(false);
+            useEffect(() => {
+                const handleScroll = () => setScrolled(window.scrollY > 50);
+                window.addEventListener('scroll', handleScroll);
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+            const links = [
+                { href: '#rewards', label: '獎勵' },
+                { href: '#about', label: '關於' },
+                { href: '#features', label: '功能' },
+                { href: '#data', label: '數據' },
+                { href: '#more', label: '更多' },
+            ];
+            return (
+                <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-white/90 backdrop-blur-xl shadow-lg shadow-rose-100/50' : 'bg-transparent'}`}>
+                    <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+                        <a href="#" className="flex items-center space-x-2">
+                            <span className="text-3xl">💰</span>
+                            <span className={`text-xl font-black tracking-tight ${scrolled ? 'text-rose-600' : 'text-white'}`}>金好康</span>
+                        </a>
+                        {/* Desktop */}
+                        <div className="hidden md:flex items-center space-x-1">
+                            {links.map(l => (
+                                <a key={l.href} href={l.href} className={`px-4 py-2 rounded-full text-sm font-bold transition-all hover:bg-rose-500/10 ${scrolled ? 'text-gray-700 hover:text-rose-600' : 'text-white/90 hover:text-white'}`}>
+                                    {l.label}
+                                </a>
+                            ))}
+                            <a href="#download" className="ml-4 bg-gradient-to-r from-rose-500 to-orange-500 text-white px-6 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-rose-500/30 hover:shadow-rose-500/50 hover:scale-105 transition-all">
+                                立即下載
+                            </a>
+                        </div>
+                        {/* Mobile */}
+                        <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2">
+                            <Icon name={mobileOpen ? 'x' : 'menu'} size={24} className={scrolled ? 'text-gray-700' : 'text-white'} />
+                        </button>
+                    </div>
+                    {mobileOpen && (
+                        <div className="md:hidden bg-white/95 backdrop-blur-xl border-t border-rose-100 px-6 py-4 space-y-2">
+                            {links.map(l => (
+                                <a key={l.href} href={l.href} onClick={() => setMobileOpen(false)} className="block px-4 py-3 rounded-xl text-gray-700 font-bold hover:bg-rose-50 hover:text-rose-600 transition-colors">
+                                    {l.label}
+                                </a>
+                            ))}
+                        </div>
+                    )}
+                </nav>
+            );
+        }
+
+        // ── 主應用 ──
+        function App() {
+            const [activeTab, setActiveTab] = useState('cpi');
+            const [openFaq, setOpenFaq] = useState(null);
+            const [heroSlide, setHeroSlide] = useState(0);
+
+            // Hero 自動輪播
+            useEffect(() => {
+                const timer = setInterval(() => setHeroSlide(s => (s + 1) % 3), 4000);
+                return () => clearInterval(timer);
+            }, []);
+
+            const heroSlides = [
+                { title: 'DOWNLOAD TO WIN!', sub: '下載就有獎，好禮天天換', emoji: '🎁' },
+                { title: '輕鬆賺積分', sub: '看影片、裝 App，積分輕鬆到手', emoji: '💰' },
+                { title: '超值好禮等你拿', sub: '超商禮券、遊戲點數、電影票通通有', emoji: '🎉' },
+            ];
+
+            return (
+                <div className="min-h-screen bg-amber-50 text-gray-800">
+                    <Navbar />
+
+                    {/* ═══ HERO ═══ */}
+                    <section className="hero-gradient relative overflow-hidden min-h-[90vh] flex items-center">
+                        {/* 裝飾元素 */}
+                        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                            <div className="absolute top-20 left-10 text-7xl opacity-20 float-anim">🪙</div>
+                            <div className="absolute top-40 right-20 text-8xl opacity-15 float-anim-delay">🎁</div>
+                            <div className="absolute bottom-20 left-1/4 text-6xl opacity-20 float-anim">🏆</div>
+                            <div className="absolute bottom-40 right-1/3 text-5xl opacity-15 float-anim-delay">⭐</div>
+                            <div className="absolute top-1/3 left-1/2 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
+                        </div>
+
+                        <div className="max-w-7xl mx-auto px-6 py-32 relative z-10 text-center">
+                            <div className="mb-6 inline-flex items-center bg-white/20 backdrop-blur-md rounded-full px-5 py-2 text-white text-sm font-bold">
+                                <span className="mr-2">🔥</span> 突破 125 萬次下載！
+                            </div>
+
+                            {heroSlides.map((slide, idx) => (
+                                <div key={idx} className={`transition-all duration-700 ${heroSlide === idx ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 absolute inset-0 flex items-center justify-center pointer-events-none'}`}>
+                                    {heroSlide === idx && (
+                                        <>
+                                            <div className="text-8xl mb-6">{slide.emoji}</div>
+                                            <h1 className="text-5xl md:text-7xl font-black text-white mb-4 tracking-tight drop-shadow-lg">
+                                                {slide.title}
+                                            </h1>
+                                            <p className="text-xl md:text-2xl text-white/90 font-medium mb-10">
+                                                {slide.sub}
+                                            </p>
+                                        </>
+                                    )}
+                                </div>
+                            ))}
+
+                            <div id="download" className="flex flex-col sm:flex-row justify-center gap-4 mb-8">
+                                <button className="bg-white text-rose-600 px-8 py-4 rounded-2xl font-black text-lg shadow-2xl shadow-black/20 hover:scale-105 hover:shadow-3xl transition-all flex items-center justify-center gap-2 pulse-glow">
+                                    <Icon name="smartphone" size={24} /> iOS 下載
+                                </button>
+                                <button className="bg-gray-900 text-white px-8 py-4 rounded-2xl font-black text-lg shadow-2xl shadow-black/20 hover:scale-105 transition-all flex items-center justify-center gap-2">
+                                    <Icon name="smartphone" size={24} /> Android 下載
+                                </button>
+                            </div>
+
+                            {/* 輪播指示器 */}
+                            <div className="flex justify-center gap-2 mt-6">
+                                {[0,1,2].map(i => (
+                                    <button key={i} onClick={() => setHeroSlide(i)}
+                                        className={`w-3 h-3 rounded-full transition-all ${heroSlide === i ? 'bg-white w-8' : 'bg-white/40 hover:bg-white/60'}`} />
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* 波浪底部 */}
+                        <svg className="absolute bottom-0 left-0 w-full" viewBox="0 0 1440 120" preserveAspectRatio="none">
+                            <path fill="#fffbeb" d="M0,64 C360,120 1080,0 1440,64 L1440,120 L0,120 Z"/>
+                        </svg>
+                    </section>
+
+                    {/* ═══ 獎勵 REWARDS ═══ */}
+                    <section id="rewards" className="py-24 px-6">
+                        <div className="max-w-7xl mx-auto">
+                            <div className="text-center mb-16">
+                                <span className="inline-block bg-rose-100 text-rose-600 text-sm font-bold px-4 py-1.5 rounded-full mb-4">🎁 獎勵專區</span>
+                                <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-4">超值好禮等你來換</h2>
+                                <p className="text-lg text-gray-500 max-w-2xl mx-auto">累積積分，兌換超過 50 種生活好禮。從咖啡到遊戲點數，應有盡有！</p>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                {REWARDS.map((r, idx) => (
+                                    <div key={r.id} className="reward-card bg-white rounded-3xl shadow-lg shadow-gray-200/50 overflow-hidden cursor-pointer group" style={{ animationDelay: `${idx * 0.1}s` }}>
+                                        <div className={`bg-gradient-to-br ${r.color} p-8 text-center relative overflow-hidden`}>
+                                            <div className="card-shine absolute inset-0"></div>
+                                            <span className="text-6xl relative z-10">{r.emoji}</span>
+                                            {r.tag && <span className="absolute top-3 right-3 bg-white/90 text-gray-800 text-[10px] font-black px-2.5 py-1 rounded-full shadow">{r.tag}</span>}
+                                        </div>
+                                        <div className="p-5">
+                                            <h3 className="font-bold text-gray-800 mb-2 group-hover:text-rose-600 transition-colors leading-tight">{r.name}</h3>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm text-gray-400">兌換門檻</span>
+                                                <span className="font-black text-amber-500 text-lg flex items-center gap-1">
+                                                    <span className="text-sm">🪙</span> {r.points}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="text-center mt-12">
+                                <button className="bg-gradient-to-r from-rose-500 to-orange-500 text-white px-8 py-3.5 rounded-2xl font-bold shadow-lg shadow-rose-500/20 hover:shadow-rose-500/40 hover:scale-105 transition-all">
+                                    查看全部獎勵 →
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* ═══ 關於 ABOUT ═══ */}
+                    <section id="about" className="py-24 px-6 bg-white">
+                        <div className="max-w-7xl mx-auto">
+                            <div className="text-center mb-16">
+                                <span className="inline-block bg-amber-100 text-amber-600 text-sm font-bold px-4 py-1.5 rounded-full mb-4">📱 關於金好康</span>
+                                <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-4">三步驟，開始賺好禮</h2>
+                                <p className="text-lg text-gray-500 max-w-2xl mx-auto">金好康零錢包讓你利用零碎時間，輕鬆累積積分兌換真實好禮</p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+                                {[
+                                    { step: '01', icon: 'download', title: '免費下載', desc: '在 App Store 或 Google Play 免費下載金好康零錢包', color: 'from-rose-500 to-pink-500' },
+                                    { step: '02', icon: 'target', title: '完成任務', desc: '選擇安裝、觀看或行動任務，輕鬆賺取積分', color: 'from-orange-500 to-amber-500' },
+                                    { step: '03', icon: 'gift', title: '兌換好禮', desc: '累積積分後即可兌換超商禮券、遊戲點數等好禮', color: 'from-amber-500 to-yellow-500' },
+                                ].map((s, idx) => (
+                                    <div key={s.step} className="text-center relative group">
+                                        <div className={`w-24 h-24 bg-gradient-to-br ${s.color} rounded-3xl mx-auto mb-6 flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform`}>
+                                            <Icon name={s.icon} size={40} className="text-white" />
+                                        </div>
+                                        <span className="text-6xl font-black text-gray-100 absolute -top-4 left-1/2 -translate-x-1/2">{s.step}</span>
+                                        <h3 className="text-xl font-bold text-gray-900 mb-2 relative z-10">{s.title}</h3>
+                                        <p className="text-gray-500 relative z-10">{s.desc}</p>
+                                        {idx < 2 && <div className="hidden md:block absolute top-12 -right-4 text-4xl text-rose-300">→</div>}
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* App 預覽 */}
+                            <div className="bg-gradient-to-br from-rose-50 to-amber-50 rounded-3xl p-8 md:p-12 flex flex-col md:flex-row items-center gap-10">
+                                <div className="flex-1">
+                                    <h3 className="text-3xl font-black text-gray-900 mb-4">立即加入 125 萬用戶的行列！</h3>
+                                    <p className="text-gray-600 mb-6 leading-relaxed">
+                                        每天只需花 5 分鐘，就能累積可觀的積分。不論是等公車、午休還是睡前，隨時隨地都能賺好禮。
+                                        已經有超過 68 萬份獎勵被成功兌換！
+                                    </p>
+                                    <div className="flex items-center gap-6 mb-6">
+                                        <div className="flex -space-x-3">
+                                            {['😊','😄','🥰','😎','🤩'].map((e,i) => (
+                                                <div key={i} className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-lg border-2 border-white">{e}</div>
+                                            ))}
+                                        </div>
+                                        <div>
+                                            <div className="text-sm font-bold text-gray-800">4.7 ★★★★★</div>
+                                            <div className="text-xs text-gray-500">來自 12,500+ 則評價</div>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <button className="bg-gray-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-gray-800 transition-colors flex items-center gap-2">
+                                            <Icon name="smartphone" size={18} /> App Store
+                                        </button>
+                                        <button className="bg-green-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-green-500 transition-colors flex items-center gap-2">
+                                            <Icon name="smartphone" size={18} /> Google Play
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="flex-shrink-0">
+                                    <div className="w-56 h-96 bg-gradient-to-b from-rose-500 to-orange-500 rounded-[2.5rem] shadow-2xl shadow-rose-500/30 p-3 relative">
+                                        <div className="w-full h-full bg-white rounded-[2rem] flex flex-col items-center justify-center p-4 space-y-3">
+                                            <span className="text-5xl">💰</span>
+                                            <span className="font-black text-gray-800 text-center">金好康零錢包</span>
+                                            <div className="text-sm text-gray-500 text-center">掃描 QR Code<br/>立即下載</div>
+                                            <div className="w-24 h-24 bg-gray-200 rounded-xl flex items-center justify-center">
+                                                <Icon name="qr-code" size={48} className="text-gray-400" />
+                                            </div>
+                                        </div>
+                                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-5 bg-gray-900 rounded-b-2xl"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* ═══ 功能 FEATURES ═══ */}
+                    <section id="features" className="py-24 px-6 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
+                        <div className="max-w-7xl mx-auto">
+                            <div className="text-center mb-16">
+                                <span className="inline-block bg-white/10 backdrop-blur text-white text-sm font-bold px-4 py-1.5 rounded-full mb-4">⚡ 任務功能</span>
+                                <h2 className="text-4xl md:text-5xl font-black mb-4">三種任務，三倍收穫</h2>
+                                <p className="text-lg text-gray-400 max-w-2xl mx-auto">CPI 安裝、CPA 行動、CPM 觀看 — 選擇最適合你的方式賺取積分</p>
+                            </div>
+
+                            {/* Tab 切換 */}
+                            <div className="flex justify-center mb-12">
+                                <div className="inline-flex bg-gray-800 rounded-2xl p-1.5">
+                                    {TASK_TYPES.map(t => (
+                                        <button key={t.key} onClick={() => setActiveTab(t.key)}
+                                            className={`px-6 py-3 rounded-xl text-sm font-bold transition-all flex items-center gap-2 ${activeTab === t.key ? 'tab-active shadow-lg' : 'text-gray-400 hover:text-white'}`}>
+                                            <Icon name={t.icon} size={16} /> {t.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Tab 內容 */}
+                            {TASK_TYPES.filter(t => t.key === activeTab).map(t => (
+                                <div key={t.key} className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center slide-in">
+                                    <div>
+                                        <h3 className="text-3xl font-black mb-4">{t.title}</h3>
+                                        <p className="text-gray-400 text-lg mb-8">{t.desc}</p>
+                                        <div className="space-y-4">
+                                            {t.steps.map((step, idx) => (
+                                                <div key={idx} className="flex items-start gap-4 group">
+                                                    <div className={`w-10 h-10 bg-gradient-to-br ${t.color} rounded-xl flex items-center justify-center text-white font-black text-sm flex-shrink-0 group-hover:scale-110 transition-transform`}>
+                                                        {idx + 1}
+                                                    </div>
+                                                    <div className="pt-2 text-gray-300 group-hover:text-white transition-colors">{step}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="mt-8 bg-white/5 border border-white/10 rounded-2xl p-5 flex items-center gap-3">
+                                            <span className="text-2xl">🪙</span>
+                                            <div>
+                                                <div className="text-sm text-gray-400">預估獎勵</div>
+                                                <div className="text-xl font-black text-amber-400">{t.reward}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-center">
+                                        <div className="w-72 h-[500px] bg-gradient-to-b from-gray-700 to-gray-800 rounded-[2.5rem] shadow-2xl p-3 border border-gray-600">
+                                            <div className="w-full h-full bg-gray-900 rounded-[2rem] flex flex-col items-center justify-center p-6 space-y-4">
+                                                <div className={`w-20 h-20 bg-gradient-to-br ${t.color} rounded-2xl flex items-center justify-center`}>
+                                                    <Icon name={t.icon} size={36} className="text-white" />
+                                                </div>
+                                                <span className="text-lg font-bold text-white">{t.label}</span>
+                                                <div className="w-full space-y-3">
+                                                    {[1,2,3].map(i => (
+                                                        <div key={i} className="bg-gray-800 rounded-xl p-3 flex items-center gap-3">
+                                                            <div className={`w-10 h-10 bg-gradient-to-br ${t.color} rounded-lg opacity-60`}></div>
+                                                            <div className="flex-1">
+                                                                <div className="h-3 bg-gray-700 rounded w-3/4 mb-1.5"></div>
+                                                                <div className="h-2 bg-gray-700 rounded w-1/2"></div>
+                                                            </div>
+                                                            <span className="text-amber-400 text-xs font-bold">+{i * 15}分</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* ═══ 數據 DATA ═══ */}
+                    <section id="data" className="py-24 px-6 bg-white">
+                        <div className="max-w-7xl mx-auto">
+                            <div className="text-center mb-16">
+                                <span className="inline-block bg-green-100 text-green-600 text-sm font-bold px-4 py-1.5 rounded-full mb-4">📊 數據總覽</span>
+                                <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-4">用數字說話</h2>
+                                <p className="text-lg text-gray-500 max-w-2xl mx-auto">金好康零錢包持續成長，成為最受歡迎的積分獎勵平台</p>
+                            </div>
+
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+                                {STATS.map(s => (
+                                    <div key={s.label} className="bg-gradient-to-br from-gray-50 to-white rounded-3xl p-8 text-center shadow-lg shadow-gray-100/50 border border-gray-100 group hover:shadow-xl transition-shadow">
+                                        <div className="w-16 h-16 bg-white rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                                            <Icon name={s.icon} size={28} className={s.color} />
+                                        </div>
+                                        <div className="text-3xl md:text-4xl font-black text-gray-900 mb-1">{s.value}</div>
+                                        <div className="text-sm text-gray-500 font-medium">{s.label}</div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            {/* 粉絲團 */}
+                            <div className="bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-500 rounded-3xl p-8 md:p-12 text-white flex flex-col md:flex-row items-center justify-between gap-6">
+                                <div className="flex items-center gap-6">
+                                    <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center text-4xl">📘</div>
+                                    <div>
+                                        <h3 className="text-2xl font-black mb-1">加入金好康粉絲團</h3>
+                                        <p className="text-blue-100">追蹤最新活動、限時加碼與獨家優惠</p>
+                                        <div className="mt-2 text-sm text-blue-200 font-medium">👍 26,700+ 人說讚</div>
+                                    </div>
+                                </div>
+                                <button className="bg-white text-blue-600 px-8 py-3.5 rounded-2xl font-bold hover:bg-blue-50 transition-colors shadow-lg flex items-center gap-2 whitespace-nowrap">
+                                    <Icon name="external-link" size={18} /> 前往粉絲專頁
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* ═══ 更多 MORE (FAQ) ═══ */}
+                    <section id="more" className="py-24 px-6 bg-gradient-to-br from-amber-50 to-rose-50">
+                        <div className="max-w-3xl mx-auto">
+                            <div className="text-center mb-16">
+                                <span className="inline-block bg-purple-100 text-purple-600 text-sm font-bold px-4 py-1.5 rounded-full mb-4">❓ 常見問題</span>
+                                <h2 className="text-4xl md:text-5xl font-black text-gray-900 mb-4">FAQ</h2>
+                            </div>
+
+                            <div className="space-y-4">
+                                {FAQS.map((faq, idx) => (
+                                    <div key={idx} className="bg-white rounded-2xl shadow-md shadow-gray-100/50 overflow-hidden border border-gray-100">
+                                        <button onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                                            className="w-full text-left px-6 py-5 flex justify-between items-center hover:bg-gray-50 transition-colors">
+                                            <span className="font-bold text-gray-800 pr-4">{faq.q}</span>
+                                            <Icon name={openFaq === idx ? 'chevron-up' : 'chevron-down'} size={20} className="text-gray-400 flex-shrink-0" />
+                                        </button>
+                                        {openFaq === idx && (
+                                            <div className="px-6 pb-5 text-gray-600 leading-relaxed border-t border-gray-100 pt-4">
+                                                {faq.a}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* ═══ CTA ═══ */}
+                    <section className="hero-gradient py-20 px-6 text-center">
+                        <div className="max-w-3xl mx-auto">
+                            <span className="text-6xl mb-6 inline-block">🚀</span>
+                            <h2 className="text-4xl md:text-5xl font-black text-white mb-4">準備好開始賺好禮了嗎？</h2>
+                            <p className="text-xl text-white/80 mb-10">立即下載金好康零錢包，加入 125 萬用戶的行列！</p>
+                            <div className="flex flex-col sm:flex-row justify-center gap-4">
+                                <button className="bg-white text-rose-600 px-10 py-4 rounded-2xl font-black text-lg shadow-2xl hover:scale-105 transition-all flex items-center justify-center gap-2">
+                                    <Icon name="smartphone" size={24} /> 免費下載
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* ═══ FOOTER ═══ */}
+                    <footer className="bg-gray-900 text-gray-400 py-16 px-6">
+                        <div className="max-w-7xl mx-auto">
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
+                                <div>
+                                    <div className="flex items-center gap-2 mb-4">
+                                        <span className="text-2xl">💰</span>
+                                        <span className="text-xl font-black text-white">金好康</span>
+                                    </div>
+                                    <p className="text-sm leading-relaxed">金好康零錢包 — 透過簡單的任務賺取積分，兌換各式生活好禮。</p>
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-white mb-4">快速連結</h4>
+                                    <div className="space-y-2 text-sm">
+                                        <a href="#rewards" className="block hover:text-rose-400 transition-colors">獎勵專區</a>
+                                        <a href="#about" className="block hover:text-rose-400 transition-colors">關於我們</a>
+                                        <a href="#features" className="block hover:text-rose-400 transition-colors">功能介紹</a>
+                                        <a href="#data" className="block hover:text-rose-400 transition-colors">數據總覽</a>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-white mb-4">支援</h4>
+                                    <div className="space-y-2 text-sm">
+                                        <a href="#more" className="block hover:text-rose-400 transition-colors">常見問題</a>
+                                        <a href="#" className="block hover:text-rose-400 transition-colors">使用條款</a>
+                                        <a href="#" className="block hover:text-rose-400 transition-colors">隱私權政策</a>
+                                        <a href="#" className="block hover:text-rose-400 transition-colors">領獎注意事項</a>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-white mb-4">聯繫我們</h4>
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex items-center gap-2"><Icon name="mail" size={14} /> jinghokan@gmail.com</div>
+                                        <div className="flex items-center gap-2"><Icon name="globe" size={14} /> Facebook 粉絲團</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="border-t border-gray-800 pt-8 text-center text-sm">
+                                © 2026 金好康零錢包. All rights reserved.
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+            );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

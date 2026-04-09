@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企業內部管理中心 - 首頁</title>
+
+    <!-- Google Fonts: Noto Sans TC & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap"
+        rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans TC"', '"Inter"', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* 全局設定與背景 */
+        body {
+            background-color: #f8fafc;
+            /* bg-slate-50 */
+            color: #0f172a;
+            /* text-slate-900 */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 頂部微動態漸層背景 */
+        .header-gradient {
+            background: linear-gradient(-45deg, #4f46e5, #4338ca, #312e81, #3730a3);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+
+        @keyframes gradientBG {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* 玻璃擬態巨大卡片與懸停微動效 */
+        .glass-card {
+            /* 大圓角與白底柔和陰影 */
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 2rem;
+            border: 1px solid #f1f5f9;
+            /* border-slate-100 */
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+            backdrop-filter: blur(12px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px -12px rgba(79, 70, 229, 0.15);
+            /* shadow-indigo-200 的感覺 */
+            border-color: #e0e7ff;
+            /* border-indigo-100 */
+        }
+
+        /* 進場動畫 */
+        .animate-fade-in-up {
+            animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .delay-100 {
+            animation-delay: 100ms;
+        }
+
+        .delay-200 {
+            animation-delay: 200ms;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 自訂捲軸 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #cbd5e1;
+        }
+    </style>
+</head>
+
+<body class="antialiased selection:bg-indigo-100 selection:text-indigo-900">
+
+    <!-- 頂部漸層標頭區塊 -->
+    <header
+        class="header-gradient text-white pt-16 pb-32 px-6 text-center relative rounded-b-[2.5rem] shadow-xl shadow-indigo-900/10 mb-[-5rem]">
+        <div class="max-w-4xl mx-auto px-4 z-10 relative animate-fade-in-up">
+            <div
+                class="inline-flex items-center justify-center p-3 rounded-2xl bg-white/10 backdrop-blur-md mb-6 border border-white/20">
+                <i data-lucide="layers" class="w-8 h-8 text-indigo-100"></i>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-black mb-4 tracking-tight drop-shadow-sm">企業內部管理中心</h1>
+            <p class="text-indigo-100/90 text-lg md:text-xl font-medium max-w-2xl mx-auto drop-shadow-sm">
+                高度整合的人力資源與數據分析儀表板，為您提供即時、精準的決策支援。
+            </p>
+        </div>
+    </header>
+
+    <!-- 核心導覽卡片區塊 -->
+    <main class="flex-grow w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-20 pb-16">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10">
+
+            <!-- 卡片 A：日報管理系統 -->
+            <a href="http://192.168.163.162:3000/" target="_blank"
+                class="glass-card p-10 group animate-fade-in-up delay-100">
+                <div
+                    class="absolute inset-0 bg-gradient-to-br from-amber-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                </div>
+                <div class="relative z-10">
+                    <div class="flex items-center justify-between mb-8">
+                        <div
+                            class="p-5 rounded-[1.5rem] bg-amber-50 text-amber-600 group-hover:scale-110 transition-transform duration-300">
+                            <i data-lucide="clock" class="w-10 h-10"></i>
+                        </div>
+                        <span
+                            class="bg-amber-100 text-amber-700 rounded-full px-4 py-1.5 text-xs font-bold tracking-wide">外部系統</span>
+                    </div>
+                    <h2 class="text-3xl font-black text-slate-800 mb-4 tracking-tight">日報管理系統</h2>
+                    <p class="text-slate-500 text-base leading-relaxed mb-10 min-h-[4.5rem]">
+                        部門各團隊工時多維度分析管理看板，提供透明化的任務追蹤與效能產出分析。
+                    </p>
+                    <div class="flex items-center text-amber-600 font-bold group-hover:text-amber-700">
+                        開啟連結
+                        <i data-lucide="external-link"
+                            class="w-5 h-5 ml-2 group-hover:translate-x-2 transition-transform duration-300"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- 卡片 B：績效與數據中心 -->
+            <a href="performance.html" class="glass-card p-10 group animate-fade-in-up delay-200">
+                <div
+                    class="absolute inset-0 bg-gradient-to-br from-emerald-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                </div>
+                <div class="relative z-10">
+                    <div class="flex items-center justify-between mb-8">
+                        <div
+                            class="p-5 rounded-[1.5rem] bg-emerald-50 text-emerald-600 group-hover:scale-110 transition-transform duration-300">
+                            <i data-lucide="bar-chart-2" class="w-10 h-10"></i>
+                        </div>
+                        <span
+                            class="bg-emerald-100 text-emerald-700 rounded-full px-4 py-1.5 text-xs font-bold tracking-wide">數據分析</span>
+                    </div>
+                    <h2 class="text-3xl font-black text-slate-800 mb-4 tracking-tight">績效與數據儀表板</h2>
+                    <p class="text-slate-500 text-base leading-relaxed mb-10 min-h-[4.5rem]">
+                        透過雷達圖、長條圖與人才九宮格，深度分析組織健康度、各部門 KPI 達成率與核心職能指標。
+                    </p>
+                    <div class="flex items-center text-emerald-600 font-bold group-hover:text-emerald-700">
+                        檢視數據
+                        <i data-lucide="arrow-right"
+                            class="w-5 h-5 ml-2 group-hover:translate-x-2 transition-transform duration-300"></i>
+                    </div>
+                </div>
+            </a>
+
+        </div>
+    </main>
+
+    <!-- 頁尾 -->
+    <footer class="mt-auto py-8 text-center text-slate-400 text-sm">
+        <div class="flex justify-center items-center gap-2 mb-2">
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
+            <span>安全連線環境</span>
+        </div>
+        <p>&copy; <span id="currentYear"></span> 內部系統資源中心. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // 初始化 Lucide Icons
+        lucide.createIcons();
+
+        // 動態年份
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NotebookLM 簡報轉 PPTX</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+
+    <!-- Babel Standalone -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+    <!-- PptxGenJS -->
+    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        body { font-family: 'Noto Sans TC', 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .anim-in { animation: fadeInUp 0.5s cubic-bezier(0.16,1,0.3,1) forwards; }
+        @keyframes pulse-glow {
+            0%,100% { box-shadow: 0 0 8px rgba(99,102,241,0.3); }
+            50% { box-shadow: 0 0 24px rgba(99,102,241,0.6); }
+        }
+        .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { animation: spin 0.8s linear infinite; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useRef, useCallback, useMemo } = React;
+
+        // ── 常數 ──
+        const SW = 10, SH = 5.625; // PPTX 16:9 inches
+        const RENDER_SCALE = 2.5;
+        const DEFAULT_KEY = 'AIzaSyAoGhQ4CvwdQyyzbdSpFbL4VfN_y83jBVY';
+
+        // ── PDF.js 初始化 ──
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        // ── 工具函式 ──
+
+        async function renderPage(pdf, num) {
+            const page = await pdf.getPage(num);
+            const vp = page.getViewport({ scale: RENDER_SCALE });
+            const c = document.createElement('canvas');
+            c.width = vp.width; c.height = vp.height;
+            await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
+            return c;
+        }
+
+        function canvasToRawBase64(canvas, quality = 0.88) {
+            return canvas.toDataURL('image/jpeg', quality).split(',')[1];
+        }
+        function canvasToDataUrl(canvas, quality = 0.88) {
+            return canvas.toDataURL('image/jpeg', quality);
+        }
+
+        // ── Google Cloud Vision OCR ──
+        async function cloudVisionOCR(base64, apiKey) {
+            const url = `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`;
+            const res = await fetchWithRetry(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    requests: [{
+                        image: { content: base64 },
+                        features: [{ type: 'DOCUMENT_TEXT_DETECTION' }]
+                    }]
+                })
+            });
+            if (res.error) throw new Error(res.error.message);
+            const textAnnotations = res.responses?.[0]?.fullTextAnnotation;
+            if (!textAnnotations) throw new Error('OCR 回傳空結果（可能是圖片中沒有文字）');
+
+            const blocks = [];
+            const imgW = textAnnotations.pages[0].width;
+            const imgH = textAnnotations.pages[0].height;
+
+            textAnnotations.pages[0].blocks.forEach(block => {
+                let blockText = '';
+                block.paragraphs.forEach(p => {
+                    p.words.forEach(w => {
+                        w.symbols.forEach(s => blockText += s.text);
+                    });
+                    blockText += ' '; // 段落內分詞間距
+                });
+                blockText = blockText.trim();
+                if (!blockText) return;
+
+                const v = block.boundingBox.vertices;
+                const minX = Math.min(...v.map(pt => pt.x || 0));
+                const maxX = Math.max(...v.map(pt => pt.x || 0));
+                const minY = Math.min(...v.map(pt => pt.y || 0));
+                const maxY = Math.max(...v.map(pt => pt.y || 0));
+
+                const x_pct = (minX / imgW) * 100;
+                const y_pct = (minY / imgH) * 100;
+                const w_pct = ((maxX - minX) / imgW) * 100;
+                const h_pct = ((maxY - minY) / imgH) * 100;
+
+                // 根據 bounding box 高度動態計算相應字級 (PPTX 單位為 point，做比例換算)
+                let fontSize = Math.max(10, Math.round(h_pct * 3.5));
+
+                blocks.push({ 
+                    text: blockText, 
+                    x_pct, y_pct, w_pct, h_pct, 
+                    fontSize, 
+                    fontColor: '#000000', 
+                    fontFace: 'Microsoft JhengHei' 
+                });
+            });
+
+            return { blocks };
+        }
+
+        // ── Canvas 智慧補圖 (純前端，不需 API) ──
+        function canvasRemoveText(canvas, blocks) {
+            // 建立副本
+            const outCanvas = document.createElement('canvas');
+            outCanvas.width = canvas.width;
+            outCanvas.height = canvas.height;
+            const ctx = outCanvas.getContext('2d');
+            ctx.drawImage(canvas, 0, 0);
+
+            const W = canvas.width;
+            const H = canvas.height;
+
+            blocks.forEach(b => {
+                // 計算實際像素座標
+                const x = Math.round((b.x_pct / 100) * W);
+                const y = Math.round((b.y_pct / 100) * H);
+                const w = Math.round((b.w_pct / 100) * W);
+                const h = Math.round((b.h_pct / 100) * H);
+
+                if (w <= 0 || h <= 0) return;
+
+                // 擷取邊緣像素的平均顏色 (上、下、左、右 4 條邊)
+                const pad = Math.max(2, Math.round(h * 0.15)); // 向外取樣寬度
+                const sampleEdge = (sx, sy, sw, sh) => {
+                    const sx2 = Math.max(0, Math.min(sx, W - 1));
+                    const sy2 = Math.max(0, Math.min(sy, H - 1));
+                    const sw2 = Math.min(sw, W - sx2);
+                    const sh2 = Math.min(sh, H - sy2);
+                    if (sw2 <= 0 || sh2 <= 0) return [128, 128, 128, 255];
+                    const data = ctx.getImageData(sx2, sy2, sw2, sh2).data;
+                    let r = 0, g = 0, bl = 0, count = 0;
+                    for (let i = 0; i < data.length; i += 4) {
+                        r += data[i]; g += data[i+1]; bl += data[i+2]; count++;
+                    }
+                    return count > 0 ? [r/count, g/count, bl/count] : [128, 128, 128];
+                };
+
+                // 取四條邊的樣本
+                const top    = sampleEdge(x, Math.max(0, y - pad), w, pad);
+                const bottom = sampleEdge(x, y + h, w, pad);
+                const left   = sampleEdge(Math.max(0, x - pad), y, pad, h);
+                const right  = sampleEdge(x + w, y, pad, h);
+
+                // 用漸層填充：從上到下融合
+                for (let row = 0; row < h; row++) {
+                    const ty = row / h; // 0 = 靠上, 1 = 靠下
+                    for (let col = 0; col < w; col++) {
+                        const tx = col / w; // 0 = 靠左, 1 = 靠右
+                        // 雙線性插值：上下左右四邊融合
+                        const r = top[0]*(1-ty) + bottom[0]*ty;
+                        const g = top[1]*(1-ty) + bottom[1]*ty;
+                        const bl= top[2]*(1-ty) + bottom[2]*ty;
+                        const rl = left[0]*(1-tx) + right[0]*tx;
+                        const gl = left[1]*(1-tx) + right[1]*tx;
+                        const bll= left[2]*(1-tx) + right[2]*tx;
+                        // 平均合併
+                        const fr = (r + rl) / 2;
+                        const fg = (g + gl) / 2;
+                        const fb = (bl + bll) / 2;
+                        ctx.fillStyle = `rgb(${Math.round(fr)},${Math.round(fg)},${Math.round(fb)})`;
+                        ctx.fillRect(x + col, y + row, 1, 1);
+                    }
+                }
+
+                // 模糊過渡邊緣 (用 blur 杗暮) - 用斑块疊加來柔化邊緣
+                ctx.save();
+                ctx.filter = 'blur(3px)';
+                const edgeW = Math.max(3, Math.round(w * 0.05));
+                // 疊加左右邊緣
+                ctx.drawImage(outCanvas, x, y, edgeW, h, x, y, edgeW, h);
+                ctx.drawImage(outCanvas, x + w - edgeW, y, edgeW, h, x + w - edgeW, y, edgeW, h);
+                // 疊加上下邊緣
+                ctx.drawImage(outCanvas, x, y, w, edgeW, x, y, w, edgeW);
+                ctx.drawImage(outCanvas, x, y + h - edgeW, w, edgeW, x, y + h - edgeW, w, edgeW);
+                ctx.restore();
+            });
+
+            return outCanvas;
+        }
+
+        // ── Gemini AI 補圖 ──
+        async function geminiInpaint(base64, apiKey, model) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            const prompt = `Remove ALL text, words, numbers, letters, and characters from this presentation slide image.
+Keep the background design, decorative elements, shapes, icons, logos, and color scheme completely intact.
+Fill the removed text areas seamlessly with the surrounding background patterns and colors.
+Return ONLY the cleaned image with no text remaining.`;
+
+            console.log(`[補圖] 使用模型: ${model}`);
+            let data;
+            try {
+                data = await fetchWithRetry(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [
+                            { text: prompt },
+                            { inlineData: { mimeType: 'image/jpeg', data: base64 } }
+                        ]}],
+                        generationConfig: { responseModalities: ['IMAGE'] },
+                        safetySettings: [
+                            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+                        ]
+                    })
+                });
+            } catch (fetchErr) {
+                console.error(`[補圖] Fetch 錯誤:`, fetchErr);
+                throw new Error(`補圖網路錯誤: ${fetchErr.message}`);
+            }
+
+            console.log(`[補圖] API 回應:`, JSON.stringify(data).substring(0, 500));
+
+            if (data.error) {
+                console.error(`[補圖] API 錯誤:`, data.error);
+                throw new Error(`${data.error.code || ''} ${data.error.message}`);
+            }
+
+            const candidate = data.candidates?.[0];
+            if (!candidate) {
+                console.error(`[補圖] 無 candidates，完整回應:`, JSON.stringify(data));
+                throw new Error('AI 補圖無回應候選 (可能模型不支援圖片生成)');
+            }
+
+            // 檢查是否被安全過濾擋住
+            if (candidate.finishReason && candidate.finishReason !== 'STOP') {
+                console.warn(`[補圖] finishReason: ${candidate.finishReason}`);
+                throw new Error(`AI 補圖被攔截 (finishReason: ${candidate.finishReason})`);
+            }
+
+            const parts = candidate.content?.parts || [];
+            const imgPart = parts.find(p => p.inlineData);
+            if (!imgPart) {
+                console.error(`[補圖] 未找到圖片，parts 內容:`, parts.map(p => Object.keys(p)));
+                throw new Error('AI 補圖未回傳圖片 (可能只回傳了文字)');
+            }
+            return imgPart.inlineData;
+        }
+
+        // ── PPTX 產生 ──
+        async function buildPptx(slides) {
+            const pptx = new PptxGenJS();
+            pptx.layout = 'LAYOUT_16x9';
+
+            slides.forEach(s => {
+                const slide = pptx.addSlide();
+                // 背景
+                if (s.cleanBase64) {
+                    slide.background = { data: `data:image/${s.cleanMime || 'png'};base64,${s.cleanBase64}` };
+                } else {
+                    slide.background = { data: s.originalDataUrl };
+                }
+                // 文字框
+                (s.blocks || []).forEach(b => {
+                    const x = (b.x_pct / 100) * SW;
+                    const y = (b.y_pct / 100) * SH;
+                    const w = Math.max(0.5, (b.w_pct / 100) * SW + 0.3);
+                    const h = Math.max(0.3, (b.h_pct / 100) * SH + 0.15);
+                    const fontSize = b.fontSize || 16;
+                    const color = (b.fontColor || '#000000').replace('#', '');
+                    const fontFace = b.fontFace || 'Microsoft JhengHei';
+                    slide.addText(b.text, {
+                        x, y, w, h, fontSize,
+                        color: color,
+                        fontFace: fontFace,
+                        valign: 'middle',
+                        wrap: true,
+                        margin: 4
+                    });
+                });
+            });
+            await pptx.writeFile({ fileName: `NotebookLM_Editable_${Date.now()}.pptx` });
+        }
+
+        // ── 延遲與重試機制 ──
+        const delay = ms => new Promise(r => setTimeout(r, ms));
+
+        async function fetchWithRetry(url, options, maxRetries = 3) {
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const res = await fetch(url, options);
+                    const data = await res.json();
+                    
+                    if (data.error) {
+                        // 只有 Rate Limit (429) 才重試，其他錯誤立即拋出
+                        if (data.error.code === 429 && i < maxRetries - 1) {
+                            const waitTime = Math.pow(2, i) * 3000 + Math.random() * 1000;
+                            console.warn(`API 限速，等待 ${Math.round(waitTime/1000)} 秒後重試...`);
+                            await delay(waitTime);
+                            continue;
+                        }
+                        // 非 429 錯誤 (如 404 模型不存在)，不重試直接拋出
+                        return data; // 回傳含 error 的 data，讓呼叫端處理
+                    }
+                    return data;
+                } catch (err) {
+                    // 網路層面的錯誤才重試
+                    if (i === maxRetries - 1) throw err;
+                    console.warn(`網路錯誤，${2}秒後重試...`, err.message);
+                    await delay(2000);
+                }
+            }
+        }
+
+        // ────────────────────────────
+        // React App
+        // ────────────────────────────
+        const App = () => {
+            const [visionApiKey, setVisionApiKey] = useState(() => localStorage.getItem('vision_api_key') || '');
+            const [apiKey, setApiKey] = useState(() => localStorage.getItem('gemini_api_key') || DEFAULT_KEY);
+            const [model, setModel] = useState('canvas');
+            const [pdfFile, setPdfFile] = useState(null);
+            const [pdfName, setPdfName] = useState('');
+            const [processing, setProcessing] = useState(false);
+            const [status, setStatus] = useState('');
+            const [progress, setProgress] = useState(0);
+            const [slides, setSlides] = useState([]);
+            const [done, setDone] = useState(false);
+            const [downloading, setDownloading] = useState(false);
+            const [logs, setLogs] = useState([]);
+            const fileRef = useRef(null);
+            const dropRef = useRef(null);
+
+            const addLog = useCallback((type, msg) => {
+                const ts = new Date().toLocaleTimeString();
+                setLogs(prev => [...prev, { ts, type, msg }]);
+            }, []);
+
+            // Save API keys
+            const updateKey = useCallback(v => { setApiKey(v); localStorage.setItem('gemini_api_key', v); }, []);
+            const updateVisionKey = useCallback(v => { setVisionApiKey(v); localStorage.setItem('vision_api_key', v); }, []);
+
+            // 測試 Gemini API Key 並列出可用模型
+            const testGeminiKey = useCallback(async () => {
+                if (!apiKey) { addLog('error', '請先填寫 Gemini API Key'); return; }
+                addLog('info', '正在查詢可用模型...');
+                try {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}&pageSize=100`);
+                    const data = await res.json();
+                    if (data.error) {
+                        addLog('error', `API Key 錯誤: ${data.error.message}`);
+                        return;
+                    }
+                    const models = data.models || [];
+                    const imageModels = models.filter(m =>
+                        m.supportedGenerationMethods?.includes('generateContent') &&
+                        (m.name.includes('image') || m.name.includes('flash-exp') || m.name.includes('pro-image'))
+                    );
+                    const allGenerateModels = models.filter(m =>
+                        m.supportedGenerationMethods?.includes('generateContent')
+                    );
+                    addLog('ok', `API Key 有效！共 ${models.length} 個模型，${allGenerateModels.length} 個支援 generateContent`);
+                    if (imageModels.length > 0) {
+                        imageModels.forEach(m => addLog('ok', `可用圖片模型: ${m.name}`));
+                    } else {
+                        addLog('error', '未找到任何圖片生成模型！請確認 API Key 是否有權限');
+                        allGenerateModels.forEach(m => addLog('info', `  可用: ${m.name}`));
+                    }
+                } catch (e) {
+                    addLog('error', `查詢失敗: ${e.message}`);
+                }
+            }, [apiKey, addLog]);
+
+            // File handling
+            const acceptFile = useCallback(f => { if (f?.type === 'application/pdf') { setPdfFile(f); setPdfName(f.name); setSlides([]); setDone(false); }}, []);
+            const handleDrop = useCallback(e => { e.preventDefault(); dropRef.current?.classList.remove('ring-2','ring-indigo-400'); acceptFile(e.dataTransfer?.files?.[0]); }, [acceptFile]);
+            const handleDragOver = useCallback(e => { e.preventDefault(); dropRef.current?.classList.add('ring-2','ring-indigo-400'); }, []);
+            const handleDragLeave = useCallback(e => { e.preventDefault(); dropRef.current?.classList.remove('ring-2','ring-indigo-400'); }, []);
+
+            // ── 核心處理 ──
+            const handleProcess = useCallback(async () => {
+                if (!pdfFile || !visionApiKey) {
+                    alert('請確認已上傳 PDF，並填寫 Cloud Vision API Key！');
+                    return;
+                }
+                setProcessing(true); setSlides([]); setDone(false); setProgress(0); setLogs([]);
+                try {
+                    setStatus('正在載入 PDF...');
+                    addLog('info', '開始處理 PDF...');
+                    const buf = await pdfFile.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+                    const total = pdf.numPages;
+                    const result = [];
+
+                    for (let i = 1; i <= total; i++) {
+                        // 1. 渲染
+                        setStatus(`第 ${i}/${total} 頁：渲染圖片中...`);
+                        setProgress(((i - 1) / total) * 100);
+                        const canvas = await renderPage(pdf, i);
+                        const raw64 = canvasToRawBase64(canvas);
+                        const dataUrl = canvasToDataUrl(canvas);
+
+                        // 2. OCR (Cloud Vision)
+                        setStatus(`第 ${i}/${total} 頁：Cloud Vision 辨識文字中...`);
+                        addLog('info', `第${i}頁：開始 OCR...`);
+                        let ocrResult = { blocks: [] };
+                        try {
+                            ocrResult = await cloudVisionOCR(raw64, visionApiKey);
+                            addLog('ok', `第${i}頁 OCR 完成，辨識到 ${ocrResult.blocks.length} 個文字區塊`);
+                        } catch (e) {
+                            console.warn(`OCR 第${i}頁失敗:`, e.message);
+                            addLog('error', `第${i}頁 OCR 失敗: ${e.message}`);
+                            ocrResult = { blocks: [{ text: `(OCR 失敗: ${e.message})`, x_pct: 5, y_pct: 5, w_pct: 90, h_pct: 10, fontSize: 14, fontColor: '#cc0000', fontFace: 'Microsoft JhengHei' }] };
+                        }
+
+                        // 3. 補圖
+                        let cleanBase64 = null, cleanMime = 'png';
+                        const useAI = apiKey && model !== 'canvas';
+
+                        if (useAI) {
+                            // AI 補圖 (Gemini - 需要付費計算)
+                            setStatus(`第 ${i}/${total} 頁：Gemini AI 補圖中 (模型: ${model})...`);
+                            addLog('info', `第${i}頁：開始 AI 補圖，模型: ${model}`);
+                            try {
+                                const imgData = await geminiInpaint(raw64, apiKey, model);
+                                cleanBase64 = imgData.data;
+                                cleanMime = (imgData.mimeType || 'image/png').split('/')[1];
+                                addLog('ok', `第${i}頁 AI 補圖成功！`);
+                            } catch (e) {
+                                console.warn(`AI 補圖第${i}頁失敗:`, e.message);
+                                addLog('error', `第${i}頁 AI 補圖失敗: ${e.message}，改用 Canvas 補圖`);
+                            }
+                        }
+
+                        // Canvas 補圖 (免費備案或預設)
+                        if (!cleanBase64) {
+                            setStatus(`第 ${i}/${total} 頁：Canvas 智慧補圖中...`);
+                            addLog('info', `第${i}頁：使用 Canvas 智慧補圖 (免費)`);
+                            try {
+                                const cleanCanvas = canvasRemoveText(canvas, ocrResult.blocks);
+                                cleanBase64 = canvasToRawBase64(cleanCanvas);
+                                cleanMime = 'jpeg';
+                                addLog('ok', `第${i}頁 Canvas 補圖完成`);
+                            } catch (e) {
+                                addLog('error', `第${i}頁 Canvas 補圖也失敗: ${e.message}`);
+                                cleanBase64 = null;
+                            }
+                        }
+
+                        const slideData = {
+                            originalDataUrl: dataUrl,
+                            cleanBase64,
+                            cleanMime,
+                            cleanDataUrl: cleanBase64 ? `data:image/${cleanMime};base64,${cleanBase64}` : null,
+                            blocks: ocrResult.blocks || []
+                        };
+                        result.push(slideData);
+                        setSlides([...result]);
+                        setProgress((i / total) * 100);
+
+                        // 避免 API 限速 (Free Tier 限制較嚴格)
+                        if (i < total) {
+                            setStatus(`第 ${i}/${total} 頁：等待冷卻以避免 API 限制...`);
+                            await delay(4000); // 增加基礎延遲到 4 秒
+                        }
+                    }
+
+                    setStatus('✅ 全部完成！可預覽並編輯文字，確認後下載 PPTX。');
+                    setDone(true);
+                } catch (err) {
+                    console.error(err);
+                    setStatus(`❌ 錯誤：${err.message}`);
+                } finally {
+                    setProcessing(false);
+                }
+            }, [pdfFile, apiKey, visionApiKey, model, addLog]);
+
+            // ── 文字編輯 ──
+            const updateBlockField = useCallback((slideIdx, blockIdx, field, newValue) => {
+                setSlides(prev => {
+                    const copy = [...prev];
+                    copy[slideIdx] = { ...copy[slideIdx], blocks: [...copy[slideIdx].blocks] };
+                    copy[slideIdx].blocks[blockIdx] = { ...copy[slideIdx].blocks[blockIdx], [field]: newValue };
+                    return copy;
+                });
+            }, []);
+
+            // ── 下載 PPTX ──
+            const handleDownload = useCallback(async () => {
+                setDownloading(true);
+                setStatus('正在產生 PPTX...');
+                try {
+                    await buildPptx(slides);
+                    setStatus('✅ PPTX 已下載！');
+                } catch (e) {
+                    setStatus(`❌ 產生 PPTX 失敗：${e.message}`);
+                } finally { setDownloading(false); }
+            }, [slides]);
+
+            // ── 重新開始 ──
+            const handleReset = useCallback(() => {
+                setPdfFile(null); setPdfName(''); setSlides([]); setDone(false);
+                setProcessing(false); setStatus(''); setProgress(0);
+            }, []);
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-slate-50 to-indigo-50/50">
+                    {/* Header */}
+                    <header className="bg-gradient-to-r from-indigo-600 to-indigo-800 shadow-lg shadow-indigo-200/50">
+                        <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
+                            <div>
+                                <h1 className="text-xl font-bold text-white tracking-tight">📑 NotebookLM → 可編輯 PPTX</h1>
+                                <p className="text-indigo-200 text-sm mt-0.5">AI 辨識文字 + AI 智慧補圖，一鍵產出可修改的 PowerPoint</p>
+                            </div>
+                            <span className="text-indigo-300 text-xs hidden md:block">全部在瀏覽器端處理</span>
+                        </div>
+                    </header>
+
+                    <main className="max-w-6xl mx-auto px-6 py-6 space-y-6">
+
+                        {/* ── 設定 + 上傳 ── */}
+                        <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 p-6 anim-in">
+                            {/* API Key & Model */}
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
+                                <div className="md:col-span-2">
+                                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-1.5 flex justify-between">
+                                        Cloud Vision API Key (文字辨識)
+                                        <a href="https://console.cloud.google.com/apis/library/vision.googleapis.com" target="_blank" className="text-indigo-500 hover:underline">啟用 API ↗</a>
+                                    </label>
+                                    <input type="password" value={visionApiKey} onChange={e => updateVisionKey(e.target.value)} placeholder="AIzaSy..."
+                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all font-mono" />
+                                    <p className="text-[10px] text-slate-400 mt-1">請確保您的 GCP 專案已啟用 Cloud Vision API，避免出現 blocked 錯誤。</p>
+                                </div>
+                                <div className="md:col-span-1">
+                                    <label className="text-xs font-semibold text-amber-500 uppercase tracking-widest mb-1.5 flex justify-between">
+                                        Gemini API Key (可選，AI補圖)
+                                        <button onClick={testGeminiKey} className="text-indigo-500 hover:underline text-[10px] font-normal normal-case">🔍 測試</button>
+                                    </label>
+                                    <input type="password" value={apiKey} onChange={e => updateKey(e.target.value)} placeholder="留空 = 使用免費 Canvas 補圖"
+                                        className="w-full border border-amber-200 rounded-xl px-4 py-2.5 text-sm bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-400 transition-all font-mono" />
+                                    <p className="text-[10px] text-slate-400 mt-1">留空即使用免費 Canvas 補圖，填寫則用 Gemini AI 補圖(需付費計畫)</p>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-1.5 block">補圖方式</label>
+                                    <select value={model} onChange={e => setModel(e.target.value)}
+                                        className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all">
+                                        <option value="canvas">🎨 Canvas 智慧補圖 (免費推薦)</option>
+                                        <option value="gemini-2.0-flash-preview-image-generation">Gemini 2.0 Flash (需付費)</option>
+                                        <option value="gemini-3.1-flash-image-preview">Nano Banana 2 (需付費)</option>
+                                        <option value="gemini-3-pro-image-preview">Nano Banana Pro (需付費)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Upload + Action */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="md:col-span-2">
+                                    <div ref={dropRef} onDrop={handleDrop} onDragOver={handleDragOver} onDragLeave={handleDragLeave}
+                                        onClick={() => fileRef.current?.click()}
+                                        className="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/30 transition-all">
+                                        <input ref={fileRef} type="file" accept="application/pdf" onChange={e => acceptFile(e.target.files?.[0])} className="hidden" />
+                                        {pdfName ? (
+                                            <div><span className="text-3xl">📄</span><p className="text-indigo-600 font-semibold mt-1">{pdfName}</p><p className="text-slate-400 text-xs mt-0.5">點擊重新選擇</p></div>
+                                        ) : (
+                                            <div><span className="text-3xl">📂</span><p className="text-slate-500 mt-1">點擊或拖曳上傳 PDF 簡報</p></div>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="flex flex-col gap-3">
+                                    <button onClick={handleProcess} disabled={!pdfFile || processing}
+                                        className={`flex-1 py-4 rounded-xl font-bold text-white text-base transition-all shadow-lg ${
+                                            !pdfFile || processing ? 'bg-slate-300 cursor-not-allowed shadow-none' : 'bg-gradient-to-r from-indigo-500 to-purple-500 hover:-translate-y-0.5 hover:shadow-indigo-300 active:scale-[0.98] pulse-glow'
+                                        }`}>
+                                        {processing ? '⏳ 處理中...' : '🚀 開始轉換'}
+                                    </button>
+                                    {done && (
+                                        <button onClick={handleDownload} disabled={downloading}
+                                            className="py-3 rounded-xl font-bold text-white bg-gradient-to-r from-emerald-500 to-teal-500 hover:-translate-y-0.5 hover:shadow-emerald-300 shadow-lg transition-all active:scale-[0.98]">
+                                            {downloading ? '⏳ 產生中...' : '💾 下載 PPTX'}
+                                        </button>
+                                    )}
+                                    {slides.length > 0 && (
+                                        <button onClick={handleReset} className="py-2 rounded-xl text-sm text-slate-500 border border-slate-200 hover:bg-slate-50 transition-all">
+                                            🔄 重新來過
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* ── 進度 ── */}
+                        {(processing || status) && (
+                            <div className="bg-white rounded-2xl shadow-lg border border-slate-100 px-6 py-4 anim-in flex items-center gap-4">
+                                {processing && <div className="w-5 h-5 border-[3px] border-indigo-200 border-t-indigo-600 rounded-full spinner flex-shrink-0"></div>}
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-slate-700 truncate">{status}</p>
+                                    {processing && (
+                                        <div className="w-full bg-slate-100 rounded-full h-1.5 mt-2 overflow-hidden">
+                                            <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── 前台日誌面板 ── */}
+                        {logs.length > 0 && (
+                            <div className="bg-slate-900 rounded-2xl shadow-lg p-4 anim-in">
+                                <div className="flex justify-between items-center mb-2">
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">📝 處理日誌 ({logs.length})</p>
+                                    <button onClick={() => setLogs([])} className="text-xs text-slate-500 hover:text-white transition-colors">清除</button>
+                                </div>
+                                <div className="max-h-48 overflow-y-auto custom-scrollbar space-y-1 text-xs font-mono">
+                                    {logs.map((log, li) => (
+                                        <div key={li} className={`flex gap-2 ${
+                                            log.type === 'error' ? 'text-red-400' :
+                                            log.type === 'ok' ? 'text-emerald-400' :
+                                            'text-slate-400'
+                                        }`}>
+                                            <span className="text-slate-600 flex-shrink-0">{log.ts}</span>
+                                            <span>{log.type === 'error' ? '❌' : log.type === 'ok' ? '✅' : 'ℹ️'} {log.msg}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {slides.length > 0 && (
+                            <div className="space-y-6">
+                                <h2 className="text-base font-bold text-slate-600 uppercase tracking-widest">投影片預覽 ({slides.length} 頁) — 可進階修改樣式</h2>
+                                {slides.map((s, si) => (
+                                    <SlideCard key={si} slide={s} index={si} onBlockChange={updateBlockField} />
+                                ))}
+                            </div>
+                        )}
+
+                        {/* ── 使用說明 ── */}
+                        {slides.length === 0 && !processing && (
+                            <div className="bg-white rounded-[2rem] shadow-xl border border-slate-100 p-6 anim-in" style={{animationDelay:'100ms'}}>
+                                <h2 className="text-base font-bold text-slate-700 mb-4">📖 使用說明</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-5 text-sm text-slate-600">
+                                    {[
+                                        ['①', '上傳 PDF', '將 NotebookLM 匯出的圖檔式 PDF 簡報拖曳上傳'],
+                                        ['②', 'AI 辨識文字', 'Gemini 自動辨識每頁文字與位置座標'],
+                                        ['③', 'AI 智慧補圖', 'AI 移除文字後自然補回背景，非抹白'],
+                                        ['④', '下載可編輯簡報', '產出 PPTX：乾淨背景 + 獨立文字框可修改']
+                                    ].map(([num, title, desc]) => (
+                                        <div key={num} className="flex md:flex-col gap-3">
+                                            <span className="text-2xl">{num}</span>
+                                            <div><p className="font-semibold text-slate-800 mb-0.5">{title}</p><p>{desc}</p></div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    <footer className="text-center py-5 text-xs text-slate-400">
+                        NotebookLM Slide Converter — Powered by Gemini AI
+                    </footer>
+                </div>
+            );
+        };
+
+        // ── 投影片卡片元件 ──
+        const SlideCard = React.memo(({ slide, index, onBlockChange }) => {
+            const [showClean, setShowClean] = useState(true);
+            const imgSrc = showClean && slide.cleanDataUrl ? slide.cleanDataUrl : slide.originalDataUrl;
+
+            return (
+                <div className="bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden anim-in" style={{ animationDelay: `${index * 60}ms` }}>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
+                        {/* 圖片預覽 */}
+                        <div className="relative bg-slate-100">
+                            <img src={imgSrc} alt={`Slide ${index+1}`} className="w-full h-auto block" />
+                            <span className="absolute top-3 left-3 bg-indigo-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow">#{index+1}</span>
+                            {slide.cleanDataUrl && (
+                                <button onClick={() => setShowClean(!showClean)}
+                                    className="absolute top-3 right-3 bg-slate-900/70 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-sm hover:bg-slate-900/90 transition-all">
+                                    {showClean ? '📷 顯示原圖' : '✨ 顯示補圖'}
+                                </button>
+                            )}
+                            {!slide.cleanDataUrl && slide.cleanBase64 === null && (
+                                <span className="absolute bottom-3 right-3 bg-amber-500/90 text-white text-xs px-3 py-1.5 rounded-full">⚠️ 補圖失敗，使用原圖</span>
+                            )}
+                        </div>
+
+                        {/* 文字編輯 */}
+                        <div className="p-5 max-h-[400px] overflow-y-auto custom-scrollbar">
+                            <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">辨識文字 (可直接修改)</p>
+                            {slide.blocks.length === 0 && <p className="text-sm text-slate-400 italic">此頁無辨識到文字</p>}
+                            {slide.blocks.map((b, bi) => (
+                                <div key={bi} className="mb-3">
+                                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                                        <div className="flex items-center gap-1 bg-slate-100 rounded px-1.5 py-1">
+                                            <span className="text-[10px] text-slate-500">大小</span>
+                                            <input type="number" value={b.fontSize} onChange={e => onBlockChange(index, bi, 'fontSize', parseInt(e.target.value)||16)}
+                                                className="w-10 text-xs text-center border-none bg-transparent focus:ring-0 p-0 h-4" />
+                                        </div>
+                                        <div className="flex items-center gap-1 bg-slate-100 rounded px-1.5 py-1">
+                                            <span className="text-[10px] text-slate-500">顏色</span>
+                                            <input type="color" value={b.fontColor} onChange={e => onBlockChange(index, bi, 'fontColor', e.target.value)}
+                                                className="w-4 h-4 rounded cursor-pointer border-none p-0 bg-transparent" />
+                                        </div>
+                                        <div className="flex items-center gap-1 bg-slate-100 rounded px-1.5 py-1">
+                                            <span className="text-[10px] text-slate-500">字型</span>
+                                            <select value={b.fontFace} onChange={e => onBlockChange(index, bi, 'fontFace', e.target.value)}
+                                                className="text-xs border-none bg-transparent focus:ring-0 p-0 py-0 h-4 max-w-[100px]">
+                                                <option value="Microsoft JhengHei">微軟正黑體</option>
+                                                <option value="PingFang TC">蘋方體</option>
+                                                <option value="Arial">Arial</option>
+                                                <option value="Times New Roman">Times New Roman</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <textarea
+                                        value={b.text}
+                                        onChange={e => onBlockChange(index, bi, 'text', e.target.value)}
+                                        rows={Math.max(1, Math.ceil(b.text.length / 40))}
+                                        className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-300 transition-all resize-none"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+        });
+
+        // 掛載
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
