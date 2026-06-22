@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>美食足跡 — 舊資料標籤批次補齊工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Noto Sans TC', sans-serif; }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800 p-4 md:p-8 max-w-3xl mx-auto">
+
+    <h1 class="text-2xl font-bold mb-1">🏷️ 舊資料標籤批次補齊</h1>
+    <p class="text-sm text-gray-500 mb-4">用店名 / 餐點關鍵字推斷標籤，只補「目前沒有標籤」的紀錄，不覆蓋既有標籤。寫入前會自動備份，可一鍵還原。</p>
+
+    <div class="bg-white rounded-xl shadow p-4 mb-4 space-y-3">
+        <div class="flex items-center gap-2">
+            <label class="text-sm font-bold">伴侶通行碼</label>
+            <input id="codeInput" class="flex-1 border rounded px-2 py-1 text-sm" placeholder="自動讀取中...">
+            <button id="loadBtn" class="bg-blue-500 hover:bg-blue-600 text-white text-sm font-bold px-4 py-1.5 rounded">載入資料</button>
+        </div>
+        <div id="status" class="text-sm text-gray-600">尚未載入。</div>
+    </div>
+
+    <div id="summary" class="hidden bg-white rounded-xl shadow p-4 mb-4">
+        <div class="grid grid-cols-3 gap-3 text-center mb-3">
+            <div><div id="cTotal" class="text-2xl font-bold">0</div><div class="text-xs text-gray-500">總紀錄</div></div>
+            <div><div id="cUpdate" class="text-2xl font-bold text-green-600">0</div><div class="text-xs text-gray-500">將補標籤</div></div>
+            <div><div id="cEmpty" class="text-2xl font-bold text-gray-400">0</div><div class="text-xs text-gray-500">仍空白</div></div>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <button id="applyBtn" class="bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2 rounded shadow">✅ 套用標籤（寫入雲端）</button>
+            <button id="undoBtn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-4 py-2 rounded shadow hidden">↩️ 還原上次套用</button>
+            <span id="applyStatus" class="text-sm self-center"></span>
+        </div>
+        <p class="text-xs text-gray-400 mt-2">套用前會把目前狀態存到瀏覽器（localStorage）並下載一份 JSON 備份。</p>
+    </div>
+
+    <div id="previewWrap" class="hidden bg-white rounded-xl shadow p-4">
+        <h2 class="font-bold mb-2 text-sm">預覽（前 200 筆將補的標籤）</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead><tr class="text-left text-gray-500 border-b"><th class="py-1 pr-2">店名</th><th class="py-1">將補上的標籤</th></tr></thead>
+                <tbody id="previewBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, getDocs, doc, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCnmENG-9ZoPswg0wJnckyryyljuFnVysY",
+            authDomain: "food-records-a693c.firebaseapp.com",
+            projectId: "food-records-a693c",
+            storageBucket: "food-records-a693c.firebasestorage.app",
+            messagingSenderId: "172202827688",
+            appId: "1:172202827688:web:1fb1a549dda3eb0f8cc79d"
+        };
+        const APP_ID = 'default-app-id';
+        const COL = ['artifacts', APP_ID, 'public', 'data', 'food_entries'];
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const $ = id => document.getElementById(id);
+        const setStatus = (t) => $('status').textContent = t;
+
+        // 自動帶入通行碼
+        $('codeInput').value = localStorage.getItem('food_footprints_code') || '';
+
+        // 關鍵字 → 標籤
+        const RULES = [
+            [/拉麵|豚骨/, ['拉麵', '日式']],
+            [/壽司|迴轉壽司|刺身/, ['壽司', '日式']],
+            [/生魚片|海鮮|龍蝦|螃蟹|蝦|烤魚|海產|現撈|漁港|蚵/, ['海鮮']],
+            [/丼|天婦羅|居酒屋|燒鳥|烏龍麵|親子丼|日式|和食|筑前屋|かつ|牛かつ/, ['日式']],
+            [/牛排|steak|鐵板/, ['牛排']],
+            [/牛肉麵/, ['牛肉麵']],
+            [/燒肉|和牛|烤肉|燒烤/, ['燒肉']],
+            [/火鍋|涮|鍋物|麻辣鍋|薑母鴨|羊肉爐|麻辣燙|鴛鴦鍋/, ['火鍋']],
+            [/羊肉/, ['羊肉']],
+            [/咖啡|coffee|caf[eé]/i, ['咖啡廳']],
+            [/brunch|早午餐|早伴/i, ['早午餐']],
+            [/早餐|豆漿|蛋餅|燒餅|油條/, ['早餐']],
+            [/韓式|韓國|部隊鍋|明洞|韓式料理/, ['韓式']],
+            [/泰式|泰國/, ['泰式']],
+            [/義式|義大利|pasta|pizza|披薩|比薩/i, ['義式']],
+            [/漢堡|burger|熱狗堡/i, ['漢堡', '美式']],
+            [/港式|飲茶|茶餐廳|燒臘|港點|冰室|腸粉|叉燒/, ['港式']],
+            [/自助餐|buffet|吃到飽/i, ['自助餐']],
+            [/夜市/, ['夜市']],
+            [/豆花|甜點|蛋糕|剉冰|挫冰|冰品|仙草|甜品|布丁|冰果室/, ['甜點']],
+            [/黑輪|水煎包|刈包|臭豆腐|麵線|肉圓|魯肉|滷肉|切仔|擔仔|小吃|鹹酥雞|雞排|餛飩|鴨肉|豬腳/, ['小吃', '台式']],
+            [/素食|蔬食/, ['素食']],
+            [/快餐|便當/, ['便當']],
+        ];
+        function propose(x) {
+            const t = ((x.name || '') + ' ' + (x.dishes || '')).toLowerCase();
+            const s = new Set();
+            RULES.forEach(([re, tags]) => { if (re.test(t)) tags.forEach(g => s.add(g)); });
+            if ((x.category || 'food') === 'night_market') s.add('夜市');
+            return [...s];
+        }
+
+        let plan = [];   // [{id, name, newTags}]
+        let entriesById = {};
+
+        $('loadBtn').onclick = async () => {
+            const code = $('codeInput').value.trim();
+            if (!code) { setStatus('⚠️ 請先輸入伴侶通行碼。'); return; }
+            setStatus('連線中...');
+            try {
+                if (!auth.currentUser) await signInAnonymously(auth);
+                setStatus('讀取資料中...');
+                const snap = await getDocs(collection(db, ...COL));
+                const all = [];
+                snap.forEach(d => { const data = d.data(); if (data.coupleCode === code) all.push({ id: d.id, ...data }); });
+                entriesById = Object.fromEntries(all.map(e => [e.id, e]));
+                // 只補「沒有標籤」者
+                plan = all
+                    .filter(e => !(Array.isArray(e.tags) && e.tags.length > 0))
+                    .map(e => ({ id: e.id, name: e.name || '(未命名)', newTags: propose(e) }))
+                    .filter(p => p.newTags.length > 0);
+                const emptyCount = all.length - all.filter(e => Array.isArray(e.tags) && e.tags.length > 0).length - plan.length;
+                $('cTotal').textContent = all.length;
+                $('cUpdate').textContent = plan.length;
+                $('cEmpty').textContent = emptyCount;
+                $('summary').classList.remove('hidden');
+                $('previewWrap').classList.remove('hidden');
+                $('previewBody').innerHTML = plan.slice(0, 200).map(p =>
+                    `<tr class="border-b border-gray-100"><td class="py-1 pr-2 align-top">${p.name}</td><td class="py-1"><span class="text-xs">${p.newTags.map(t => `<span class="inline-block bg-orange-50 text-orange-600 border border-orange-100 px-2 py-0.5 rounded-full mr-1 mb-1">${t}</span>`).join('')}</span></td></tr>`
+                ).join('');
+                if (localStorage.getItem('food_tag_backfill_backup')) $('undoBtn').classList.remove('hidden');
+                setStatus(`✅ 已載入 ${all.length} 筆，其中 ${plan.length} 筆可補標籤。請檢視下方預覽後再套用。`);
+            } catch (e) { setStatus('❌ 讀取失敗：' + e.message); }
+        };
+
+        $('applyBtn').onclick = async () => {
+            if (!plan.length) { $('applyStatus').textContent = '沒有要寫入的項目。'; return; }
+            if (!confirm(`即將寫入 ${plan.length} 筆紀錄的標籤。已自動備份、可還原。確定套用？`)) return;
+            $('applyBtn').disabled = true;
+            $('applyStatus').textContent = '備份中...';
+            // 備份目前狀態（只記被改的 id 的舊 tags）
+            const backup = plan.map(p => ({ id: p.id, oldTags: (entriesById[p.id] && Array.isArray(entriesById[p.id].tags)) ? entriesById[p.id].tags : null }));
+            localStorage.setItem('food_tag_backfill_backup', JSON.stringify(backup));
+            try {
+                const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+                a.download = 'food_tag_backup_' + Date.now() + '.json'; a.click();
+            } catch (e) {}
+            $('applyStatus').textContent = '寫入中...';
+            try {
+                // 分批（每批 450 筆）
+                for (let i = 0; i < plan.length; i += 450) {
+                    const batch = writeBatch(db);
+                    plan.slice(i, i + 450).forEach(p => batch.update(doc(db, ...COL, p.id), { tags: p.newTags }));
+                    await batch.commit();
+                }
+                $('applyStatus').textContent = `✅ 完成！已補 ${plan.length} 筆。回 App 重新整理即可看到標籤。`;
+                $('undoBtn').classList.remove('hidden');
+            } catch (e) { $('applyStatus').textContent = '❌ 寫入失敗：' + e.message; $('applyBtn').disabled = false; }
+        };
+
+        $('undoBtn').onclick = async () => {
+            const raw = localStorage.getItem('food_tag_backfill_backup');
+            if (!raw) { $('applyStatus').textContent = '找不到備份。'; return; }
+            const backup = JSON.parse(raw);
+            if (!confirm(`即將把上次套用的 ${backup.length} 筆紀錄標籤還原成套用前的狀態。確定？`)) return;
+            $('undoBtn').disabled = true;
+            $('applyStatus').textContent = '還原中...';
+            try {
+                if (!auth.currentUser) await signInAnonymously(auth);
+                for (let i = 0; i < backup.length; i += 450) {
+                    const batch = writeBatch(db);
+                    backup.slice(i, i + 450).forEach(b => batch.update(doc(db, ...COL, b.id), { tags: b.oldTags === null ? [] : b.oldTags }));
+                    await batch.commit();
+                }
+                $('applyStatus').textContent = `↩️ 已還原 ${backup.length} 筆。`;
+            } catch (e) { $('applyStatus').textContent = '❌ 還原失敗：' + e.message; }
+            $('undoBtn').disabled = false;
+        };
+    </script>
+</body>
+
+</html>
