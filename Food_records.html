@@ -1042,28 +1042,83 @@
         tailwind.config = {
             theme: {
                 extend: {
+                    // ✨ 軟糖質感主題：brand 改為珊瑚粉色票（重定義即可全站換色，markup 不動）
                     colors: {
                         brand: {
-                            50: '#fff7ed',
-                            100: '#ffedd5',
-                            500: '#f97316',
-                            600: '#ea580c',
-                            900: '#7c2d12',
+                            50: '#fff5f5',
+                            100: '#ffe4e6',
+                            200: '#fecdd3',
+                            300: '#fca5af',
+                            400: '#ff9a9a',
+                            500: '#ff8a8a',
+                            600: '#f76c6c',
+                            700: '#e85a5a',
+                            900: '#5c3a3a',
                         }
+                    },
+                    fontFamily: {
+                        sans: ['Fredoka', 'Noto Sans TC', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
 
         body {
-            font-family: 'Noto Sans TC', sans-serif;
-            background-color: #fff7ed;
+            /* ✨ 軟糖：圓體字（拉丁）+ Noto Sans TC（中文 fallback） */
+            font-family: 'Fredoka', 'Noto Sans TC', sans-serif;
+            /* ✨ 軟糖：粉→薰衣草放射漸層背景 */
+            background: radial-gradient(circle at 28% 18%, #fbeef4, #efe9fb 70%) fixed;
+            background-color: #fbeef4;
             overflow-x: hidden;
             /* 避免最後內容被底部導覽列遮住（含 iPhone 底部安全區） */
             padding-bottom: calc(72px + env(safe-area-inset-bottom)) !important;
+        }
+
+        /* ===== ✨ 軟糖質感主題層（只靠樣式，不動 markup / id / JS）===== */
+        /* 大圓角 */
+        .rounded-lg { border-radius: 0.95rem !important; }
+        .rounded-xl { border-radius: 1.3rem !important; }
+        .rounded-2xl { border-radius: 1.8rem !important; }
+
+        /* 柔和的暖粉色陰影（取代灰陰影，營造軟糖立體感） */
+        .shadow-sm { box-shadow: 0 4px 14px rgba(214, 120, 130, .12) !important; }
+        .shadow-md { box-shadow: 0 8px 20px rgba(214, 120, 130, .16) !important; }
+        .shadow-lg { box-shadow: 0 12px 30px rgba(214, 120, 130, .20) !important; }
+
+        /* 主要珊瑚按鈕 / FAB / 主模式：漸層 + 發光陰影 */
+        .bg-brand-500 {
+            background-image: linear-gradient(150deg, #ffc48a, #ff8a8a) !important;
+            box-shadow: 0 6px 16px rgba(255, 138, 138, .45) !important;
+        }
+        .hover\:bg-brand-600:hover {
+            background-image: linear-gradient(150deg, #ffb877, #f76c6c) !important;
+        }
+
+        /* 心願清單粉色按鈕：粉紅漸層 + 發光 */
+        .bg-pink-500 {
+            background-image: linear-gradient(150deg, #fba8c4, #f86fa0) !important;
+            box-shadow: 0 6px 16px rgba(248, 111, 160, .42) !important;
+        }
+        .hover\:bg-pink-600:hover {
+            background-image: linear-gradient(150deg, #f78fb4, #ec5b91) !important;
+        }
+
+        /* 轉為回憶的藍色按鈕也圓潤化 */
+        .bg-blue-100 { box-shadow: 0 4px 12px rgba(96, 134, 214, .18) !important; }
+
+        /* 輸入框 / 下拉聚焦時的柔光 */
+        input:focus, select:focus, textarea:focus {
+            box-shadow: 0 0 0 3px rgba(255, 138, 138, .25) !important;
+        }
+
+        /* 模式分頁：滑動指示器改珊瑚實心 + 發光（搭配 active 按鈕白字，貼近原型） */
+        #mode-indicator {
+            background: linear-gradient(150deg, #ffc48a, #ff8a8a) !important;
+            border: none !important;
+            box-shadow: 0 4px 12px rgba(255, 138, 138, .5) !important;
         }
 
         /* 防止 iOS Safari 點輸入框時自動放大（字體需 >= 16px） */
@@ -1154,7 +1209,7 @@
                 </div>
 
                 <button onclick="window.switchMode('food')" id="mode-food-btn"
-                    class="flex-1 relative z-10 py-1 text-sm font-bold rounded-full transition-colors duration-300 text-brand-600">
+                    class="flex-1 relative z-10 py-1 text-sm font-bold rounded-full transition-colors duration-300 text-white">
                     <i class="fa-solid fa-utensils mr-1"></i>餐廳美食
                 </button>
                 <button onclick="window.switchMode('night_market')" id="mode-night-btn"
@@ -1671,14 +1726,14 @@
 
             if (mode === 'food') {
                 indicator.style.transform = 'translateX(0)';
-                foodBtn.className = 'flex-1 relative z-10 py-1 text-sm font-bold rounded-full transition-colors duration-300 text-brand-600';
+                foodBtn.className = 'flex-1 relative z-10 py-1 text-sm font-bold rounded-full transition-colors duration-300 text-white';
                 nightBtn.className = 'flex-1 relative z-10 py-1 text-sm font-bold rounded-full transition-colors duration-300 text-gray-400 hover:text-brand-500';
                 if (titleIcon) titleIcon.innerText = '🍲';
                 if (titleText) titleText.innerText = '美食足跡';
                 if (titleIconBg) titleIconBg.className = 'inline-flex items-center justify-center w-8 h-8 bg-brand-100 rounded-full text-lg shadow-sm shrink-0 transition-colors';
             } else {
                 indicator.style.transform = 'translateX(100%)';
-                nightBtn.className = 'flex-1 relative z-10 py-1 text-sm font-bold rounded-full transition-colors duration-300 text-brand-600';
+                nightBtn.className = 'flex-1 relative z-10 py-1 text-sm font-bold rounded-full transition-colors duration-300 text-white';
                 foodBtn.className = 'flex-1 relative z-10 py-1 text-sm font-bold rounded-full transition-colors duration-300 text-gray-400 hover:text-brand-500';
                 if (titleIcon) titleIcon.innerText = '🌙';
                 if (titleText) titleText.innerText = '夜市巡航';
@@ -1976,7 +2031,7 @@
 
             const getStars = (count) => '⭐'.repeat(parseInt(count));
 
-            entries.forEach(entry => {
+            entries.forEach((entry, idx) => {
                 const hasMap = entry.coords ? '<i class="fa-solid fa-map-pin text-brand-500 ml-1"></i>' : '';
 
                 // Store images to map
@@ -2010,6 +2065,18 @@
 
                         imageSection = `<div class="flex gap-2 mb-3 overflow-x-auto hide-scrollbar snap-x snap-mandatory">${imagesHtml}</div>`;
                     }
+                } else {
+                    // ✨ 無照片：軟糖漸層 hero + 食物 icon（貼近原型）
+                    const heroGradients = [
+                        'linear-gradient(150deg,#ffc48a,#ff8a8a)',
+                        'linear-gradient(150deg,#d8a878,#9c6b42)',
+                        'linear-gradient(150deg,#c98b6a,#7a3f28)',
+                        'linear-gradient(150deg,#8fe3c4,#3fa796)'
+                    ];
+                    const heroIcon = (entry.category === 'night_market') ? 'fa-tent' : 'fa-utensils';
+                    imageSection = `<div class="w-full h-40 rounded-lg mb-3 flex items-center justify-center" style="background:${heroGradients[idx % heroGradients.length]}">
+                                        <i class="fa-solid ${heroIcon} text-white text-4xl opacity-90" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,.15))"></i>
+                                    </div>`;
                 }
 
                 const card = document.createElement('div');
