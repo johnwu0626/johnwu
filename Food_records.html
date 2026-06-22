@@ -253,6 +253,8 @@
             });
             return result;
         }
+        // 掛到全域，讓另一個（非 module）script 區塊的表單送出也能呼叫
+        window.parseTags = parseTags;
 
         window.filterAndRender = function () {
             const ratingValue = parseInt(document.getElementById('ratingFilter').value);
@@ -1362,6 +1364,17 @@
                                 placeholder="自動填入...">
                         </div>
                     </div>
+                    <!-- ✨ 標籤欄位（選店家時自動帶入 Google 分類，可自由增刪） -->
+                    <div>
+                        <label class="block text-xs font-bold mb-0.5 ml-1 text-gray-700">標籤</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2.5 text-pink-500 text-sm"><i
+                                    class="fa-solid fa-tags"></i></span>
+                            <input type="text" id="wishlistTagsInput"
+                                class="w-full pl-9 pr-4 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 transition"
+                                placeholder="用逗號分隔，例如：約會, 拉麵">
+                        </div>
+                    </div>
                     <button type="submit"
                         class="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-lg shadow-md hover:shadow-lg transition duration-200 flex items-center justify-center gap-2">
                         <i class="fa-solid fa-heart"></i> 加入心願清單
@@ -2324,9 +2337,11 @@
                         lat: place.geometry.location.lat(),
                         lng: place.geometry.location.lng()
                     },
-                    placeId: place.place_id,
-                    tags: window.tagsFromGoogleTypes(place.types) // ✨ 帶入 Google 分類標籤，轉為回憶時沿用
+                    placeId: place.place_id
                 };
+
+                // ✨ 依 Google 分類自動填入心願清單的「標籤」欄（可再手動增刪）
+                window.applyAutoTags(place.types, 'wishlistTagsInput');
             });
         }
 
@@ -2378,6 +2393,8 @@
             e.preventDefault();
             const isNight = currentMode === 'night_market';
 
+            const wishlistTags = window.parseTags(document.getElementById('wishlistTagsInput').value);
+
             let entry;
             if (isNight) {
                 const name = document.getElementById('wishlistName').value;
@@ -2388,6 +2405,7 @@
                     dishes: dishes,
                     type: 'wishlist',
                     category: currentMode,
+                    tags: wishlistTags,
                     date: new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }),
                     timestamp: Date.now()
                 };
@@ -2400,6 +2418,7 @@
                     ...wishlistPlaceDetails,
                     type: 'wishlist', // Tag as wishlist
                     category: currentMode,
+                    tags: wishlistTags, // ✨ 由可見的標籤欄取得（含 Google 自動分類 + 手動增刪）
                     date: new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }),
                     timestamp: Date.now()
                 };
@@ -2411,6 +2430,7 @@
             document.getElementById('wishlistForm').reset();
             wishlistPlaceDetails = null;
             document.getElementById('wishlistDishes').value = '';
+            document.getElementById('wishlistTagsInput').value = '';
             alert("已加入心願清單！");
         });
 
@@ -2462,8 +2482,9 @@
         };
 
         // 把 Google 分類標籤合併進「標籤」輸入框（保留既有、不重複）
-        window.applyAutoTags = function (types) {
-            const input = document.getElementById('tagsInput');
+        // inputId 預設是回憶表單的 tagsInput，心願清單傳入 wishlistTagsInput
+        window.applyAutoTags = function (types, inputId = 'tagsInput') {
+            const input = document.getElementById(inputId);
             const mapped = window.tagsFromGoogleTypes(types);
             if (!input || mapped.length === 0) return;
             const seen = new Set();
@@ -2658,7 +2679,7 @@
                 rating: document.getElementById('rating').value,
                 priceLevel: document.getElementById('priceLevel').value, // Add priceLevel
                 notes: document.getElementById('notes').value,
-                tags: parseTags(document.getElementById('tagsInput').value),
+                tags: window.parseTags(document.getElementById('tagsInput').value),
                 date: new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }),
                 category: currentMode,
                 coords: currentPlaceCoords,
