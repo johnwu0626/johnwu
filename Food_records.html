@@ -203,10 +203,8 @@
             }
         }
 
-        // ✨ 在輸入框下方顯示「已用過的標籤」供一鍵套用
+        // ✨ 在輸入框下方顯示「已用過的標籤」供一鍵套用（回憶與心願清單共用）
         window.renderTagSuggestions = function () {
-            const box = document.getElementById('tagSuggestions');
-            if (!box) return;
             const seen = new Map(); // key(lower) -> 原始標籤
             window.allFetchedEntries.forEach(entry => {
                 if ((entry.category || 'food') !== currentMode) return;
@@ -218,17 +216,26 @@
                 }
             });
             const tags = Array.from(seen.values()).slice(0, 20);
-            box.innerHTML = tags.map(tag => `
-                <button type="button" onclick="addTagToInput('${tag.replace(/'/g, "\\'")}')"
-                    class="text-xs text-gray-500 bg-gray-100 hover:bg-brand-50 hover:text-brand-600 border border-gray-200 px-2 py-0.5 rounded-full transition">
-                    + ${tag}
-                </button>
-            `).join('');
+            // 同時渲染到回憶表單與心願清單表單的建議區
+            const targets = [
+                { boxId: 'tagSuggestions', inputId: 'tagsInput' },
+                { boxId: 'wishlistTagSuggestions', inputId: 'wishlistTagsInput' },
+            ];
+            targets.forEach(({ boxId, inputId }) => {
+                const box = document.getElementById(boxId);
+                if (!box) return;
+                box.innerHTML = tags.map(tag => `
+                    <button type="button" onclick="addTagToInput('${tag.replace(/'/g, "\\'")}', '${inputId}')"
+                        class="text-xs text-gray-500 bg-gray-100 hover:bg-brand-50 hover:text-brand-600 border border-gray-200 px-2 py-0.5 rounded-full transition">
+                        + ${tag}
+                    </button>
+                `).join('');
+            });
         }
 
-        // ✨ 點建議標籤 → 追加到輸入框（避免重複）
-        window.addTagToInput = function (tag) {
-            const input = document.getElementById('tagsInput');
+        // ✨ 點建議標籤 → 追加到指定輸入框（避免重複）
+        window.addTagToInput = function (tag, inputId = 'tagsInput') {
+            const input = document.getElementById(inputId);
             if (!input) return;
             const existing = parseTags(input.value);
             if (!existing.some(t => t.toLowerCase() === tag.toLowerCase())) {
@@ -1429,6 +1436,7 @@
                                 class="w-full pl-9 pr-4 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 transition"
                                 placeholder="用逗號分隔，例如：約會, 拉麵">
                         </div>
+                        <div id="wishlistTagSuggestions" class="flex flex-wrap gap-1.5 mt-1.5"></div>
                     </div>
                     <button type="submit"
                         class="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-lg shadow-md hover:shadow-lg transition duration-200 flex items-center justify-center gap-2">
