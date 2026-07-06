@@ -365,6 +365,103 @@
                 </section>`;
         };
 
+        // ✨ 取一筆紀錄的年份（timestamp 優先，退回 date 字串）
+        window.__yearOf = function (e) {
+            if (e.timestamp) { const d = new Date(e.timestamp); if (!isNaN(d)) return d.getFullYear(); }
+            if (e.date) { const m = String(e.date).match(/(\d{4})/); if (m) return +m[1]; }
+            return null;
+        };
+        function _memEntriesOfMode() {
+            return (window.allFetchedEntries || []).filter(e => e.type !== 'wishlist' && (e.category || 'food') === currentMode);
+        }
+
+        // ✨ 年度回顧（回憶再現引擎）
+        window.__yrYear = null;
+        window.renderYearReview = function () {
+            const box = document.getElementById('yearReviewSection'); if (!box) return;
+            const mem = _memEntriesOfMode();
+            const years = [...new Set(mem.map(window.__yearOf).filter(Boolean))].sort((a, b) => b - a);
+            if (years.length === 0) { box.innerHTML = ''; return; }
+            if (!window.__yrYear || !years.includes(window.__yrYear)) window.__yrYear = years[0];
+            const y = window.__yrYear;
+            const list = mem.filter(e => window.__yearOf(e) === y);
+            const rated = list.filter(e => parseInt(e.rating));
+            const avg = rated.length ? (rated.reduce((s, e) => s + parseInt(e.rating), 0) / rated.length).toFixed(1) : '—';
+            const norm = s => (s || '').toLowerCase().replace(/\s+/g, '');
+            const vc = {}; list.forEach(e => { const k = norm(e.name); if (k) vc[k] = (vc[k] || 0) + 1; });
+            let topName = '—', topN = 0; list.forEach(e => { const k = norm(e.name); if (vc[k] > topN) { topN = vc[k]; topName = e.name; } });
+            const cities = new Set(list.map(e => (e.address && window.extractLocation) ? window.extractLocation(e.address).city : null).filter(Boolean));
+            const tf = {}; list.forEach(e => Array.isArray(e.tags) && e.tags.forEach(t => tf[t] = (tf[t] || 0) + 1));
+            const topTags = Object.entries(tf).sort((a, b) => b[1] - a[1]).slice(0, 4).map(x => x[0]);
+            const opts = years.map(yy => `<option value="${yy}" ${yy === y ? 'selected' : ''}>${yy} 年</option>`).join('');
+            box.innerHTML = `<section class="bg-white p-4 rounded-2xl shadow-lg border border-brand-100">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="flex items-center gap-2 font-bold text-brand-900 text-base"><span class="text-lg">📅</span> 年度回顧</h2>
+                    <select onchange="window.__yrYear=+this.value; window.renderYearReview()" class="bg-brand-50 border border-brand-200 rounded-lg py-1 px-2 text-sm">${opts}</select>
+                </div>
+                <div class="grid grid-cols-2 gap-3 text-center">
+                    <div class="bg-brand-50 rounded-xl p-3"><div class="text-2xl font-bold text-brand-600">${list.length}</div><div class="text-xs text-gray-500">筆回憶</div></div>
+                    <div class="bg-brand-50 rounded-xl p-3"><div class="text-2xl font-bold text-brand-600">${cities.size}</div><div class="text-xs text-gray-500">個縣市</div></div>
+                    <div class="bg-brand-50 rounded-xl p-3"><div class="text-2xl font-bold text-brand-600">${avg}</div><div class="text-xs text-gray-500">平均星等</div></div>
+                    <div class="bg-brand-50 rounded-xl p-3"><div class="text-sm font-bold text-brand-900 truncate">${topName}</div><div class="text-xs text-gray-500">最常造訪${topN > 1 ? ' (' + topN + '次)' : ''}</div></div>
+                </div>
+                ${topTags.length ? `<div class="flex flex-wrap gap-1.5 mt-3">${topTags.map(t => `<span class="text-xs text-brand-600 bg-brand-50 border border-brand-100 px-2 py-0.5 rounded-full">#${t}</span>`).join('')}</div>` : ''}
+            </section>`;
+        };
+
+        // ✨ 里程碑清單（回憶再現引擎）
+        window.renderMilestones = function () {
+            const box = document.getElementById('milestonesSection'); if (!box) return;
+            const ms = _memEntriesOfMode().filter(e => e.milestone).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+            if (ms.length === 0) { box.innerHTML = ''; return; }
+            const rows = ms.map(e => `<button type="button" onclick="searchByTag('${(e.name || '').replace(/'/g, "\\'")}')" class="w-full text-left flex items-center gap-3 bg-brand-50 hover:bg-brand-100 rounded-xl px-3 py-2 transition">
+                    <i class="fa-solid fa-star text-brand-500 shrink-0"></i>
+                    <span class="min-w-0 flex-1"><span class="block text-sm font-bold text-brand-900 truncate">${e.milestoneLabel || e.name}</span><span class="block text-xs text-gray-500 truncate">${e.milestoneLabel ? (e.name || '') + ' · ' : ''}${e.date || ''}</span></span>
+                </button>`).join('');
+            box.innerHTML = `<section class="bg-white p-4 rounded-2xl shadow-lg border border-brand-100"><h2 class="flex items-center gap-2 font-bold text-brand-900 text-base mb-2"><span class="text-lg">🏆</span> 里程碑<span class="text-xs font-medium text-brand-500 bg-brand-50 px-2 py-0.5 rounded-full ml-auto">${ms.length}</span></h2><div class="space-y-2">${rows}</div></section>`;
+        };
+
+        // ✨ 相片書：年份下拉 + 產生列印用內容 → window.print() 讓使用者存 PDF
+        window.populateBookYears = function () {
+            const sel = document.getElementById('bookYearSelect'); if (!sel) return;
+            const years = [...new Set(_memEntriesOfMode().map(window.__yearOf).filter(Boolean))].sort((a, b) => b - a);
+            const cur = sel.value;
+            sel.innerHTML = `<option value="all">全部年份</option>` + years.map(y => `<option value="${y}">${y} 年</option>`).join('');
+            if (cur) sel.value = cur;
+        };
+        window.buildPhotoBook = function () {
+            const sel = document.getElementById('bookYearSelect');
+            const yv = sel ? sel.value : 'all';
+            let list = _memEntriesOfMode();
+            if (yv !== 'all') list = list.filter(e => String(window.__yearOf(e)) === yv);
+            list = list.slice().sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+            if (list.length === 0) { alert('這個範圍沒有回憶可做成相片書'); return; }
+            const modeLabel = currentMode === 'night_market' ? '夜市巡航' : '餐廳美食';
+            const esc = s => String(s || '').replace(/</g, '&lt;');
+            const cover = `<div class="pb-cover"><div style="font-size:64px">🍽️</div><h1>美食足跡</h1><div class="pb-sub">夫妻專屬 ❤ ${modeLabel}</div><div class="pb-sub">${yv === 'all' ? '全部回憶' : yv + ' 年'} · 共 ${list.length} 篇</div></div>`;
+            const pages = list.map(e => {
+                const imgs = (e.imageUrls && e.imageUrls.length) ? e.imageUrls : (e.imageUrl ? [e.imageUrl] : []);
+                const img = imgs.length ? `<img class="pb-photo" src="${imgs[0]}">` : '';
+                const stars = '★'.repeat(parseInt(e.rating) || 0);
+                return `<div class="pb-entry">
+                    ${e.milestone ? `<div class="pb-badge">🏆 里程碑${e.milestoneLabel ? '：' + esc(e.milestoneLabel) : ''}</div>` : ''}
+                    ${img}
+                    <div class="pb-head"><span class="pb-name">${esc(e.name)}</span><span class="pb-date">${esc(e.date)}</span></div>
+                    <div class="pb-meta">${stars}${e.address ? ' · ' + esc(e.address) : ''}</div>
+                    ${e.dishes ? `<div class="pb-dishes">🍴 ${esc(e.dishes)}</div>` : ''}
+                    ${e.notes ? `<div class="pb-notes">${esc(e.notes)}</div>` : ''}
+                    ${Array.isArray(e.tags) && e.tags.length ? `<div class="pb-tags">${e.tags.map(t => '#' + esc(t)).join('　')}</div>` : ''}
+                </div>`;
+            }).join('');
+            const box = document.getElementById('photoBook');
+            box.innerHTML = cover + pages;
+            const done = () => { document.body.classList.remove('printing'); box.innerHTML = ''; window.removeEventListener('afterprint', done); };
+            window.addEventListener('afterprint', done);
+            const imgEls = [...box.querySelectorAll('img')];
+            Promise.all(imgEls.map(im => im.complete ? 1 : new Promise(r => { im.onload = im.onerror = r; setTimeout(r, 4000); })))
+                .then(() => { document.body.classList.add('printing'); window.print(); });
+        };
+
         // ✨ 在輸入框下方顯示「已用過的標籤」供一鍵套用（回憶與心願清單共用）
         window.renderTagSuggestions = function () {
             const seen = new Map(); // key(lower) -> 原始標籤
@@ -1135,6 +1232,21 @@
             }, 200);
         }
 
+        // ✨ 里程碑：手動釘選某筆回憶（第一次約會/求婚那餐…），可加標註
+        window.toggleMilestone = async function (docId) {
+            const entry = window.allFetchedEntries.find(e => e.id === docId);
+            if (!entry) return;
+            const makeMilestone = !entry.milestone;
+            let label = entry.milestoneLabel || '';
+            if (makeMilestone) {
+                label = (prompt('里程碑標註（例如：第一次約會、求婚那餐），可留空：', label) || '').trim();
+            }
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'food_entries', docId);
+                await updateDoc(docRef, { milestone: makeMilestone, milestoneLabel: makeMilestone ? label : '' });
+            } catch (e) { alert('里程碑更新失敗：' + e.message); }
+        };
+
         window.deleteEntryFromCloud = async function (docId, silent = false) {
             if (!currentUser) return;
             if (silent || confirm('確定要刪除這筆回憶嗎？')) {
@@ -1311,6 +1423,28 @@
             background-image: none !important;
             border: none !important;
             box-shadow: 2px 4px 10px rgba(60, 51, 47, .1) !important;
+        }
+
+        /* ✨ 相片書：螢幕上隱藏，只在列印時顯示（讓使用者「另存為 PDF」） */
+        #photoBook { display: none; }
+        @media print {
+            body.printing > *:not(#photoBook) { display: none !important; }
+            body.printing { padding: 0 !important; background: #fff !important; }
+            #photoBook { display: block !important; color: #2a2320; }
+            .pb-cover { text-align: center; padding: 30vh 0; page-break-after: always; }
+            .pb-cover h1 { font-family: "Noto Serif TC", serif; font-size: 44px; margin: 8px 0; }
+            .pb-cover .pb-sub { color: #7C726C; font-size: 15px; margin-top: 6px; }
+            .pb-entry { page-break-inside: avoid; padding: 20px 8px; border-bottom: 1.5px dashed #D2C8B0; }
+            .pb-badge { display: inline-block; background: #E0523F; color: #fff; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 999px; margin-bottom: 8px; }
+            .pb-photo { width: 100%; max-height: 62vh; object-fit: cover; border-radius: 8px; margin-bottom: 10px; }
+            .pb-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+            .pb-name { font-family: "Noto Serif TC", serif; font-size: 22px; font-weight: 700; }
+            .pb-date { color: #7C726C; font-size: 13px; white-space: nowrap; }
+            .pb-meta { color: #8a7f6a; font-size: 13px; margin: 4px 0; }
+            .pb-dishes { font-size: 14px; margin: 6px 0; }
+            .pb-notes { font-size: 13px; color: #5f5548; font-style: italic; margin: 6px 0; }
+            .pb-tags { font-size: 12px; color: #607A56; margin-top: 6px; }
+            @page { margin: 12mm; }
         }
 
         /* 防止 iOS Safari 點輸入框時自動放大（字體需 >= 16px） */
@@ -1876,9 +2010,26 @@
             </div>
         </div>
 
+        <!-- ✨ 回憶再現引擎：年度回顧 + 里程碑（由 JS 動態填入） -->
+        <div id="yearReviewSection"></div>
+        <div id="milestonesSection"></div>
+
+        <!-- ✨ 相片書：一鍵產生可存成 PDF 的實體回憶冊 -->
+        <div class="bg-white p-4 rounded-2xl shadow-lg border border-brand-100">
+            <h2 class="flex items-center gap-2 font-bold text-brand-900 text-base mb-1"><span class="text-lg">📖</span> 相片書（傳家）</h2>
+            <p class="text-xs text-gray-400 mb-3">把回憶排版成一本冊子，用瀏覽器列印 →「另存為 PDF」即可保存/印刷。</p>
+            <div class="flex items-center gap-2">
+                <select id="bookYearSelect" class="flex-1 bg-brand-50 border border-brand-200 rounded-lg py-2 px-3 text-sm"></select>
+                <button onclick="buildPhotoBook()" class="bg-brand-500 hover:bg-brand-600 text-white font-bold px-4 py-2 rounded-lg shadow-md shrink-0">產生相片書</button>
+            </div>
+        </div>
+
         <!-- ✨ 疑似重複店家（資料健檢，只提示不自動合併）由 renderDuplicates 動態填入 -->
         <div id="duplicatesSection"></div>
     </div>
+
+    <!-- ✨ 相片書列印容器（平時隱藏，只在列印時顯示） -->
+    <div id="photoBook" class="hidden"></div>
 
     <!-- 圖片燈箱 (Lightbox) - 支援左右切換與觸控 -->
     <div id="lightbox"
@@ -2297,6 +2448,9 @@
                 } else {
                     actionButtons = `
                         <div class="absolute top-4 right-4 z-10 flex gap-2">
+                            <button onclick="toggleMilestone('${entry.id}')" class="transition p-2 bg-white/80 rounded-full w-10 h-10 flex items-center justify-center shadow-sm ${entry.milestone ? 'text-brand-500' : 'text-gray-400 hover:text-brand-500'}" title="設為里程碑">
+                                <i class="fa-${entry.milestone ? 'solid' : 'regular'} fa-star"></i>
+                            </button>
                             <button onclick="editEntry('${entry.id}')" class="text-gray-400 hover:text-blue-500 transition p-2 bg-white/80 rounded-full w-10 h-10 flex items-center justify-center shadow-sm" title="編輯">
                                 <i class="fa-solid fa-pen"></i>
                             </button>
@@ -2320,8 +2474,10 @@
 
                 card.innerHTML = `
                     ${actionButtons}
-                    
+
                     ${imageSection}
+
+                    ${entry.milestone ? `<div class="inline-flex items-center gap-1.5 mb-2 text-xs font-bold text-white bg-brand-500 px-2.5 py-1 rounded-full"><i class="fa-solid fa-star"></i>里程碑${entry.milestoneLabel ? '：' + entry.milestoneLabel : ''}</div>` : ''}
 
                     <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-2 pr-8">
                         <h3 class="text-lg font-bold text-gray-800 break-words leading-tight">
@@ -2444,8 +2600,11 @@
             document.getElementById('stat-total-memory').innerText = memoryEntries.length;
             document.getElementById('stat-total-wishlist').innerText = wishlistEntries.length;
 
-            // ✨ 疑似重複偵測（不依賴 Chart，放在 guard 前確保一定執行）
+            // ✨ 疑似重複偵測 + 回憶再現引擎 + 相片書年份（不依賴 Chart，放在 guard 前確保一定執行）
             window.renderDuplicates();
+            window.renderYearReview();
+            window.renderMilestones();
+            window.populateBookYears();
 
             if (typeof Chart === 'undefined') return;
 
