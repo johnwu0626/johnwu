@@ -114,6 +114,8 @@
                     window.renderTagSuggestions();
 
                     window.filterAndRender();
+                    // 統計分頁（含疑似重複面板）在資料變動時同步刷新
+                    if (typeof currentTab !== 'undefined' && currentTab === 'stats' && window.updateStats) window.updateStats();
                     document.getElementById('loadingIndicator').classList.add('hidden');
                 });
             } catch (e) {
@@ -202,6 +204,69 @@
                 locationSelect.value = currentSelection;
             }
         }
+
+        // ✨ 疑似重複店家偵測（只提示、不自動合併）：依 placeId，或「正規化店名+縣市」分組
+        window.renderDuplicates = function () {
+            const box = document.getElementById('duplicatesSection');
+            if (!box) return;
+            const normName = (s) => (s || '').toLowerCase().replace(/\s+/g, '').replace(/[()（）\-·,，.、!！]/g, '');
+            const entries = (window.allFetchedEntries || []).filter(e => {
+                if (e.type === 'wishlist') return false;
+                return (e.category || 'food') === currentMode;
+            });
+            // 分組
+            const groups = {};
+            entries.forEach(e => {
+                const city = (e.address && window.extractLocation) ? window.extractLocation(e.address).city : '其他';
+                const key = e.placeId ? ('pid:' + e.placeId) : ('nm:' + normName(e.name) + '@' + city);
+                if (!normName(e.name) && !e.placeId) return; // 無名無 placeId 略過
+                (groups[key] = groups[key] || []).push(e);
+            });
+            const dupGroups = Object.values(groups).filter(g => g.length >= 2)
+                .sort((a, b) => b.length - a.length);
+
+            const modeLabel = currentMode === 'night_market' ? '夜市' : '餐廳';
+            if (dupGroups.length === 0) {
+                box.innerHTML = `<div class="bg-white p-4 rounded-2xl shadow-lg border border-brand-100 text-sm text-gray-500 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-check text-green-500"></i> 沒有偵測到疑似重複的${modeLabel}紀錄。</div>`;
+                return;
+            }
+
+            const totalDup = dupGroups.reduce((n, g) => n + g.length, 0);
+            const groupsHtml = dupGroups.map(g => {
+                const rows = g.map(e => {
+                    const city = (e.address && window.extractLocation) ? window.extractLocation(e.address).city : '';
+                    const stars = '⭐'.repeat(parseInt(e.rating) || 0);
+                    return `<div class="flex items-center gap-2 py-1.5 border-t border-dashed border-gray-100">
+                        <span class="min-w-0 flex-1">
+                            <span class="block text-sm text-gray-800 truncate">${e.name || '（未命名）'}</span>
+                            <span class="block text-xs text-gray-400 truncate">${e.date || ''} ${city ? '· ' + city : ''} ${stars ? '· ' + stars : ''}</span>
+                        </span>
+                        <button type="button" onclick="switchTab('memory'); editEntry('${e.id}')"
+                            class="text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-100 px-2 py-1 rounded-lg shrink-0">編輯</button>
+                        <button type="button" onclick="deleteEntryFromCloud('${e.id}')"
+                            class="text-xs text-red-500 bg-red-50 hover:bg-red-100 border border-red-100 px-2 py-1 rounded-lg shrink-0">刪除</button>
+                    </div>`;
+                }).join('');
+                return `<div class="rounded-xl bg-gray-50 border border-gray-100 p-3">
+                    <div class="text-sm font-bold text-brand-900 mb-1 flex items-center gap-2">
+                        <i class="fa-solid fa-clone text-brand-400"></i>${g[0].name || '（未命名）'}
+                        <span class="text-xs font-medium text-brand-500 bg-brand-50 px-2 py-0.5 rounded-full ml-auto">${g.length} 筆</span>
+                    </div>
+                    ${rows}
+                </div>`;
+            }).join('');
+
+            box.innerHTML = `
+                <section class="bg-white p-4 rounded-2xl shadow-lg border border-brand-100">
+                    <h2 class="flex items-center gap-2 font-bold text-brand-900 text-base mb-1">
+                        <span class="text-lg">🔍</span> 疑似重複店家
+                        <span class="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full ml-auto">${dupGroups.length} 組 / ${totalDup} 筆</span>
+                    </h2>
+                    <p class="text-xs text-gray-400 mb-3">依 Google 地點或「店名+縣市」判斷，僅提示不會自動合併。請自行「編輯」或「刪除」多餘的一筆。</p>
+                    <div class="space-y-3">${groupsHtml}</div>
+                </section>`;
+        };
 
         // ✨ 回憶回顧卡片：「N 年前的今天你們吃了◯◯」（只在美食回憶分頁、當日有往年紀錄時顯示）
         window.renderOnThisDay = function () {
@@ -1743,6 +1808,9 @@
                 </div>
             </div>
         </div>
+
+        <!-- ✨ 疑似重複店家（資料健檢，只提示不自動合併）由 renderDuplicates 動態填入 -->
+        <div id="duplicatesSection"></div>
     </div>
 
     <!-- 圖片燈箱 (Lightbox) - 支援左右切換與觸控 -->
@@ -2308,6 +2376,9 @@
             // 1. Update Totals
             document.getElementById('stat-total-memory').innerText = memoryEntries.length;
             document.getElementById('stat-total-wishlist').innerText = wishlistEntries.length;
+
+            // ✨ 疑似重複偵測（不依賴 Chart，放在 guard 前確保一定執行）
+            window.renderDuplicates();
 
             if (typeof Chart === 'undefined') return;
 
