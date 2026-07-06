@@ -436,6 +436,11 @@
             if (!currentUser) { alert("尚未連線"); return; }
             if (!coupleCode) { window.openSettings(); return; }
 
+            // ✨ 防呆：Firestore 不接受 undefined（例如 Google 地點沒有電話/評分時），一律轉成 null
+            if (entry && typeof entry === 'object') {
+                Object.keys(entry).forEach(k => { if (entry[k] === undefined) entry[k] = null; });
+            }
+
             const submitBtn = document.getElementById('submitBtn');
             const originalBtnText = submitBtn.innerHTML;
             submitBtn.disabled = true;
@@ -2403,16 +2408,16 @@
                 document.getElementById('wishlistPriceLevel').value = pText; // Restore missing line
 
                 wishlistPlaceDetails = {
-                    name: cleanName,
-                    address: place.formatted_address,
-                    rating: place.rating,
-                    phoneNumber: place.formatted_phone_number,
+                    name: cleanName || null,
+                    address: place.formatted_address || null,
+                    rating: place.rating ?? null,
+                    phoneNumber: place.formatted_phone_number || null,
                     priceLevel: pLevel,
                     coords: {
                         lat: place.geometry.location.lat(),
                         lng: place.geometry.location.lng()
                     },
-                    placeId: place.place_id
+                    placeId: place.place_id || null
                 };
 
                 // ✨ 依 Google 分類自動填入心願清單的「標籤」欄（可再手動增刪）
