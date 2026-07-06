@@ -1064,7 +1064,7 @@
             // Pop effect
             scrollingNames.innerText = selectedRandomEntry.name;
             scrollingNames.style.transform = 'scale(1.3)';
-            scrollingNames.style.color = '#ea580c';
+            scrollingNames.style.color = '#E0523F';
 
             setTimeout(() => {
                 animArea.classList.add('hidden');
@@ -1220,83 +1220,97 @@
         tailwind.config = {
             theme: {
                 extend: {
-                    // ✨ 軟糖質感主題：brand 改為珊瑚粉色票（重定義即可全站換色，markup 不動）
+                    // ✨ 餐桌手帳主題：brand 改為番茄紅暖色票（重定義即可全站換色，markup 不動）
                     colors: {
                         brand: {
-                            50: '#fff5f5',
-                            100: '#ffe4e6',
-                            200: '#fecdd3',
-                            300: '#fca5af',
-                            400: '#ff9a9a',
-                            500: '#ff8a8a',
-                            600: '#f76c6c',
-                            700: '#e85a5a',
-                            900: '#5c3a3a',
+                            50: '#FAF6EE',
+                            100: '#F3ECE0',
+                            200: '#EFCBC3',
+                            300: '#E7A89C',
+                            400: '#E77A69',
+                            500: '#E0523F',
+                            600: '#C8412F',
+                            700: '#A93629',
+                            900: '#3C332F',
                         }
                     },
                     fontFamily: {
-                        sans: ['Fredoka', 'Noto Sans TC', 'sans-serif'],
+                        sans: ['system-ui', '-apple-system', '"Noto Sans TC"', 'sans-serif'],
                     }
                 }
             }
         }
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap');
 
         body {
-            /* ✨ 軟糖：圓體字（拉丁）+ Noto Sans TC（中文 fallback） */
-            font-family: 'Fredoka', 'Noto Sans TC', sans-serif;
-            /* ✨ 軟糖：粉→薰衣草放射漸層背景 */
-            background: radial-gradient(circle at 28% 18%, #fbeef4, #efe9fb 70%) fixed;
-            background-color: #fbeef4;
+            /* 餐桌手帳：內文無襯線清晰、標題襯線有溫度 */
+            font-family: system-ui, -apple-system, "Noto Sans TC", "Segoe UI", sans-serif;
+            background: #FAF6EE;
+            color: #3C332F;
             overflow-x: hidden;
             /* 避免最後內容被底部導覽列遮住（含 iPhone 底部安全區） */
             padding-bottom: calc(72px + env(safe-area-inset-bottom)) !important;
         }
 
-        /* ===== ✨ 軟糖質感主題層（只靠樣式，不動 markup / id / JS）===== */
-        /* 大圓角 */
-        .rounded-lg { border-radius: 0.95rem !important; }
-        .rounded-xl { border-radius: 1.3rem !important; }
-        .rounded-2xl { border-radius: 1.8rem !important; }
+        /* ===== 餐桌手帳 主題層（只靠樣式，不動 markup / id / JS）===== */
+        /* 標題用襯線字 */
+        h1, h2, h3 { font-family: "Noto Serif TC", serif; }
 
-        /* 柔和的暖粉色陰影（取代灰陰影，營造軟糖立體感） */
-        .shadow-sm { box-shadow: 0 4px 14px rgba(214, 120, 130, .12) !important; }
-        .shadow-md { box-shadow: 0 8px 20px rgba(214, 120, 130, .16) !important; }
-        .shadow-lg { box-shadow: 0 12px 30px rgba(214, 120, 130, .20) !important; }
+        /* 文字色系收斂到暖褐 */
+        .text-gray-800, .text-gray-900 { color: #3C332F !important; }
+        .text-gray-600, .text-gray-500 { color: #7C726C !important; }
+        .text-brand-600 { color: #607A56 !important; }   /* 標籤 chip 橄欖綠 */
 
-        /* 主要珊瑚按鈕 / FAB / 主模式：漸層 + 發光陰影 */
+        /* 卡片：紙感底 + 手帳撕線虛線邊 + 輕盈紙張陰影 */
+        .bg-white { background-color: #FFFDF9 !important; }
+        .border-brand-100 { border: 1.5px dashed #D2C8B0 !important; }
+        .border-brand-200, .border-gray-200 { border-color: #E6DEC9 !important; }
+        .shadow-sm, .shadow-md, .shadow-lg { box-shadow: 2px 4px 10px rgba(60, 51, 47, .06) !important; }
+        .rounded-lg { border-radius: 0.9rem !important; }
+        .rounded-xl { border-radius: 1rem !important; }
+        .rounded-2xl { border-radius: 1.2rem !important; }
+        /* 注意：不動 .rounded-full，保留 FAB/圓點/膠囊的正圓 */
+
+        /* 主要按鈕 / FAB / mode active：番茄紅實心（取代軟糖漸層） */
         .bg-brand-500 {
-            background-image: linear-gradient(150deg, #ffc48a, #ff8a8a) !important;
-            box-shadow: 0 6px 16px rgba(255, 138, 138, .45) !important;
+            background-image: none !important;
+            background-color: #E0523F !important;
+            box-shadow: 2px 6px 14px rgba(224, 82, 63, .28) !important;
         }
         .hover\:bg-brand-600:hover {
-            background-image: linear-gradient(150deg, #ffb877, #f76c6c) !important;
+            background-image: none !important;
+            background-color: #C8412F !important;
         }
 
-        /* 心願清單粉色按鈕：粉紅漸層 + 發光 */
+        /* 心願清單整體走橄欖綠（次要色），與回憶的番茄紅區分、且都在紙感調性內 */
         .bg-pink-500 {
-            background-image: linear-gradient(150deg, #fba8c4, #f86fa0) !important;
-            box-shadow: 0 6px 16px rgba(248, 111, 160, .42) !important;
+            background-image: none !important;
+            background-color: #607A56 !important;
+            box-shadow: 2px 6px 14px rgba(96, 122, 86, .25) !important;
         }
-        .hover\:bg-pink-600:hover {
-            background-image: linear-gradient(150deg, #f78fb4, #ec5b91) !important;
-        }
+        .hover\:bg-pink-600:hover { background-image: none !important; background-color: #4F6848 !important; }
+        .text-pink-500, .text-pink-400 { color: #607A56 !important; }
+        .border-pink-100 { border-color: #d7dfc9 !important; }
+        .bg-pink-50 { background-color: #eef1e6 !important; }
+        .focus\:ring-pink-500:focus { --tw-ring-color: rgba(96, 122, 86, .4) !important; }
 
-        /* 轉為回憶的藍色按鈕也圓潤化 */
-        .bg-blue-100 { box-shadow: 0 4px 12px rgba(96, 134, 214, .18) !important; }
+        /* 轉為回憶的藍色按鈕 → 紙感中性 */
+        .bg-blue-100 { background-color: #F3ECE0 !important; box-shadow: inset 0 0 0 1px #E6DEC9 !important; }
+        .text-blue-700 { color: #607A56 !important; }
 
-        /* 輸入框 / 下拉聚焦時的柔光 */
+        /* 輸入框 / 下拉聚焦：番茄紅細光圈 */
         input:focus, select:focus, textarea:focus {
-            box-shadow: 0 0 0 3px rgba(255, 138, 138, .25) !important;
+            box-shadow: 0 0 0 3px rgba(224, 82, 63, .2) !important;
         }
 
-        /* 模式分頁：滑動指示器改珊瑚實心 + 發光（搭配 active 按鈕白字，貼近原型） */
+        /* 模式分頁：滑動指示器改番茄紅實心（搭配 active 白字） */
         #mode-indicator {
-            background: linear-gradient(150deg, #ffc48a, #ff8a8a) !important;
+            background: #E0523F !important;
+            background-image: none !important;
             border: none !important;
-            box-shadow: 0 4px 12px rgba(255, 138, 138, .5) !important;
+            box-shadow: 2px 4px 10px rgba(60, 51, 47, .1) !important;
         }
 
         /* 防止 iOS Safari 點輸入框時自動放大（字體需 >= 16px） */
@@ -2255,10 +2269,10 @@
                 } else {
                     // ✨ 無照片：軟糖漸層 hero + 食物 icon（貼近原型）
                     const heroGradients = [
-                        'linear-gradient(150deg,#ffc48a,#ff8a8a)',
-                        'linear-gradient(150deg,#d8a878,#9c6b42)',
-                        'linear-gradient(150deg,#c98b6a,#7a3f28)',
-                        'linear-gradient(150deg,#8fe3c4,#3fa796)'
+                        'linear-gradient(150deg,#e8a24a,#e0523f)',
+                        'linear-gradient(150deg,#8fa06a,#607a56)',
+                        'linear-gradient(150deg,#c99a6a,#8a5a3a)',
+                        'linear-gradient(150deg,#e2b13c,#c8412f)'
                     ];
                     const heroIcon = (entry.category === 'night_market') ? 'fa-tent' : 'fa-utensils';
                     imageSection = `<div class="w-full h-40 rounded-lg mb-3 flex items-center justify-center" style="background:${heroGradients[idx % heroGradients.length]}">
