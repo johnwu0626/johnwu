@@ -203,6 +203,55 @@
             }
         }
 
+        // ✨ 回憶回顧卡片：「N 年前的今天你們吃了◯◯」（只在美食回憶分頁、當日有往年紀錄時顯示）
+        window.renderOnThisDay = function () {
+            const box = document.getElementById('onThisDaySection');
+            if (!box) return;
+            if (typeof currentTab !== 'undefined' && currentTab !== 'memory') { box.innerHTML = ''; return; }
+
+            const now = new Date();
+            const m = now.getMonth(), d = now.getDate(), y = now.getFullYear();
+            const toDate = (e) => {
+                if (e.timestamp) { const t = new Date(e.timestamp); if (!isNaN(t)) return t; }
+                if (e.date) { const p = String(e.date).split(/[\/\-.]/); if (p.length === 3) { const t = new Date(+p[0], +p[1] - 1, +p[2]); if (!isNaN(t)) return t; } }
+                return null;
+            };
+            const matches = (window.allFetchedEntries || []).filter(e => {
+                if (e.type === 'wishlist') return false;
+                if ((e.category || 'food') !== currentMode) return false;
+                const t = toDate(e);
+                return t && t.getMonth() === m && t.getDate() === d && t.getFullYear() < y;
+            }).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)).slice(0, 3);
+
+            if (matches.length === 0) { box.innerHTML = ''; return; }
+
+            const items = matches.map(e => {
+                const yearsAgo = y - toDate(e).getFullYear();
+                const ago = yearsAgo === 1 ? '去年今天' : `${yearsAgo} 年前的今天`;
+                const stars = '⭐'.repeat(parseInt(e.rating) || 0);
+                const safeName = (e.name || '').replace(/'/g, "\\'");
+                return `<button type="button" onclick="searchByTag('${safeName}')"
+                            class="w-full text-left flex items-center gap-3 bg-white/70 hover:bg-white rounded-xl px-3 py-2 transition">
+                            <span class="text-[11px] font-bold text-brand-600 bg-brand-50 rounded-full px-2 py-1 shrink-0">${ago}</span>
+                            <span class="min-w-0 flex-1">
+                                <span class="block font-bold text-brand-900 text-sm truncate">${e.name || '（未命名）'}</span>
+                                <span class="block text-xs text-gray-500 truncate">${stars} ${e.dishes ? '· ' + e.dishes : ''}</span>
+                            </span>
+                            <i class="fa-solid fa-chevron-right text-brand-300 shrink-0"></i>
+                        </button>`;
+            }).join('');
+
+            box.innerHTML = `
+                <section class="rounded-2xl p-4 shadow-lg border border-brand-100"
+                    style="background:linear-gradient(150deg,#fff1f2,#ffe4e6)">
+                    <h2 class="flex items-center gap-2 font-bold text-brand-900 text-base mb-2">
+                        <span class="text-lg">📅</span> 回憶中的今天
+                        <span class="text-xs font-medium text-brand-500 bg-white/60 px-2 py-0.5 rounded-full ml-auto">${matches.length} 則</span>
+                    </h2>
+                    <div class="space-y-2">${items}</div>
+                </section>`;
+        };
+
         // ✨ 在輸入框下方顯示「已用過的標籤」供一鍵套用（回憶與心願清單共用）
         window.renderTagSuggestions = function () {
             const seen = new Map(); // key(lower) -> 原始標籤
@@ -325,6 +374,7 @@
 
             window.renderList(filteredEntries);
             window.updateMapMarkers(filteredEntries);
+            window.renderOnThisDay();
 
             // Note: We should probably ONLY update options when data initially loads 
             // OR we can keep options static based on ALL entries, not filtered ones.
@@ -1453,6 +1503,9 @@
 
         <div id="mainContent">
             <div class="space-y-3">
+                <!-- ✨ 回憶回顧卡片（去年今天）：由 renderOnThisDay 動態填入，只在美食回憶分頁顯示 -->
+                <div id="onThisDaySection"></div>
+
                 <!-- View Switcher -->
                 <div class="flex rounded-lg bg-brand-100 p-1 shadow-inner">
                     <button onclick="switchView('list')" id="btn-list"
