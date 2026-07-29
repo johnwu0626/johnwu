@@ -620,6 +620,24 @@
                 setTimeout(() => setStatus({ type: '', message: '' }), 3000);
             };
 
+            const handleUpdateTeam = async (emp, newTeam) => {
+                if (isOffline) {
+                    setStatus({ type: 'error', message: '離線模式無法操作。' });
+                    return;
+                }
+                if (newTeam === emp.team) return;
+                if (!confirm(`確定要將「${emp.name}」的組別從「${emp.team}」變更為「${newTeam}」嗎？\n變更後，該員工將由新組別的組長進行評核；過往月份的歷史評分仍保留原組別。`)) return;
+                try {
+                    const ref = db.collection('artifacts').doc(currentAppId).collection('public').doc('data').collection('employees').doc(emp.id);
+                    await ref.update({ team: newTeam, updatedAt: new Date().toISOString() });
+                    setStatus({ type: 'success', message: `✅ ${emp.name} 組別已更新為「${newTeam}」` });
+                } catch (err) {
+                    console.error('更新組別失敗:', err);
+                    setStatus({ type: 'error', message: '更新組別失敗，請檢查權限。' });
+                }
+                setTimeout(() => setStatus({ type: '', message: '' }), 3000);
+            };
+
             const generateMockHistory = async () => {
                 if (isOffline || !userAuth) {
                     setStatus({ type: 'error', message: '離線模式無法產生資料。' });
@@ -2715,7 +2733,17 @@ service cloud.firestore {
                                                             {emp.name}
                                                             {emp.status === '離職' && <span className="ml-2 text-[10px] bg-red-100 text-red-500 px-1.5 py-0.5 rounded font-bold">離職</span>}
                                                         </td>
-                                                        <td className="px-6 py-4"><span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black tracking-tighter uppercase">{emp.team}</span></td>
+                                                        <td className="px-6 py-4">
+                                                            <select
+                                                                value={emp.team}
+                                                                onChange={(e) => handleUpdateTeam(emp, e.target.value)}
+                                                                className="bg-indigo-50 border border-indigo-100 text-indigo-600 text-sm font-bold rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400 outline-none cursor-pointer hover:bg-indigo-100 transition-colors tracking-tight"
+                                                            >
+                                                                {(TEAMS.includes(emp.team) ? TEAMS : [emp.team, ...TEAMS]).map(t => (
+                                                                    <option key={t} value={t}>{t}</option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
                                                         <td className="px-6 py-4">
                                                             <select
                                                                 value={emp.title || '員工'}
