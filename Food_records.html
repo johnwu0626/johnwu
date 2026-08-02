@@ -323,6 +323,119 @@
                 </section>`;
         };
 
+        // ✨ 疑似放錯分類（跨分類健檢）：店名關鍵字建議搬移，逐筆確認或一鍵套用；只改 category 欄位、可逆
+        const RECLASS_SCAN_ORDER = ['fishing_harbor', 'cafe', 'night_market']; // 特徵強的先比對
+        window.__reclassSuggestions = [];
+        window.renderReclass = function () {
+            const box = document.getElementById('reclassSection');
+            if (!box) return;
+            const cats = window.CATEGORIES || {};
+            const sugg = [];
+            (window.allFetchedEntries || []).forEach(e => {
+                const cur = e.category || 'food';
+                if (!cats[cur] || cats[cur].group === 'stay') return; // 車宿不掃（住的語意不靠店名判斷）
+                const name = (e.name || '').toLowerCase();
+                if (!name) return;
+                for (const k of RECLASS_SCAN_ORDER) {
+                    if (k === cur || !cats[k]) continue;
+                    const kws = cats[k].reclassKeywords || [];
+                    if (kws.some(w => name.includes(w.toLowerCase()))) { sugg.push({ id: e.id, to: k, e }); break; }
+                }
+            });
+            window.__reclassSuggestions = sugg.map(s => ({ id: s.id, to: s.to }));
+
+            if (sugg.length === 0) {
+                box.innerHTML = `<div class="bg-white p-4 rounded-2xl shadow-lg border border-brand-100 text-sm text-gray-500 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-check text-green-500"></i> 沒有偵測到疑似放錯分類的紀錄（依店名關鍵字掃描全部分類）。</div>`;
+                return;
+            }
+
+            const rows = sugg.map(({ id, to, e }) => {
+                const cur = e.category || 'food';
+                const curC = cats[cur] || {}; const toC = cats[to] || {};
+                const isWish = e.type === 'wishlist';
+                return `<div class="flex items-center gap-2 py-1.5 border-t border-dashed border-gray-100">
+                        <span class="min-w-0 flex-1">
+                            <span class="block text-sm text-gray-800 truncate">${(e.name || '').replace(/</g, '&lt;')}${isWish ? ' <span class="text-[10px] text-pink-500 bg-pink-50 px-1.5 rounded-full">心願</span>' : ''}</span>
+                            <span class="block text-xs text-gray-400 truncate">${e.date || ''} · ${curC.titleIcon || ''}${curC.pillLabel || cur} → <b class="text-brand-600">${toC.titleIcon || ''}${toC.pillLabel || to}</b></span>
+                        </span>
+                        <button type="button" onclick="reclassifyEntry('${id}', '${to}')"
+                            class="text-xs font-bold text-white bg-brand-500 hover:bg-brand-600 px-3 py-1 rounded-lg shrink-0">移過去</button>
+                    </div>`;
+            }).join('');
+
+            box.innerHTML = `
+                <section class="bg-white p-4 rounded-2xl shadow-lg border border-brand-100">
+                    <h2 class="flex items-center gap-2 font-bold text-brand-900 text-base mb-1">
+                        <span class="text-lg">🗂️</span> 疑似放錯分類
+                        <span class="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full ml-auto">${sugg.length} 筆</span>
+                    </h2>
+                    <p class="text-xs text-gray-400 mb-2">依店名關鍵字掃描「全部分類」給建議；只改分類欄位，照片/標籤/評分不動。搬錯可再從「編輯」把分類改回來。</p>
+                    <button type="button" onclick="applyAllReclass()"
+                        class="w-full mb-2 text-sm font-bold text-brand-600 bg-brand-50 hover:bg-brand-100 border border-brand-100 py-2 rounded-lg transition">
+                        <i class="fa-solid fa-wand-magic-sparkles mr-1"></i>全部套用（${sugg.length} 筆）
+                    </button>
+                    <div>${rows}</div>
+                </section>`;
+        };
+        // ✨ 換分類選單（心願卡片用）：列出全部分類，點選即搬移
+        window.openCategoryPicker = function (id) {
+            const entry = (window.allFetchedEntries || []).find(e => e.id === id);
+            if (!entry) return;
+            const cur = entry.category || 'food';
+            const cats = window.CATEGORIES || {};
+            const old = document.getElementById('catPickerOverlay');
+            if (old) old.remove();
+            const ov = document.createElement('div');
+            ov.id = 'catPickerOverlay';
+            ov.className = 'fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm flex items-center justify-center p-6';
+            ov.addEventListener('click', (ev) => { if (ev.target === ov) ov.remove(); });
+            const rows = Object.keys(cats).map(k => {
+                const c = cats[k];
+                const isCur = k === cur;
+                return `<button type="button" ${isCur ? 'disabled' : `onclick="applyCategoryPick('${id}','${k}')"`}
+                        class="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition ${isCur
+                        ? 'bg-brand-50 border-brand-200 text-brand-900 font-bold cursor-default'
+                        : 'bg-white border-gray-200 hover:bg-brand-50 text-gray-700'}">
+                        <span class="text-lg">${c.titleIcon}</span>
+                        <span class="flex-1 text-sm font-bold">${c.titleText}</span>
+                        ${isCur ? '<span class="text-[10px] text-brand-500 bg-white px-2 py-0.5 rounded-full border border-brand-100">目前</span>' : '<i class="fa-solid fa-chevron-right text-gray-300"></i>'}
+                    </button>`;
+            }).join('');
+            ov.innerHTML = `<div class="bg-white w-full max-w-xs rounded-2xl p-4 shadow-2xl" onclick="event.stopPropagation()">
+                    <h3 class="font-bold text-brand-900 text-base mb-1">換分類</h3>
+                    <p class="text-xs text-gray-400 mb-3 truncate">${(entry.name || '').replace(/</g, '&lt;')}</p>
+                    <div class="space-y-2">${rows}</div>
+                    <button type="button" onclick="document.getElementById('catPickerOverlay').remove()"
+                        class="w-full mt-3 py-2 text-sm font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-xl transition">取消</button>
+                </div>`;
+            document.body.appendChild(ov);
+        };
+        window.applyCategoryPick = async function (id, to) {
+            const ov = document.getElementById('catPickerOverlay');
+            if (ov) ov.remove();
+            await window.reclassifyEntry(id, to);
+        };
+
+        window.reclassifyEntry = async function (id, to) {
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'food_entries', id), { category: to });
+            } catch (err) { alert('分類更新失敗：' + err.message); }
+        };
+        window.applyAllReclass = async function () {
+            const list = window.__reclassSuggestions || [];
+            if (list.length === 0) return;
+            if (!confirm(`確定將 ${list.length} 筆紀錄移至建議分類嗎？\n（只改分類欄位，搬錯可從「編輯」改回）`)) return;
+            let ok = 0, fail = 0;
+            for (const s of list) {
+                try {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'food_entries', s.id), { category: s.to });
+                    ok++;
+                } catch (err) { fail++; }
+            }
+            alert(`分類整理完成：成功 ${ok} 筆${fail ? `、失敗 ${fail} 筆` : ''}`);
+        };
+
         // ✨ 回憶回顧卡片：「N 年前的今天你們吃了◯◯」（只在美食回憶分頁、當日有往年紀錄時顯示）
         window.renderOnThisDay = function () {
             const box = document.getElementById('onThisDaySection');
@@ -1232,6 +1345,13 @@
             const entry = window.allFetchedEntries.find(e => e.id === docId);
             if (!entry) return;
 
+            // ✨ 顯示分類選擇器（可搬移分類），表單欄位跟隨該筆的分類
+            const catBox = document.getElementById('memory-category-container');
+            if (catBox) catBox.classList.remove('hidden');
+            const catSel = document.getElementById('entryCategory');
+            if (catSel) catSel.value = entry.category || 'food';
+            if (window.updateFormFields) window.updateFormFields(entry.category || 'food');
+
             // 填入表單
             document.getElementById('restaurantName').value = entry.name;
             document.getElementById('address').value = entry.address || '';
@@ -1272,6 +1392,10 @@
             editingDocId = null;
             document.getElementById('foodForm').reset();
             if (window.resetCampFields) window.resetCampFields();
+            // ✨ 收起分類選擇器並還原當前分類的表單版面
+            const catBox = document.getElementById('memory-category-container');
+            if (catBox) catBox.classList.add('hidden');
+            if (window.updateFormFields) window.updateFormFields();
             window.clearImages();
             currentPlaceCoords = null;
             currentPlacePhone = null;
@@ -1525,6 +1649,18 @@
 
                 <form id="foodForm" class="space-y-3 transition-all duration-300 overflow-hidden opacity-0" style="height: 0px">
                     <!-- V3 Compact Inputs -->
+                    <!-- ✨ 分類調整（僅編輯既有記錄時顯示；改選會即時切換表單欄位） -->
+                    <div id="memory-category-container" class="hidden">
+                        <label class="block text-xs font-bold mb-0.5 ml-1 text-gray-700">分類</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2.5 text-brand-500 text-sm"><i
+                                    class="fa-solid fa-layer-group"></i></span>
+                            <select id="entryCategory" onchange="window.updateFormFields(this.value)"
+                                class="w-full pl-9 pr-4 py-1.5 text-sm bg-amber-50 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 transition appearance-none"></select>
+                            <span class="absolute right-3 top-2.5 text-gray-400 pointer-events-none"><i
+                                    class="fa-solid fa-chevron-down"></i></span>
+                        </div>
+                    </div>
                     <div>
                         <label id="memory-name-label"
                             class="block text-xs font-bold mb-0.5 ml-1 text-gray-700">餐廳名稱</label>
@@ -2014,6 +2150,9 @@
         <!-- ✨ 里程碑（由 JS 動態填入） -->
         <div id="milestonesSection"></div>
 
+        <!-- ✨ 疑似放錯分類（跨分類健檢，關鍵字建議、逐筆確認）由 renderReclass 動態填入 -->
+        <div id="reclassSection"></div>
+
         <!-- ✨ 疑似重複店家（資料健檢，只提示不自動合併）由 renderDuplicates 動態填入 -->
         <div id="duplicatesSection"></div>
     </div>
@@ -2076,7 +2215,8 @@
                 showFoodFields: true, campFields: false, randomPicker: true,
                 wishlistStyle: 'simple', wishlistNameLabel: '目標夜市名稱', wishlistNamePlaceholder: '輸入夜市名稱...',
                 wishlistDishesLabel: '想吃的攤位或美食', wishLabel: '待吃清單',
-                dupLabel: '夜市', transferLabel: '吃過了，轉為回憶', presetTags: []
+                dupLabel: '夜市', transferLabel: '吃過了，轉為回憶', presetTags: [],
+                reclassKeywords: ['夜市']
             },
             fishing_harbor: {
                 group: 'eat', pillLabel: '漁港', icon: 'fa-fish', titleIcon: '🐟', titleText: '漁港海味',
@@ -2088,7 +2228,8 @@
                 showFoodFields: true, campFields: false, randomPicker: true,
                 wishlistStyle: 'search', wishlistNameLabel: '漁港或海產店 (Google 搜尋)', wishlistNamePlaceholder: '輸入漁港或店名...',
                 wishlistDishesLabel: '想吃的攤位或美食', wishLabel: '待吃清單',
-                dupLabel: '店家', transferLabel: '吃過了，轉為回憶', presetTags: ['生魚片', '代客料理', '海鮮麵', '現撈', '買漁獲']
+                dupLabel: '店家', transferLabel: '吃過了，轉為回憶', presetTags: ['生魚片', '代客料理', '海鮮麵', '現撈', '買漁獲'],
+                reclassKeywords: ['漁港', '海產', '海鮮']
             },
             cafe: {
                 group: 'eat', pillLabel: '咖啡', icon: 'fa-mug-saucer', titleIcon: '☕', titleText: '咖啡時光',
@@ -2100,7 +2241,8 @@
                 showFoodFields: true, campFields: false, randomPicker: true,
                 wishlistStyle: 'search', wishlistNameLabel: '咖啡廳名稱 (Google 搜尋)', wishlistNamePlaceholder: '輸入咖啡廳名稱...',
                 wishlistDishesLabel: '想吃的攤位或美食', wishLabel: '待喝清單',
-                dupLabel: '咖啡廳', transferLabel: '喝過了，轉為回憶', presetTags: ['手沖', '拿鐵', '甜點', '有插座', '可久坐', '安靜']
+                dupLabel: '咖啡廳', transferLabel: '喝過了，轉為回憶', presetTags: ['手沖', '拿鐵', '甜點', '有插座', '可久坐', '安靜'],
+                reclassKeywords: ['咖啡', 'cafe', 'coffee', '珈琲']
             },
             car_camp: {
                 group: 'stay', pillLabel: '車宿', icon: 'fa-caravan', titleIcon: '🚐', titleText: '車宿足跡',
@@ -2184,8 +2326,9 @@
         };
         renderSubcats(); // 初始渲染子分類列（預設 food）
 
-        window.updateFormFields = function () {
-            const cfg = window.CATEGORIES[currentMode] || window.CATEGORIES.food;
+        window.updateFormFields = function (modeKey) {
+            // modeKey 僅在「編輯中改選分類」時傳入，讓表單欄位跟著目標分類走；平常跟隨 currentMode
+            const cfg = window.CATEGORIES[modeKey || currentMode] || window.CATEGORIES.food;
 
             const formTitle = document.getElementById('memory-form-title');
             if (formTitle) formTitle.innerText = cfg.formTitle;
@@ -2265,6 +2408,13 @@
         window.SAFETY_LEVELS = SAFETY_LEVELS;
         const SEG_ON = 'text-xs font-bold text-white bg-emerald-600 border border-emerald-600 py-1.5 rounded-lg transition';
         const SEG_OFF = 'text-xs text-gray-500 bg-gray-100 hover:bg-gray-200 border border-gray-200 py-1.5 rounded-lg transition';
+
+        // ✨ 編輯時的分類選擇器：選項由 CATEGORIES 產生
+        (function initCategorySelect() {
+            const sel = document.getElementById('entryCategory');
+            if (sel) sel.innerHTML = Object.keys(window.CATEGORIES).map(k =>
+                `<option value="${k}">${window.CATEGORIES[k].titleIcon} ${window.CATEGORIES[k].titleText}</option>`).join('');
+        })();
 
         (function initCampFields() {
             const chips = document.getElementById('facilityChips');
@@ -2621,6 +2771,9 @@
                 if (currentTab === 'wishlist') {
                     actionButtons = `
                         <div class="absolute top-4 right-4 z-10 flex gap-2">
+                            <button onclick="openCategoryPicker('${entry.id}')" class="text-gray-400 hover:text-brand-500 transition p-2 bg-white/80 rounded-full w-10 h-10 flex items-center justify-center shadow-sm" title="換分類">
+                                <i class="fa-solid fa-layer-group"></i>
+                            </button>
                             <button onclick="deleteEntryFromCloud('${entry.id}')" class="text-gray-400 hover:text-red-400 transition p-2 bg-white/80 rounded-full w-10 h-10 flex items-center justify-center shadow-sm" title="刪除">
                                 <i class="fa-solid fa-trash-can"></i>
                             </button>
@@ -2800,8 +2953,9 @@
             const priceBlock = document.getElementById('chartPriceBlock');
             if (priceBlock) priceBlock.classList.toggle('hidden', !statCfg.showFoodFields);
 
-            // ✨ 疑似重複偵測 + 回憶再現引擎（不依賴 Chart，放在 guard 前確保一定執行）
+            // ✨ 疑似重複偵測 + 分類健檢 + 回憶再現引擎（不依賴 Chart，放在 guard 前確保一定執行）
             window.renderDuplicates();
+            window.renderReclass();
             window.renderYearReview();
             window.renderMilestones();
 
@@ -3305,14 +3459,19 @@
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const cfg = window.CATEGORIES[currentMode] || window.CATEGORIES.food;
+            // ✨ 編輯時以分類選擇器為準（可搬移分類）；新增時跟隨當前分類
+            const catBox = document.getElementById('memory-category-container');
+            const catSel = document.getElementById('entryCategory');
+            const entryCat = (catBox && !catBox.classList.contains('hidden') && catSel && window.CATEGORIES[catSel.value])
+                ? catSel.value : currentMode;
+            const cfg = window.CATEGORIES[entryCat] || window.CATEGORIES.food;
             const entry = {
                 name: document.getElementById('restaurantName').value,
                 address: document.getElementById('address').value,
                 notes: document.getElementById('notes').value,
                 tags: window.parseTags(document.getElementById('tagsInput').value),
                 date: new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }),
-                category: currentMode,
+                category: entryCat,
                 coords: currentPlaceCoords,
                 phoneNumber: currentPlacePhone,
                 placeId: currentPlaceId
