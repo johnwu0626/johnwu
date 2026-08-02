@@ -168,6 +168,9 @@
             const locationSelect = document.getElementById('locationFilter');
             const currentSelection = locationSelect.value;
 
+            // ✨ 修正：只統計當前分類的地區，避免 4 分類後跨類混入（例如車宿頁出現餐廳城市）
+            entries = (entries || []).filter(e => (e.category || 'food') === currentMode);
+
             // 1. Collect all unique locations
             const locationStats = {}; // "City" -> count, or "City - District" -> count
 
@@ -204,6 +207,10 @@
                 locationSelect.value = currentSelection;
             }
         }
+        // 掛到全域：切換分類時重建地區選單（非 module script 的 switchMode 會呼叫）
+        window.updateLocationOptionsForMode = function () {
+            updateLocationOptions(window.allFetchedEntries || []);
+        };
 
         // ✨ 回訪提醒：新增回憶時偵測到記錄過的同店，可一鍵帶入上次的標籤與價格
         window.__revisitSourceId = null;
@@ -273,7 +280,7 @@
             const dupGroups = Object.values(groups).filter(g => g.length >= 2)
                 .sort((a, b) => b.length - a.length);
 
-            const modeLabel = currentMode === 'night_market' ? '夜市' : '餐廳';
+            const modeLabel = ((window.CATEGORIES && window.CATEGORIES[currentMode]) || {}).dupLabel || '餐廳';
             if (dupGroups.length === 0) {
                 box.innerHTML = `<div class="bg-white p-4 rounded-2xl shadow-lg border border-brand-100 text-sm text-gray-500 flex items-center gap-2">
                     <i class="fa-solid fa-circle-check text-green-500"></i> 沒有偵測到疑似重複的${modeLabel}紀錄。</div>`;
@@ -424,6 +431,9 @@
         // ✨ 在輸入框下方顯示「已用過的標籤」供一鍵套用（回憶與心願清單共用）
         window.renderTagSuggestions = function () {
             const seen = new Map(); // key(lower) -> 原始標籤
+            // ✨ 分類預設快速標籤先進榜（例如漁港：生魚片/代客料理…），再補歷史標籤
+            const presets = ((window.CATEGORIES && window.CATEGORIES[currentMode]) || {}).presetTags || [];
+            presets.forEach(t => { const k = t.toLowerCase(); if (!seen.has(k)) seen.set(k, t); });
             window.allFetchedEntries.forEach(entry => {
                 if ((entry.category || 'food') !== currentMode) return;
                 if (Array.isArray(entry.tags)) {
@@ -535,7 +545,9 @@
                         entry.dishes,
                         entry.address,
                         entry.notes,
-                        Array.isArray(entry.tags) ? entry.tags.join(' ') : ''
+                        Array.isArray(entry.tags) ? entry.tags.join(' ') : '',
+                        Array.isArray(entry.facilities) ? entry.facilities.join(' ') : '',
+                        (entry.cost !== null && entry.cost !== undefined) ? String(entry.cost) : ''
                     ].join(' ').toLowerCase();
                     return haystack.includes(searchTerm);
                 });
@@ -895,7 +907,7 @@
             if (candidates.length > 0) {
                 await handleCandidateStatus(candidates, "附近 15km");
             } else {
-                if (confirm(`在您附近 ${radius} 公里內找不到 4 星以上的口袋名單耶！\n要改為搜尋全部地區嗎？`)) {
+                if (confirm(`在您附近 ${radius} 公里內找不到「會再回訪」以上的口袋名單耶！\n要改為搜尋全部地區嗎？`)) {
                     await prepareCandidates(null);
                 } else {
                     window.closeRandomPicker();
@@ -957,7 +969,7 @@
                     candidates = cityCandidates;
                     locationMsg = city;
                 } else {
-                    if (confirm(`在【${city}】找不到 4 星以上的口袋名單耶！\n要改為搜尋全部地區嗎？`)) {
+                    if (confirm(`在【${city}】找不到「會再回訪」以上的口袋名單耶！\n要改為搜尋全部地區嗎？`)) {
                         locationMsg = "全台";
                     } else {
                         window.closeRandomPicker();
@@ -967,7 +979,7 @@
             }
 
             if (candidates.length === 0) {
-                alert("目前沒有 4 星以上的美食回憶喔！");
+                alert("目前沒有「會再回訪」以上的美食回憶喔！");
                 window.closeRandomPicker();
                 return;
             }
@@ -1128,7 +1140,7 @@
 
                 // Fill Result
                 document.getElementById('result-name').innerText = selectedRandomEntry.name;
-                document.getElementById('result-rating').innerText = "⭐".repeat(selectedRandomEntry.rating);
+                document.getElementById('result-rating').innerText = "⭐".repeat(selectedRandomEntry.rating) + ((window.RATING_LABELS || {})[parseInt(selectedRandomEntry.rating)] ? ' ' + window.RATING_LABELS[parseInt(selectedRandomEntry.rating)] : '');
                 document.getElementById('result-location').innerText = extractLocation(selectedRandomEntry.address).city;
                 document.getElementById('result-dishes').innerText = selectedRandomEntry.dishes || '(沒寫吃了什麼)';
 
@@ -1223,10 +1235,18 @@
             // 填入表單
             document.getElementById('restaurantName').value = entry.name;
             document.getElementById('address').value = entry.address || '';
-            document.getElementById('dishes').value = entry.dishes;
-            document.getElementById('rating').value = entry.rating;
+            document.getElementById('dishes').value = entry.dishes || '';
+            document.getElementById('rating').value = entry.rating || '5';
             document.getElementById('priceLevel').value = entry.priceLevel || '1'; // Populate priceLevel
             document.getElementById('notes').value = entry.notes || '';
+            // ✨ 車宿欄位回填（非車宿則清空，避免殘留上一筆的點選狀態）
+            if (window.CATEGORIES && window.CATEGORIES[entry.category] && window.CATEGORIES[entry.category].campFields) {
+                document.getElementById('campCost').value = (entry.cost === null || entry.cost === undefined) ? '' : entry.cost;
+                window.setSafety(entry.safety || 2);
+                window.setFacilities(entry.facilities || []);
+            } else if (window.resetCampFields) {
+                window.resetCampFields();
+            }
             document.getElementById('tagsInput').value = Array.isArray(entry.tags) ? entry.tags.join(', ') : '';
             currentPlaceCoords = entry.coords || null;
             currentPlacePhone = entry.phoneNumber || null;
@@ -1251,6 +1271,7 @@
         window.cancelEdit = function () {
             editingDocId = null;
             document.getElementById('foodForm').reset();
+            if (window.resetCampFields) window.resetCampFields();
             window.clearImages();
             currentPlaceCoords = null;
             currentPlacePhone = null;
@@ -1462,8 +1483,8 @@
             </div>
         </div>
 
-        <!-- Mode Switcher -->
-        <div class="w-full flex justify-center">
+        <!-- Mode Switcher（兩層：吃/住 大膠囊 + 吃的子分類 pill） -->
+        <div class="w-full flex flex-col items-center gap-2">
             <div
                 class="bg-brand-50 rounded-full p-1 flex items-center shadow-inner border border-brand-100 relative w-64">
                 <!-- Active indicator background -->
@@ -1471,15 +1492,17 @@
                     class="absolute w-[calc(50%-4px)] h-[calc(100%-8px)] top-1 left-1 bg-white rounded-full shadow-sm transition-transform duration-300 z-0 border border-brand-200">
                 </div>
 
-                <button onclick="window.switchMode('food')" id="mode-food-btn"
+                <button onclick="window.switchGroup('eat')" id="group-eat-btn"
                     class="flex-1 relative z-10 py-1 text-sm font-bold rounded-full transition-colors duration-300 text-white">
-                    <i class="fa-solid fa-utensils mr-1"></i>餐廳美食
+                    <i class="fa-solid fa-utensils mr-1"></i>吃
                 </button>
-                <button onclick="window.switchMode('night_market')" id="mode-night-btn"
+                <button onclick="window.switchGroup('stay')" id="group-stay-btn"
                     class="flex-1 relative z-10 py-1 text-sm font-bold rounded-full transition-colors duration-300 text-gray-400 hover:text-brand-500">
-                    <i class="fa-solid fa-tent mr-1"></i>夜市巡航
+                    <i class="fa-solid fa-caravan mr-1"></i>住
                 </button>
             </div>
+            <!-- 子分類（僅「吃」群組顯示，由 JS 依 CATEGORIES 動態產生） -->
+            <div id="subcat-row" class="flex items-center justify-center gap-2"></div>
         </div>
     </header>
 
@@ -1496,7 +1519,7 @@
         <div id="memorySection">
             <section class="bg-white p-4 rounded-2xl shadow-lg border border-brand-100 relative">
                 <div class="flex items-center justify-between mb-2 cursor-pointer" onclick="toggleForm()">
-                    <h2 class="font-bold text-base text-brand-900">新增美食回憶</h2>
+                    <h2 id="memory-form-title" class="font-bold text-base text-brand-900">新增美食回憶</h2>
                     <i id="formToggleIcon" class="fa-solid fa-chevron-up text-brand-500 transition-transform" style="transform: rotate(180deg)"></i>
                 </div>
 
@@ -1524,8 +1547,13 @@
                                 class="w-full pl-9 pr-4 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 transition"
                                 placeholder="自動填入...">
                         </div>
+                        <!-- ✨ 車宿：GPS 一鍵帶入目前位置 -->
+                        <button type="button" id="gpsLocateBtn" onclick="locateHere()"
+                            class="hidden mt-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 px-3 py-1.5 rounded-lg transition">
+                            <i class="fa-solid fa-location-crosshairs mr-1"></i>帶入目前位置
+                        </button>
                     </div>
-                    <div>
+                    <div id="memory-dishes-container">
                         <label id="memory-dishes-label"
                             class="block text-xs font-bold mb-0.5 ml-1 text-gray-700">點了什麼</label>
                         <div class="relative">
@@ -1536,24 +1564,24 @@
                                 placeholder="例如：松露燉飯...">
                         </div>
                     </div>
-                    <div>
+                    <div id="memory-rating-container">
                         <label class="block text-xs font-bold mb-0.5 ml-1 text-gray-700">評分</label>
                         <div class="relative">
                             <span class="absolute left-3 top-2.5 text-brand-500 text-sm"><i
                                     class="fa-solid fa-star"></i></span>
                             <select id="rating"
                                 class="w-full pl-9 pr-4 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 transition appearance-none">
-                                <option value="5">⭐⭐⭐⭐⭐ (5分)</option>
-                                <option value="4">⭐⭐⭐⭐ (4分)</option>
-                                <option value="3">⭐⭐⭐ (3分)</option>
-                                <option value="2">⭐⭐ (2分)</option>
-                                <option value="1">⭐ (1分)</option>
+                                <option value="5">⭐⭐⭐⭐⭐ 會推給朋友來吃</option>
+                                <option value="4">⭐⭐⭐⭐ 會再回訪</option>
+                                <option value="3">⭐⭐⭐ 偶而回訪</option>
+                                <option value="2">⭐⭐ 沒得吃會回訪</option>
+                                <option value="1">⭐ 絕不會再回訪</option>
                             </select>
                             <span class="absolute right-3 top-2.5 text-gray-400 pointer-events-none"><i
                                     class="fa-solid fa-chevron-down"></i></span>
                         </div>
                     </div>
-                    <div>
+                    <div id="memory-price-container">
                         <label class="block text-xs font-bold mb-0.5 ml-1 text-gray-700">價格等級</label>
                         <div class="relative">
                             <span class="absolute left-3 top-2.5 text-brand-500 text-sm"><i
@@ -1569,6 +1597,40 @@
                                     class="fa-solid fa-chevron-down"></i></span>
                         </div>
                     </div>
+
+                    <!-- ✨ 車宿專屬欄位（category=car_camp 時顯示）：設施/費用/安全感，全程免打字可完成 -->
+                    <div id="campFields" class="hidden space-y-3">
+                        <div>
+                            <label class="block text-xs font-bold mb-0.5 ml-1 text-gray-700">設施（點選）</label>
+                            <div id="facilityChips" class="flex flex-wrap gap-1.5"></div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold mb-0.5 ml-1 text-gray-700">費用</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2.5 text-brand-500 text-sm"><i
+                                        class="fa-solid fa-coins"></i></span>
+                                <input type="number" id="campCost" min="0" inputmode="numeric"
+                                    class="w-full pl-9 pr-4 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 transition"
+                                    placeholder="金額（0 = 免費）...">
+                            </div>
+                            <div class="flex gap-1.5 mt-1.5">
+                                <button type="button" onclick="setCampCost(0)"
+                                    class="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 px-3 py-1 rounded-full transition">免費</button>
+                                <button type="button" onclick="setCampCost(100)"
+                                    class="text-xs text-gray-500 bg-gray-100 hover:bg-gray-200 border border-gray-200 px-3 py-1 rounded-full transition">100</button>
+                                <button type="button" onclick="setCampCost(300)"
+                                    class="text-xs text-gray-500 bg-gray-100 hover:bg-gray-200 border border-gray-200 px-3 py-1 rounded-full transition">300</button>
+                                <button type="button" onclick="setCampCost(500)"
+                                    class="text-xs text-gray-500 bg-gray-100 hover:bg-gray-200 border border-gray-200 px-3 py-1 rounded-full transition">500</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold mb-0.5 ml-1 text-gray-700">安全感（照明/人氣）</label>
+                            <input type="hidden" id="campSafety" value="2">
+                            <div id="safetySegment" class="grid grid-cols-3 gap-1.5"></div>
+                        </div>
+                    </div>
+
                     <div>
                         <label class="block text-xs font-bold mb-0.5 ml-1 text-gray-700">心得</label>
                         <textarea id="notes" rows="2"
@@ -1591,7 +1653,7 @@
 
                     <!-- 圖片上傳區塊 (支援多圖) -->
                     <div>
-                        <label class="block text-xs font-bold mb-0.5 ml-1 text-gray-700">美食照片 (最多10張)</label>
+                        <label id="memory-photo-label" class="block text-xs font-bold mb-0.5 ml-1 text-gray-700">美食照片 (最多10張)</label>
                         <div class="relative group cursor-pointer">
                             <input type="file" id="imageInput" accept="image/*" multiple class="hidden"
                                 onchange="previewImages(event)">
@@ -1645,7 +1707,7 @@
                     </div>
                     <!-- ✨ 新增的夜市專用攤位描述欄位 -->
                     <div id="wishlist-dishes-container" class="hidden">
-                        <label class="block text-xs font-bold mb-0.5 ml-1 text-gray-700">想吃的攤位或美食</label>
+                        <label id="wishlist-dishes-label" class="block text-xs font-bold mb-0.5 ml-1 text-gray-700">想吃的攤位或美食</label>
                         <div class="relative">
                             <span class="absolute left-3 top-2.5 text-pink-500 text-sm"><i
                                     class="fa-solid fa-utensils"></i></span>
@@ -1748,16 +1810,16 @@
                     </div>
 
                     <!-- 評分篩選 -->
-                    <div class="relative flex items-center shrink-0">
+                    <div id="ratingFilterWrap" class="relative flex items-center shrink-0">
                         <label for="ratingFilter" class="text-sm font-bold text-gray-500 mr-2"><i
                                 class="fa-solid fa-star"></i></label>
                         <div class="relative">
                             <select id="ratingFilter" onchange="filterAndRender()"
                                 class="appearance-none bg-white border border-brand-200 text-brand-900 font-medium py-1.5 pl-3 pr-8 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-sm transition-all hover:border-brand-400 cursor-pointer">
                                 <option value="0">全部評價</option>
-                                <option value="5">5 ⭐ (必吃)</option>
-                                <option value="4">4 ⭐ Up</option>
-                                <option value="3">3 ⭐ Up</option>
+                                <option value="5">⭐5 會推給朋友來吃</option>
+                                <option value="4">⭐4↑ 會再回訪</option>
+                                <option value="3">⭐3↑ 偶而回訪</option>
                             </select>
                             <div
                                 class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-brand-500">
@@ -1767,7 +1829,7 @@
                     </div>
 
                     <!-- 價格篩選 -->
-                    <div class="relative flex items-center shrink-0">
+                    <div id="priceFilterWrap" class="relative flex items-center shrink-0">
                         <label for="priceFilter" class="text-sm font-bold text-gray-500 mr-2"><i
                                 class="fa-solid fa-sack-dollar"></i></label>
                         <div class="relative">
@@ -1813,7 +1875,7 @@
             </section>
 
             <!-- 隨機選餐浮動按鈕 (FAB)：跟著 mainContent 顯示/隱藏（統計分頁自動消失） -->
-            <button onclick="openRandomPicker()" title="不知吃什麼？幫我選！"
+            <button onclick="openRandomPicker()" id="randomPickerFab" title="不知吃什麼？幫我選！"
                 class="fixed right-4 bottom-20 z-40 w-14 h-14 rounded-full bg-brand-500 hover:bg-brand-600 text-white shadow-lg shadow-brand-500/40 flex items-center justify-center transition transform hover:-translate-y-0.5 active:scale-95"
                 style="bottom: calc(80px + env(safe-area-inset-bottom))">
                 <i class="fa-solid fa-dice text-2xl"></i>
@@ -1919,20 +1981,20 @@
                 </div>
                 <div class="bg-pink-50 p-3 rounded-xl border border-pink-100 text-center">
                     <div class="text-2xl font-bold text-pink-500" id="stat-total-wishlist">0</div>
-                    <div class="text-xs text-gray-500 font-bold">待吃清單</div>
+                    <div class="text-xs text-gray-500 font-bold" id="stat-wishlist-label">待吃清單</div>
                 </div>
             </div>
 
             <!-- Charts -->
             <div class="space-y-6">
-                <div>
+                <div id="chartRatingBlock">
                     <h3 class="font-bold text-gray-700 mb-2 text-sm border-l-4 border-brand-500 pl-2">⭐ 評分分佈</h3>
                     <div class="h-48 relative">
                         <canvas id="chart-rating"></canvas>
                     </div>
                 </div>
 
-                <div>
+                <div id="chartPriceBlock">
                     <h3 class="font-bold text-gray-700 mb-2 text-sm border-l-4 border-brand-500 pl-2">💰 價位分佈</h3>
                     <div class="h-48 relative">
                         <canvas id="chart-price"></canvas>
@@ -1989,92 +2051,274 @@
 
     <!-- UI Logic Script -->
     <script>
-        // --- Mode Switching Logic ---
-        let currentMode = 'food'; // 'food' or 'night_market'
+        // --- Mode Switching Logic（config 驅動，4 分類：吃=餐廳/夜市/漁港、住=車宿）---
+        // 分類設定表：新增分類只需在此加一筆（資料層 category 過濾為通用比較，自動生效）
+        window.CATEGORIES = {
+            food: {
+                group: 'eat', pillLabel: '餐廳', icon: 'fa-utensils', titleIcon: '🍲', titleText: '美食足跡',
+                titleBgClass: 'inline-flex items-center justify-center w-8 h-8 bg-brand-100 rounded-full text-lg shadow-sm shrink-0 transition-colors',
+                formTitle: '新增美食回憶',
+                nameLabel: '餐廳名稱', namePlaceholder: '輸入店名...', addressMode: 'auto',
+                dishesLabel: '點了什麼', dishesPlaceholder: '例如：松露燉飯...',
+                photoLabel: '美食照片 (最多10張)', searchPlaceholder: '搜尋店名、餐點、地址、心得、標籤...',
+                showFoodFields: true, campFields: false, randomPicker: true,
+                wishlistStyle: 'search', wishlistNameLabel: '餐廳名稱 (Google 搜尋)', wishlistNamePlaceholder: '輸入餐廳名稱...',
+                wishlistDishesLabel: '想吃的攤位或美食', wishLabel: '待吃清單',
+                dupLabel: '餐廳', transferLabel: '吃過了，轉為回憶', presetTags: []
+            },
+            night_market: {
+                group: 'eat', pillLabel: '夜市', icon: 'fa-tent', titleIcon: '🌙', titleText: '夜市巡航',
+                titleBgClass: 'inline-flex items-center justify-center w-8 h-8 rounded-full text-lg shadow-sm shrink-0 transition-colors bg-purple-100 bg-opacity-70 text-purple-600',
+                formTitle: '新增夜市回憶',
+                nameLabel: '夜市名稱 (例如：饒河街夜市)', namePlaceholder: '輸入夜市名稱...', addressMode: 'readonly',
+                dishesLabel: '攤位或小吃描述', dishesPlaceholder: '例如：王記好吃麻油雞...',
+                photoLabel: '美食照片 (最多10張)', searchPlaceholder: '搜尋店名、餐點、地址、心得、標籤...',
+                showFoodFields: true, campFields: false, randomPicker: true,
+                wishlistStyle: 'simple', wishlistNameLabel: '目標夜市名稱', wishlistNamePlaceholder: '輸入夜市名稱...',
+                wishlistDishesLabel: '想吃的攤位或美食', wishLabel: '待吃清單',
+                dupLabel: '夜市', transferLabel: '吃過了，轉為回憶', presetTags: []
+            },
+            fishing_harbor: {
+                group: 'eat', pillLabel: '漁港', icon: 'fa-fish', titleIcon: '🐟', titleText: '漁港海味',
+                titleBgClass: 'inline-flex items-center justify-center w-8 h-8 rounded-full text-lg shadow-sm shrink-0 transition-colors bg-sky-100 bg-opacity-70 text-sky-600',
+                formTitle: '新增漁港回憶',
+                nameLabel: '漁港或海產店名稱', namePlaceholder: '輸入漁港或店名...', addressMode: 'auto',
+                dishesLabel: '吃了什麼海味', dishesPlaceholder: '這次吃了什麼現撈海鮮？',
+                photoLabel: '美食照片 (最多10張)', searchPlaceholder: '搜尋店名、海味、地址、心得、標籤...',
+                showFoodFields: true, campFields: false, randomPicker: true,
+                wishlistStyle: 'search', wishlistNameLabel: '漁港或海產店 (Google 搜尋)', wishlistNamePlaceholder: '輸入漁港或店名...',
+                wishlistDishesLabel: '想吃的攤位或美食', wishLabel: '待吃清單',
+                dupLabel: '店家', transferLabel: '吃過了，轉為回憶', presetTags: ['生魚片', '代客料理', '海鮮麵', '現撈', '買漁獲']
+            },
+            car_camp: {
+                group: 'stay', pillLabel: '車宿', icon: 'fa-caravan', titleIcon: '🚐', titleText: '車宿足跡',
+                titleBgClass: 'inline-flex items-center justify-center w-8 h-8 rounded-full text-lg shadow-sm shrink-0 transition-colors bg-emerald-100 bg-opacity-70 text-emerald-700',
+                formTitle: '新增車宿記錄',
+                nameLabel: '過夜地點名稱', namePlaceholder: '例如：龍洞灣停車場...', addressMode: 'gps',
+                dishesLabel: '', dishesPlaceholder: '',
+                photoLabel: '現場照片 (最多10張)', searchPlaceholder: '搜尋地點、設施、心得、標籤...',
+                showFoodFields: false, campFields: true, randomPicker: false,
+                wishlistStyle: 'simple', wishlistNameLabel: '想去的過夜點', wishlistNamePlaceholder: '輸入地點名稱...',
+                wishlistDishesLabel: '筆記（想確認的事）', wishLabel: '想去清單',
+                dupLabel: '地點', transferLabel: '住過了，轉為回憶', presetTags: ['海邊', '山上', '森林']
+            }
+        };
+
+        // ✨ 評分語意：數值 1-5 照存（統計/抽籤/篩選不變），顯示改為回訪意願
+        window.RATING_LABELS = { 1: '絕不會再回訪', 2: '沒得吃會回訪', 3: '偶而回訪', 4: '會再回訪', 5: '會推給朋友來吃' };
+
+        let currentMode = 'food'; // CATEGORIES 的 key
+        let lastEatMode = 'food'; // 「吃」群組最後停留的子分類
+
+        const MODE_BTN_ACTIVE = 'flex-1 relative z-10 py-1 text-sm font-bold rounded-full transition-colors duration-300 text-white';
+        const MODE_BTN_INACTIVE = 'flex-1 relative z-10 py-1 text-sm font-bold rounded-full transition-colors duration-300 text-gray-400 hover:text-brand-500';
+
+        window.switchGroup = function (group) {
+            if (group === 'stay') window.switchMode('car_camp');
+            else window.switchMode(lastEatMode || 'food');
+        };
+
+        function renderSubcats() {
+            const row = document.getElementById('subcat-row');
+            if (!row) return;
+            const cfg = window.CATEGORIES[currentMode];
+            if (cfg.group !== 'eat') { row.innerHTML = ''; return; }
+            row.innerHTML = Object.keys(window.CATEGORIES)
+                .filter(k => window.CATEGORIES[k].group === 'eat')
+                .map(k => {
+                    const c = window.CATEGORIES[k];
+                    const cls = (k === currentMode)
+                        ? 'text-xs font-bold text-brand-900 bg-white border border-brand-200 shadow-sm px-3 py-1 rounded-full transition'
+                        : 'text-xs font-bold text-gray-400 bg-brand-50 border border-brand-100 hover:text-brand-500 px-3 py-1 rounded-full transition';
+                    return `<button onclick="window.switchMode('${k}')" class="${cls}"><i class="fa-solid ${c.icon} mr-1"></i>${c.pillLabel}</button>`;
+                }).join('');
+        }
 
         window.switchMode = function (mode) {
+            const cfg = window.CATEGORIES[mode] || window.CATEGORIES.food;
             currentMode = mode;
-            const foodBtn = document.getElementById('mode-food-btn');
-            const nightBtn = document.getElementById('mode-night-btn');
+            if (cfg.group === 'eat') lastEatMode = mode;
+
             const indicator = document.getElementById('mode-indicator');
+            const eatBtn = document.getElementById('group-eat-btn');
+            const stayBtn = document.getElementById('group-stay-btn');
+            if (cfg.group === 'eat') {
+                indicator.style.transform = 'translateX(0)';
+                eatBtn.className = MODE_BTN_ACTIVE;
+                stayBtn.className = MODE_BTN_INACTIVE;
+            } else {
+                indicator.style.transform = 'translateX(100%)';
+                stayBtn.className = MODE_BTN_ACTIVE;
+                eatBtn.className = MODE_BTN_INACTIVE;
+            }
+            renderSubcats();
+
             const titleIcon = document.getElementById('title-icon');
             const titleText = document.getElementById('title-text');
             const titleIconBg = document.getElementById('title-icon-bg');
+            if (titleIcon) titleIcon.innerText = cfg.titleIcon;
+            if (titleText) titleText.innerText = cfg.titleText;
+            if (titleIconBg) titleIconBg.className = cfg.titleBgClass;
 
-            if (mode === 'food') {
-                indicator.style.transform = 'translateX(0)';
-                foodBtn.className = 'flex-1 relative z-10 py-1 text-sm font-bold rounded-full transition-colors duration-300 text-white';
-                nightBtn.className = 'flex-1 relative z-10 py-1 text-sm font-bold rounded-full transition-colors duration-300 text-gray-400 hover:text-brand-500';
-                if (titleIcon) titleIcon.innerText = '🍲';
-                if (titleText) titleText.innerText = '美食足跡';
-                if (titleIconBg) titleIconBg.className = 'inline-flex items-center justify-center w-8 h-8 bg-brand-100 rounded-full text-lg shadow-sm shrink-0 transition-colors';
-            } else {
-                indicator.style.transform = 'translateX(100%)';
-                nightBtn.className = 'flex-1 relative z-10 py-1 text-sm font-bold rounded-full transition-colors duration-300 text-white';
-                foodBtn.className = 'flex-1 relative z-10 py-1 text-sm font-bold rounded-full transition-colors duration-300 text-gray-400 hover:text-brand-500';
-                if (titleIcon) titleIcon.innerText = '🌙';
-                if (titleText) titleText.innerText = '夜市巡航';
-                if (titleIconBg) titleIconBg.className = 'inline-flex items-center justify-center w-8 h-8 bg-purple-100 rounded-full text-lg shadow-sm shrink-0 transition-colors bg-opacity-70 text-purple-600';
-            }
+            // 抽籤 FAB：車宿排除（4 星門檻為餐飲語意，見 decision.md）
+            const fab = document.getElementById('randomPickerFab');
+            if (fab) fab.classList.toggle('hidden', !cfg.randomPicker);
 
             if (window.updateFormFields) window.updateFormFields();
             if (window.renderTagSuggestions) window.renderTagSuggestions();
+            if (window.updateLocationOptionsForMode) window.updateLocationOptionsForMode();
             if (window.filterAndRender) window.filterAndRender();
             if (typeof currentTab !== 'undefined' && currentTab === 'stats' && window.updateStats) window.updateStats();
         };
+        renderSubcats(); // 初始渲染子分類列（預設 food）
 
         window.updateFormFields = function () {
-            const isNight = currentMode === 'night_market';
+            const cfg = window.CATEGORIES[currentMode] || window.CATEGORIES.food;
 
+            const formTitle = document.getElementById('memory-form-title');
+            if (formTitle) formTitle.innerText = cfg.formTitle;
             const memNameLabel = document.getElementById('memory-name-label');
-            if (memNameLabel) memNameLabel.innerText = isNight ? "夜市名稱 (例如：饒河街夜市)" : "餐廳名稱";
-
-            const memAddressContainer = document.getElementById('memory-address-container');
-            if (memAddressContainer) {
-                if (isNight) {
-                    memAddressContainer.classList.remove('hidden');
-                    const addrInput = document.getElementById('address');
-                    if (addrInput) {
-                        addrInput.readOnly = true;
-                        addrInput.placeholder = '搜尋夜市時自動填入...';
-                        addrInput.classList.add('bg-gray-100', 'cursor-not-allowed');
-                    }
-                } else {
-                    memAddressContainer.classList.remove('hidden');
-                    const addrInput = document.getElementById('address');
-                    if (addrInput) {
-                        addrInput.readOnly = false;
-                        addrInput.placeholder = '自動填入...';
-                        addrInput.classList.remove('bg-gray-100', 'cursor-not-allowed');
-                    }
-                }
-            }
-
-            const memDishesLabel = document.getElementById('memory-dishes-label');
-            if (memDishesLabel) memDishesLabel.innerText = isNight ? "攤位或小吃描述" : "點了什麼";
-
+            if (memNameLabel) memNameLabel.innerText = cfg.nameLabel;
             const nameInput = document.getElementById('restaurantName');
-            if (nameInput) nameInput.placeholder = isNight ? "輸入夜市名稱..." : "輸入店名...";
+            if (nameInput) nameInput.placeholder = cfg.namePlaceholder;
 
-            const wNameLabel = document.getElementById('wishlist-name-label');
-            if (wNameLabel) wNameLabel.innerText = isNight ? "目標夜市名稱" : "餐廳名稱 (Google 搜尋)";
-
-            const wAddressContainer = document.getElementById('wishlist-address-container');
-            if (wAddressContainer) wAddressContainer.classList.toggle('hidden', isNight);
-
-            const wRatingContainer = document.getElementById('wishlist-rating-container');
-            if (wRatingContainer) wRatingContainer.classList.toggle('hidden', isNight);
-
-            const wPriceContainer = document.getElementById('wishlist-price-container');
-            if (wPriceContainer) wPriceContainer.classList.toggle('hidden', isNight);
-
-            const wDishesContainer = document.getElementById('wishlist-dishes-container');
-            if (wDishesContainer) wDishesContainer.classList.toggle('hidden', !isNight);
-
-            const wNameInput = document.getElementById('wishlistName');
-            if (wNameInput) {
-                wNameInput.placeholder = isNight ? "輸入夜市名稱..." : "輸入餐廳名稱...";
+            const addrInput = document.getElementById('address');
+            if (addrInput) {
+                const ro = cfg.addressMode === 'readonly';
+                addrInput.readOnly = ro;
+                addrInput.placeholder = ro ? '搜尋夜市時自動填入...' : '自動填入...';
+                addrInput.classList.toggle('bg-gray-100', ro);
+                addrInput.classList.toggle('cursor-not-allowed', ro);
             }
+            const gpsBtn = document.getElementById('gpsLocateBtn');
+            if (gpsBtn) gpsBtn.classList.toggle('hidden', cfg.addressMode !== 'gps');
+
+            const memDishesContainer = document.getElementById('memory-dishes-container');
+            if (memDishesContainer) memDishesContainer.classList.toggle('hidden', !cfg.showFoodFields);
+            const memDishesLabel = document.getElementById('memory-dishes-label');
+            if (memDishesLabel) memDishesLabel.innerText = cfg.dishesLabel;
+            const dishesInput = document.getElementById('dishes');
+            if (dishesInput) {
+                dishesInput.required = !!cfg.showFoodFields; // 隱藏時必須解除 required，否則表單送不出
+                dishesInput.placeholder = cfg.dishesPlaceholder;
+            }
+            const ratingContainer = document.getElementById('memory-rating-container');
+            if (ratingContainer) ratingContainer.classList.toggle('hidden', !cfg.showFoodFields);
+            const priceContainer = document.getElementById('memory-price-container');
+            if (priceContainer) priceContainer.classList.toggle('hidden', !cfg.showFoodFields);
+
+            const campFieldsBox = document.getElementById('campFields');
+            if (campFieldsBox) campFieldsBox.classList.toggle('hidden', !cfg.campFields);
+
+            const photoLabel = document.getElementById('memory-photo-label');
+            if (photoLabel) photoLabel.innerText = cfg.photoLabel;
+
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) searchInput.placeholder = cfg.searchPlaceholder;
+
+            // 評分/價格篩選器：車宿無此語意 → 隱藏並重置，避免看不見的條件把清單濾空
+            const rfWrap = document.getElementById('ratingFilterWrap');
+            const pfWrap = document.getElementById('priceFilterWrap');
+            if (rfWrap) rfWrap.classList.toggle('hidden', !cfg.showFoodFields);
+            if (pfWrap) pfWrap.classList.toggle('hidden', !cfg.showFoodFields);
+            if (!cfg.showFoodFields) {
+                const rf = document.getElementById('ratingFilter'); if (rf) rf.value = '0';
+                const pf = document.getElementById('priceFilter'); if (pf) pf.value = '0';
+            }
+
+            // 心願清單表單
+            const wNameLabel = document.getElementById('wishlist-name-label');
+            if (wNameLabel) wNameLabel.innerText = cfg.wishlistNameLabel;
+            const wNameInput = document.getElementById('wishlistName');
+            if (wNameInput) wNameInput.placeholder = cfg.wishlistNamePlaceholder;
+
+            const simple = cfg.wishlistStyle === 'simple';
+            const wAddressContainer = document.getElementById('wishlist-address-container');
+            if (wAddressContainer) wAddressContainer.classList.toggle('hidden', simple);
+            const wRatingContainer = document.getElementById('wishlist-rating-container');
+            if (wRatingContainer) wRatingContainer.classList.toggle('hidden', simple);
+            const wPriceContainer = document.getElementById('wishlist-price-container');
+            if (wPriceContainer) wPriceContainer.classList.toggle('hidden', simple);
+            const wDishesContainer = document.getElementById('wishlist-dishes-container');
+            if (wDishesContainer) wDishesContainer.classList.toggle('hidden', !simple);
+            const wDishesLabel = document.getElementById('wishlist-dishes-label');
+            if (wDishesLabel) wDishesLabel.innerText = cfg.wishlistDishesLabel;
+        };
+
+        // --- ✨ 車宿欄位小工具（設施 chips / 費用快速鍵 / 安全感三段）---
+        const CAMP_FACILITIES = ['廁所', '淋浴', '飲水', '供電', '超商', '安靜', '有遮蔽', '風景好'];
+        const CHIP_ON = 'text-xs font-bold text-white bg-emerald-600 border border-emerald-600 px-2.5 py-1 rounded-full transition';
+        const CHIP_OFF = 'text-xs text-gray-500 bg-gray-100 hover:bg-gray-200 border border-gray-200 px-2.5 py-1 rounded-full transition';
+        const SAFETY_LEVELS = { 1: '🌑 偏暗', 2: '🌗 普通', 3: '💡 明亮' };
+        window.SAFETY_LEVELS = SAFETY_LEVELS;
+        const SEG_ON = 'text-xs font-bold text-white bg-emerald-600 border border-emerald-600 py-1.5 rounded-lg transition';
+        const SEG_OFF = 'text-xs text-gray-500 bg-gray-100 hover:bg-gray-200 border border-gray-200 py-1.5 rounded-lg transition';
+
+        (function initCampFields() {
+            const chips = document.getElementById('facilityChips');
+            if (chips) chips.innerHTML = CAMP_FACILITIES.map(f =>
+                `<button type="button" data-val="${f}" data-on="0" onclick="toggleFacility(this)" class="${CHIP_OFF}">${f}</button>`).join('');
+            const seg = document.getElementById('safetySegment');
+            if (seg) seg.innerHTML = Object.keys(SAFETY_LEVELS).map(l =>
+                `<button type="button" data-level="${l}" onclick="setSafety(${l})" class="${+l === 2 ? SEG_ON : SEG_OFF}">${SAFETY_LEVELS[l]}</button>`).join('');
+        })();
+
+        window.toggleFacility = function (btn) {
+            const on = btn.dataset.on !== '1';
+            btn.dataset.on = on ? '1' : '0';
+            btn.className = on ? CHIP_ON : CHIP_OFF;
+        };
+        window.getSelectedFacilities = function () {
+            return Array.from(document.querySelectorAll('#facilityChips button[data-on="1"]')).map(b => b.dataset.val);
+        };
+        window.setFacilities = function (arr) {
+            const list = Array.isArray(arr) ? arr : [];
+            document.querySelectorAll('#facilityChips button').forEach(b => {
+                const on = list.includes(b.dataset.val);
+                b.dataset.on = on ? '1' : '0';
+                b.className = on ? CHIP_ON : CHIP_OFF;
+            });
+        };
+        window.setSafety = function (n) {
+            const el = document.getElementById('campSafety');
+            if (el) el.value = n;
+            document.querySelectorAll('#safetySegment button').forEach(b => {
+                b.className = (+b.dataset.level === +n) ? SEG_ON : SEG_OFF;
+            });
+        };
+        window.setCampCost = function (n) {
+            const el = document.getElementById('campCost');
+            if (el) el.value = n;
+        };
+        window.resetCampFields = function () {
+            window.setFacilities([]);
+            window.setSafety(2);
+            const el = document.getElementById('campCost');
+            if (el) el.value = '';
+        };
+
+        // ✨ 車宿：GPS 一鍵帶入目前位置（座標必存；地址以 Geocoder 反查，失敗則存座標字串）
+        window.locateHere = function () {
+            if (!navigator.geolocation) { alert('此裝置不支援定位'); return; }
+            const btn = document.getElementById('gpsLocateBtn');
+            if (btn) btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i>定位中...';
+            const restore = () => { if (btn) btn.innerHTML = '<i class="fa-solid fa-location-crosshairs mr-1"></i>帶入目前位置'; };
+            navigator.geolocation.getCurrentPosition(pos => {
+                const lat = pos.coords.latitude, lng = pos.coords.longitude;
+                currentPlaceCoords = { lat, lng };
+                const done = (text) => {
+                    const addr = document.getElementById('address');
+                    if (addr) addr.value = text || '';
+                    if (btn) btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i>已帶入位置';
+                };
+                if (window.google && google.maps && google.maps.Geocoder) {
+                    new google.maps.Geocoder().geocode({ location: { lat, lng } }, (results, status) => {
+                        done((status === 'OK' && results && results[0]) ? results[0].formatted_address : `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+                    });
+                } else {
+                    done(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+                }
+            }, () => { alert('定位失敗，請確認已開啟定位權限'); restore(); });
         };
 
         const form = document.getElementById('foodForm');
@@ -2350,7 +2594,7 @@
                         'linear-gradient(150deg,#c99a6a,#8a5a3a)',
                         'linear-gradient(150deg,#e2b13c,#c8412f)'
                     ];
-                    const heroIcon = (entry.category === 'night_market') ? 'fa-tent' : 'fa-utensils';
+                    const heroIcon = ((window.CATEGORIES && window.CATEGORIES[entry.category || 'food']) || { icon: 'fa-utensils' }).icon;
                     imageSection = `<div class="w-full h-40 rounded-lg mb-3 flex items-center justify-center" style="background:${heroGradients[idx % heroGradients.length]}">
                                         <i class="fa-solid ${heroIcon} text-white text-4xl opacity-90" style="filter:drop-shadow(0 2px 4px rgba(0,0,0,.15))"></i>
                                     </div>`;
@@ -2413,10 +2657,16 @@
                         </span>
                     </div>
 
+                    ${(entry.category === 'car_camp') ? `
+                    <div class="flex items-center gap-2 mb-2 text-sm">
+                        ${entry.safety ? `<span class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">${(window.SAFETY_LEVELS || {})[entry.safety] || ''}</span>` : ''}
+                        ${(entry.cost !== null && entry.cost !== undefined) ? `<span class="text-xs font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">${entry.cost == 0 ? '免費' : 'NT$' + entry.cost}</span>` : ''}
+                    </div>` : `
                     <div class="flex items-center gap-2 mb-2 text-sm">
                         <span class="text-yellow-500">${getStars(entry.rating)}</span>
+                        ${window.RATING_LABELS[parseInt(entry.rating)] ? `<span class="text-xs font-bold text-brand-600 bg-brand-50 border border-brand-100 px-2 py-0.5 rounded-full">${window.RATING_LABELS[parseInt(entry.rating)]}</span>` : ''}
                         ${entry.priceLevel ? `<span class="text-gray-500 font-medium px-1.5 py-0.5 bg-gray-100 rounded text-xs">${getPriceSymbol(entry.priceLevel)}</span>` : ''}
-                    </div>
+                    </div>`}
                     
                     <div class="space-y-2 text-sm text-gray-600">
                         ${entry.address ? `
@@ -2427,7 +2677,11 @@
                                 </a>
                             </p>
                         ` : ''}
-                        <p class="flex items-start gap-2"><i class="fa-solid fa-utensils mt-1 text-brand-500 shrink-0"></i><span class="font-medium text-gray-800">${entry.dishes || '未填寫'}</span></p>
+                        ${(entry.category === 'car_camp') ? `
+                        ${Array.isArray(entry.facilities) && entry.facilities.length > 0 ? `
+                            <p class="flex flex-wrap gap-1.5">${entry.facilities.map(f => `<span class="inline-flex items-center text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full"><i class="fa-solid fa-circle-check text-[9px] mr-1 opacity-70"></i>${f}</span>`).join('')}</p>
+                        ` : ''}` : `
+                        <p class="flex items-start gap-2"><i class="fa-solid fa-utensils mt-1 text-brand-500 shrink-0"></i><span class="font-medium text-gray-800">${entry.dishes || '未填寫'}</span></p>`}
                         
                         ${entry.phoneNumber ? `
                             <p class="flex items-center gap-2 mt-1">
@@ -2439,7 +2693,7 @@
 
                         ${currentTab === 'wishlist' ? `
                             <button onclick="addToMemory('${entry.id}')" class="w-full mt-3 bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold py-2 rounded-lg transition border border-blue-200 flex items-center justify-center gap-2">
-                                <i class="fa-solid fa-check"></i> 吃過了，轉為回憶
+                                <i class="fa-solid fa-check"></i> ${((window.CATEGORIES && window.CATEGORIES[entry.category || 'food']) || {}).transferLabel || '吃過了，轉為回憶'}
                             </button>
                         ` : ''}
 
@@ -2525,6 +2779,15 @@
             document.getElementById('stat-total-memory').innerText = memoryEntries.length;
             document.getElementById('stat-total-wishlist').innerText = wishlistEntries.length;
 
+            // ✨ 分類感知：心願卡片標籤查表；車宿隱藏評分/價位圖（餐飲語意，見 decision.md）
+            const statCfg = (window.CATEGORIES && window.CATEGORIES[currentMode]) || { showFoodFields: true, wishLabel: '待吃清單' };
+            const wishLabelEl = document.getElementById('stat-wishlist-label');
+            if (wishLabelEl) wishLabelEl.innerText = statCfg.wishLabel;
+            const ratingBlock = document.getElementById('chartRatingBlock');
+            if (ratingBlock) ratingBlock.classList.toggle('hidden', !statCfg.showFoodFields);
+            const priceBlock = document.getElementById('chartPriceBlock');
+            if (priceBlock) priceBlock.classList.toggle('hidden', !statCfg.showFoodFields);
+
             // ✨ 疑似重複偵測 + 回憶再現引擎（不依賴 Chart，放在 guard 前確保一定執行）
             window.renderDuplicates();
             window.renderYearReview();
@@ -2540,7 +2803,7 @@
             });
 
             renderChart('chart-rating', 'doughnut', {
-                labels: ['5星', '4星', '3星', '2星', '1星'],
+                labels: ['5星 會推給朋友', '4星 會再回訪', '3星 偶而回訪', '2星 沒得吃會回訪', '1星 絕不再回訪'],
                 datasets: [{
                     data: [ratingCounts[5], ratingCounts[4], ratingCounts[3], ratingCounts[2], ratingCounts[1]],
                     backgroundColor: ['#eab308', '#facc15', '#fdba74', '#fdba74', '#cbd5e1'],
@@ -2720,6 +2983,7 @@
             // Fill form
             document.getElementById('restaurantName').value = entry.name || '';
             document.getElementById('address').value = entry.address || '';
+            document.getElementById('dishes').value = entry.dishes || ''; // ✨ 修正：心願轉回憶原本漏帶攤位/餐點描述
             document.getElementById('rating').value = entry.rating || '5';
             document.getElementById('priceLevel').value = entry.priceLevel || '1';
             document.getElementById('tagsInput').value = Array.isArray(entry.tags) ? entry.tags.join(', ') : '';
@@ -2745,12 +3009,13 @@
         // Wishlist Form Listener
         document.getElementById('wishlistForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const isNight = currentMode === 'night_market';
+            const wcfg = window.CATEGORIES[currentMode] || window.CATEGORIES.food;
+            const isSimple = wcfg.wishlistStyle === 'simple'; // 夜市/車宿：自由文字，不走 Google 搜尋
 
             const wishlistTags = window.parseTags(document.getElementById('wishlistTagsInput').value);
 
             let entry;
-            if (isNight) {
+            if (isSimple) {
                 const name = document.getElementById('wishlistName').value;
                 const dishes = document.getElementById('wishlistDishes').value;
 
@@ -3028,12 +3293,10 @@
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const cfg = window.CATEGORIES[currentMode] || window.CATEGORIES.food;
             const entry = {
                 name: document.getElementById('restaurantName').value,
                 address: document.getElementById('address').value,
-                dishes: document.getElementById('dishes').value,
-                rating: document.getElementById('rating').value,
-                priceLevel: document.getElementById('priceLevel').value, // Add priceLevel
                 notes: document.getElementById('notes').value,
                 tags: window.parseTags(document.getElementById('tagsInput').value),
                 date: new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' }),
@@ -3042,9 +3305,21 @@
                 phoneNumber: currentPlacePhone,
                 placeId: currentPlaceId
             };
+            if (cfg.campFields) {
+                // 車宿：扁平專屬欄位，不重載 rating/priceLevel（見 decision.md）
+                entry.facilities = window.getSelectedFacilities();
+                const costVal = document.getElementById('campCost').value;
+                entry.cost = costVal === '' ? null : parseInt(costVal);
+                entry.safety = parseInt(document.getElementById('campSafety').value) || 2;
+            } else {
+                entry.dishes = document.getElementById('dishes').value;
+                entry.rating = document.getElementById('rating').value;
+                entry.priceLevel = document.getElementById('priceLevel').value;
+            }
 
             console.log("Submitting entry with files:", selectedFiles);
             await addEntryToCloud(entry, selectedFiles);
+            window.resetCampFields();
 
             // ✨ Auto-delete Wishlist Item if transferred
             if (window.transferringWishlistId) {
