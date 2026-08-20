@@ -1020,7 +1020,7 @@
             if (candidates.length > 0) {
                 await handleCandidateStatus(candidates, "附近 15km");
             } else {
-                if (confirm(`在您附近 ${radius} 公里內找不到「會再回訪」以上的口袋名單耶！\n要改為搜尋全部地區嗎？`)) {
+                if (confirm(`在您附近 ${radius} 公里內找不到「好吃會再回來」以上的口袋名單耶！\n要改為搜尋全部地區嗎？`)) {
                     await prepareCandidates(null);
                 } else {
                     window.closeRandomPicker();
@@ -1082,7 +1082,7 @@
                     candidates = cityCandidates;
                     locationMsg = city;
                 } else {
-                    if (confirm(`在【${city}】找不到「會再回訪」以上的口袋名單耶！\n要改為搜尋全部地區嗎？`)) {
+                    if (confirm(`在【${city}】找不到「好吃會再回來」以上的口袋名單耶！\n要改為搜尋全部地區嗎？`)) {
                         locationMsg = "全台";
                     } else {
                         window.closeRandomPicker();
@@ -1092,7 +1092,7 @@
             }
 
             if (candidates.length === 0) {
-                alert("目前沒有「會再回訪」以上的美食回憶喔！");
+                alert("目前沒有「好吃會再回來」以上的美食回憶喔！");
                 window.closeRandomPicker();
                 return;
             }
@@ -1707,11 +1707,11 @@
                                     class="fa-solid fa-star"></i></span>
                             <select id="rating"
                                 class="w-full pl-9 pr-4 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 transition appearance-none">
-                                <option value="5">⭐⭐⭐⭐⭐ 會推給朋友來吃</option>
-                                <option value="4">⭐⭐⭐⭐ 會再回訪</option>
-                                <option value="3">⭐⭐⭐ 偶而回訪</option>
-                                <option value="2">⭐⭐ 沒得吃會回訪</option>
-                                <option value="1">⭐ 絕不會再回訪</option>
+                                <option value="5">⭐⭐⭐⭐⭐ 大推可以宣傳</option>
+                                <option value="4">⭐⭐⭐⭐ 好吃會再回來</option>
+                                <option value="3">⭐⭐⭐ 還可以偶爾吃</option>
+                                <option value="2">⭐⭐ 普通不會來了</option>
+                                <option value="1">⭐ 大踩雷</option>
                             </select>
                             <span class="absolute right-3 top-2.5 text-gray-400 pointer-events-none"><i
                                     class="fa-solid fa-chevron-down"></i></span>
@@ -1953,9 +1953,9 @@
                             <select id="ratingFilter" onchange="filterAndRender()"
                                 class="appearance-none bg-white border border-brand-200 text-brand-900 font-medium py-1.5 pl-3 pr-8 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 shadow-sm transition-all hover:border-brand-400 cursor-pointer">
                                 <option value="0">全部評價</option>
-                                <option value="5">⭐5 會推給朋友來吃</option>
-                                <option value="4">⭐4↑ 會再回訪</option>
-                                <option value="3">⭐3↑ 偶而回訪</option>
+                                <option value="5">⭐5 大推可以宣傳</option>
+                                <option value="4">⭐4↑ 好吃會再回來</option>
+                                <option value="3">⭐3↑ 還可以偶爾吃</option>
                             </select>
                             <div
                                 class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-brand-500">
@@ -2259,7 +2259,7 @@
         };
 
         // ✨ 評分語意：數值 1-5 照存（統計/抽籤/篩選不變），顯示改為回訪意願
-        window.RATING_LABELS = { 1: '絕不會再回訪', 2: '沒得吃會回訪', 3: '偶而回訪', 4: '會再回訪', 5: '會推給朋友來吃' };
+        window.RATING_LABELS = { 1: '大踩雷', 2: '普通不會來了', 3: '還可以偶爾吃', 4: '好吃會再回來', 5: '大推可以宣傳' };
 
         let currentMode = 'food'; // CATEGORIES 的 key
         let lastEatMode = 'food'; // 「吃」群組最後停留的子分類
@@ -2969,7 +2969,7 @@
             });
 
             renderChart('chart-rating', 'doughnut', {
-                labels: ['5星 會推給朋友', '4星 會再回訪', '3星 偶而回訪', '2星 沒得吃會回訪', '1星 絕不再回訪'],
+                labels: ['5星 大推可宣傳', '4星 好吃會再來', '3星 偶爾吃', '2星 不會來了', '1星 大踩雷'],
                 datasets: [{
                     data: [ratingCounts[5], ratingCounts[4], ratingCounts[3], ratingCounts[2], ratingCounts[1]],
                     backgroundColor: ['#eab308', '#facc15', '#fdba74', '#fdba74', '#cbd5e1'],
