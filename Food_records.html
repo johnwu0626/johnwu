@@ -2784,9 +2784,64 @@
                         <button type="button" onclick="document.getElementById('parkingDetailOverlay').remove()"
                             class="px-4 py-2.5 text-sm font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 rounded-xl transition">關閉</button>
                     </div>
+                    <div class="mt-3 pt-3 border-t border-dashed border-gray-200">
+                        <p class="text-xs font-bold text-brand-900 mb-2">🍜 附近 4.2★ 以上美食（700m 內）</p>
+                        <div id="parkingFoodList" class="space-y-1.5"><p class="text-xs text-gray-400"><i class="fa-solid fa-circle-notch fa-spin mr-1"></i>搜尋附近美食中…</p></div>
+                    </div>
                 </div>`;
             document.body.appendChild(ov);
+            loadNearbyFood(s);
         };
+
+        // 🍜 場站附近 4.2★+ 餐廳（Google Places NearbySearch）：700m 起搜、不滿 10 間自動擴大 1.5km；8 秒逾時防呆
+        function loadNearbyFood(s) {
+            const fail = (msg) => { const el = document.getElementById('parkingFoodList'); if (el) el.innerHTML = `<p class="text-xs text-gray-400">${msg}</p>`; };
+            if (!(s && s.lat && s.lng)) return fail('此場站無座標，無法搜尋附近美食');
+            if (!(window.google && google.maps && google.maps.places)) return fail('地圖服務尚未載入，稍後再開一次試試');
+            const loc = new google.maps.LatLng(s.lat, s.lng);
+            const svc = new google.maps.places.PlacesService(document.createElement('div'));
+            let done = false;
+            const guard = setTimeout(() => { if (!done) { done = true; fail('附近美食搜尋逾時（此網域可能未授權 Google 地點服務）'); } }, 8000);
+            const search = (radius) => new Promise(resolve => {
+                svc.nearbySearch({ location: loc, radius, type: 'restaurant' }, (results, status) => {
+                    resolve(status === google.maps.places.PlacesServiceStatus.OK && results ? results : (status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS ? [] : null));
+                });
+            });
+            (async () => {
+                let results = await search(700);
+                let widened = false;
+                if (results === null) { if (!done) { done = true; clearTimeout(guard); fail('附近美食搜尋失敗'); } return; }
+                const pick = (arr) => arr
+                    .filter(r => (r.rating || 0) >= 4.2 && (r.user_ratings_total || 0) > 0 && r.geometry && r.geometry.location)
+                    .map(r => ({ r, m: Math.round(parkingDistKm(s.lat, s.lng, r.geometry.location.lat(), r.geometry.location.lng()) * 1000) }));
+                let hits = pick(results);
+                if (hits.length < 10) {
+                    const more = await search(1500);
+                    if (more && more.length) {
+                        widened = true;
+                        const seen = new Set(hits.map(x => x.r.place_id));
+                        pick(more).forEach(x => { if (!seen.has(x.r.place_id)) { seen.add(x.r.place_id); hits.push(x); } });
+                    }
+                }
+                if (done) return;
+                done = true; clearTimeout(guard);
+                const el = document.getElementById('parkingFoodList');
+                if (!el) return; // 使用者已關閉明細卡
+                hits.sort((a, b) => a.m - b.m);
+                hits = hits.slice(0, 10);
+                if (!hits.length) return fail('1.5km 內沒有 4.2★ 以上的餐廳');
+                const esc = (t) => String(t || '').replace(/</g, '&lt;');
+                el.innerHTML = hits.map(x => `
+                    <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(x.r.name)}&query_place_id=${x.r.place_id || ''}" target="_blank" rel="noopener"
+                        class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-gray-50 hover:bg-brand-50 border border-gray-100 transition">
+                        <span class="min-w-0 flex-1">
+                            <span class="block text-xs font-bold text-gray-800 truncate">${esc(x.r.name)}</span>
+                            <span class="block text-[10px] text-gray-500">⭐${x.r.rating}（${x.r.user_ratings_total} 則）· ${x.m}m</span>
+                        </span>
+                        <i class="fa-solid fa-chevron-right text-[10px] text-gray-300 shrink-0"></i>
+                    </a>`).join('') + (widened ? '<p class="text-[10px] text-gray-400 mt-1">700m 內不足 10 間，已擴大搜尋至 1.5km</p>' : '');
+            })();
+        }
 
         // 距離（km）：haversine
         function parkingDistKm(lat1, lng1, lat2, lng2) {
