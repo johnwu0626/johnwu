@@ -2220,6 +2220,10 @@
                 <div id="rateDayPills" class="flex gap-1.5"></div>
                 <span class="text-[10px] text-gray-400 ml-auto">試算未含信用卡折抵，以現場公告為準</span>
             </div>
+            <div id="rateBandRow" style="display:none" class="items-center gap-1.5 mt-2 flex-wrap">
+                <span class="text-xs font-bold text-brand-900 shrink-0">時費</span>
+                <div id="rateBandPills" class="flex gap-1.5 flex-wrap"></div>
+            </div>
         </section>
 
         <div id="parkingList" class="space-y-3"></div>
@@ -2679,8 +2683,11 @@
                         if (s._p === undefined) s._p = parseParkingRate(s.r);
                         const est = s._p ? estimateCost(s._p, parkingHours, parkingDay) : null;
                         if (est == null) { unparsed++; return; }
+                        const seg = parkingDay === 'hd' ? s._p.hd : s._p.wd;
+                        const band = RATE_BANDS[parkingBand];
+                        if (seg.hourly < band.min || seg.hourly > band.max) return; // 時費區間篩選
                         const km = (near && s.lat && s.lng) ? parkingDistKm(near.lat, near.lng, s.lat, s.lng) : null;
-                        rows.push({ cty, i, s, est, km, seg: parkingDay === 'hd' ? s._p.hd : s._p.wd });
+                        rows.push({ cty, i, s, est, km, seg });
                     });
                 }
                 rows.sort((a, b) => a.est - b.est || (a.km ?? 1e9) - (b.km ?? 1e9) || a.seg.hourly - b.seg.hourly);
@@ -2695,7 +2702,7 @@
                         <span class="text-sm font-bold text-brand-600 bg-white border border-brand-100 px-2 py-1 rounded-lg shrink-0">約$${x.est}</span>
                     </button>`).join('');
                 html = `<section class="bg-white p-4 rounded-2xl shadow-lg border border-brand-100">
-                    <h3 class="font-bold text-base text-brand-900 mb-1">⏱️ 停 ${parkingHours} 小時試算 <span class="text-xs font-medium text-brand-500">（${parkingDay === 'wd' ? '平日' : '假日'}${q ? '・搜尋「' + q + '」' : ''}）</span></h3>
+                    <h3 class="font-bold text-base text-brand-900 mb-1">⏱️ 停 ${parkingHours} 小時試算 <span class="text-xs font-medium text-brand-500">（${parkingDay === 'wd' ? '平日' : '假日'}${parkingBand ? '・時費' + RATE_BANDS[parkingBand].label : ''}${q ? '・搜尋「' + q + '」' : ''}）</span></h3>
                     <p class="text-[10px] text-gray-400 mb-2">共 ${rows.length} 站可試算${rows.length > 40 ? '，顯示最便宜前 40' : ''}${unparsed ? '；另 ' + unparsed + ' 站費率無法解析（可點進明細看原文）' : ''}。分時段費率以最高時費保守估。</p>
                     <div class="space-y-1.5">${items || '<p class="text-sm text-gray-500">沒有可試算的場站。</p>'}</div>
                 </section>`;
@@ -2842,6 +2849,14 @@
 
         let parkingHours = 0;   // 0 = 試算關閉
         let parkingDay = 'wd';  // 'wd' 平日 | 'hd' 假日
+        let parkingBand = 0;    // 時費區間索引（0=全部）
+        const RATE_BANDS = [
+            { label: '全部', min: 0, max: Infinity },
+            { label: '$30以下', min: 0, max: 30 },
+            { label: '$30-50', min: 31, max: 50 },
+            { label: '$50-80', min: 51, max: 80 },
+            { label: '$80以上', min: 81, max: Infinity }
+        ];
         const RPILL_ON = 'text-xs font-bold text-white bg-brand-500 px-2.5 py-1 rounded-full transition';
         const RPILL_OFF = 'text-xs text-gray-500 bg-gray-100 hover:bg-gray-200 border border-gray-200 px-2.5 py-1 rounded-full transition';
 
@@ -2856,12 +2871,24 @@
                 dp.innerHTML = [['wd', '平日'], ['hd', '假日']].map(([k, label]) =>
                     `<button type="button" data-d="${k}" onclick="setParkingDay('${k}')" class="${k === 'wd' ? RPILL_ON : RPILL_OFF}">${label}</button>`).join('');
             }
+            const bp = document.getElementById('rateBandPills');
+            if (bp && !bp.children.length) {
+                bp.innerHTML = RATE_BANDS.map((b, i) =>
+                    `<button type="button" data-b="${i}" onclick="setParkingBand(${i})" class="${i === 0 ? RPILL_ON : RPILL_OFF}">${b.label}</button>`).join('');
+            }
         }
         window.setParkingHours = function (h) {
             parkingHours = h;
             document.querySelectorAll('#rateHourPills button').forEach(b => { b.className = (+b.dataset.h === h) ? RPILL_ON : RPILL_OFF; });
             const row = document.getElementById('rateDayRow');
             if (row) row.style.display = h ? 'flex' : 'none';
+            const bandRow = document.getElementById('rateBandRow');
+            if (bandRow) bandRow.style.display = h ? 'flex' : 'none';
+            renderParkingList();
+        };
+        window.setParkingBand = function (i) {
+            parkingBand = i;
+            document.querySelectorAll('#rateBandPills button').forEach(b => { b.className = (+b.dataset.b === i) ? RPILL_ON : RPILL_OFF; });
             renderParkingList();
         };
         window.setParkingDay = function (d) {
