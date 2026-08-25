@@ -2388,9 +2388,13 @@
             if (titleText) titleText.innerText = cfg.titleText;
             if (titleIconBg) titleIconBg.className = cfg.titleBgClass;
 
-            // 抽籤 FAB：車宿排除（4 星門檻為餐飲語意，見 decision.md）
+            // 抽籤 FAB：車宿排除（4 星門檻為餐飲語意，見 decision.md）；離開行模式時還原為美食抽籤
             const fab = document.getElementById('randomPickerFab');
-            if (fab) fab.classList.toggle('hidden', !cfg.randomPicker);
+            if (fab) {
+                fab.classList.toggle('hidden', !cfg.randomPicker);
+                fab.setAttribute('onclick', 'openRandomPicker()');
+                fab.setAttribute('title', '不知吃什麼？幫我選！');
+            }
 
             if (window.updateFormFields) window.updateFormFields();
             if (window.renderTagSuggestions) window.renderTagSuggestions();
@@ -2589,10 +2593,17 @@
             if (titleText) titleText.innerText = '停車優惠';
             if (titleIconBg) titleIconBg.className = 'inline-flex items-center justify-center w-8 h-8 rounded-full text-lg shadow-sm shrink-0 transition-colors bg-indigo-100 bg-opacity-70 text-indigo-600';
 
-            ['memorySection', 'wishlistSection', 'statsSection', 'mainContent', 'bottomNav', 'randomPickerFab'].forEach(id => {
+            ['memorySection', 'wishlistSection', 'statsSection', 'mainContent', 'bottomNav'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.classList.add('hidden');
             });
+            // 🎲 FAB 在行模式改為「骰停車場」（20km 內雙業者隨機抽一場）
+            const fab = document.getElementById('randomPickerFab');
+            if (fab) {
+                fab.classList.remove('hidden');
+                fab.setAttribute('onclick', 'parkingDice()');
+                fab.setAttribute('title', '不知道停哪？骰一個 20km 內的優惠停車場！');
+            }
             const ps = document.getElementById('parkingSection');
             if (ps) ps.classList.remove('hidden');
             initParkingUnit();
@@ -2752,8 +2763,33 @@
             box.innerHTML = html || '<section class="bg-white p-4 rounded-2xl shadow-lg border border-brand-100 text-sm text-gray-500">沒有符合的場站。</section>';
         };
 
-        // ✨ 場站明細卡：費率/營業時間/玉山配合/導航
-        window.openParkingDetail = function (op, cty, i) {
+        // 🎲 骰停車場：定位 → 從嘟嘟房＋台灣聯通合併池抽 20km 內一場 → 開明細卡（含附近美食）
+        window.parkingDice = function () {
+            if (!navigator.geolocation) { alert('此裝置不支援定位'); return; }
+            const d = window.PARKING_DATA;
+            if (!d) { alert('停車資料尚未載入'); return; }
+            navigator.geolocation.getCurrentPosition(pos => {
+                const lat = pos.coords.latitude, lng = pos.coords.longitude;
+                const pool = [];
+                for (const op of ['dodo', 'twp']) {
+                    for (const [cty, sites] of Object.entries(d[op] || {})) {
+                        sites.forEach((s, i) => {
+                            if (!s.lat || !s.lng) return;
+                            const km = parkingDistKm(lat, lng, s.lat, s.lng);
+                            if (km <= 20) pool.push({ op, cty, i, km });
+                        });
+                    }
+                }
+                if (pool.length === 0) { alert('你附近 20 公里內沒有信用卡優惠的場站耶！'); return; }
+                const pick = pool[Math.floor(Math.random() * pool.length)];
+                openParkingDetail(pick.op, pick.cty, pick.i, pick.km);
+            }, (err) => {
+                alert('定位失敗（' + (err && err.code === 1 ? '未授權定位權限，請到瀏覽器設定開啟' : '訊號不足，請稍後再試') + '）');
+            }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 });
+        };
+
+        // ✨ 場站明細卡：費率/營業時間/玉山配合/導航（km 有值時顯示距離，供骰子/附近入口用）
+        window.openParkingDetail = function (op, cty, i, km) {
             const s = parkingStation(op, cty, i);
             if (!s) return;
             const old = document.getElementById('parkingDetailOverlay');
@@ -2772,6 +2808,7 @@
                         <h3 class="font-bold text-brand-900 text-base flex-1">${s.n}</h3>${esun}
                     </div>
                     <p class="text-xs text-gray-500 mb-2">${s.a || ''}</p>
+                    ${(typeof km === 'number') ? `<p class="text-xs font-bold text-brand-600 mb-2">🎲 ${op === 'dodo' ? '嘟嘟房' : '台灣聯通'} · 距你約 ${km.toFixed(1)} km</p>` : ''}
                     ${s.h ? `<p class="text-xs text-gray-600 mb-2"><i class="fa-regular fa-clock mr-1 text-brand-500"></i>營業時間：${s.h}</p>` : ''}
                     <div class="bg-brand-50 border border-brand-100 rounded-xl px-3 py-2 mb-3">
                         <p class="text-xs font-bold text-brand-900 mb-1">💰 臨停費率</p>
