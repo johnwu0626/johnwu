@@ -2569,6 +2569,7 @@
         let parkingOp = 'dodo';       // 'dodo' | 'twp'
         let parkingView = 'list';     // 'list' | 'map'
         let parkingMap = null, parkingMarkers = [], parkingInfoWin = null;
+        let __fabHome = null; // FAB 原本的父節點（mainContent），行模式借用後要歸還
 
         const PARK_TAB_ON = 'flex-1 py-2 text-sm font-bold rounded-md transition text-brand-900 bg-white shadow-sm';
         const PARK_TAB_OFF = 'flex-1 py-2 text-sm font-bold rounded-md transition text-brand-600 hover:bg-white/50';
@@ -2597,20 +2598,26 @@
                 const el = document.getElementById(id);
                 if (el) el.classList.add('hidden');
             });
-            // 🎲 FAB 在行模式改為「骰停車場」（20km 內雙業者隨機抽一場）
+            const ps = document.getElementById('parkingSection');
+            if (ps) ps.classList.remove('hidden');
+            // 🎲 FAB 在行模式改為「骰停車場」；FAB 原本住在 mainContent（行模式會整塊隱藏），
+            //    必須把節點搬進 parkingSection 才看得見（只 remove hidden 沒用）
             const fab = document.getElementById('randomPickerFab');
-            if (fab) {
+            if (fab && ps) {
+                if (!__fabHome) __fabHome = fab.parentElement;
+                ps.appendChild(fab);
                 fab.classList.remove('hidden');
                 fab.setAttribute('onclick', 'parkingDice()');
                 fab.setAttribute('title', '不知道停哪？骰一個 20km 內的優惠停車場！');
             }
-            const ps = document.getElementById('parkingSection');
-            if (ps) ps.classList.remove('hidden');
             initParkingUnit();
         }
 
         function exitParkingMode() {
             window.__parkingMode = false;
+            // FAB 先搬回原家（mainContent），否則會跟著 parkingSection 一起被藏起來
+            const fab = document.getElementById('randomPickerFab');
+            if (fab && __fabHome) __fabHome.appendChild(fab);
             const ps = document.getElementById('parkingSection');
             if (ps) ps.classList.add('hidden');
             const nav = document.getElementById('bottomNav');
