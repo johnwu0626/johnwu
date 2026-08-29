@@ -217,6 +217,7 @@
         // ✨ 回訪提醒：新增回憶時偵測到記錄過的同店，可一鍵帶入上次的標籤與價格
         window.__revisitSourceId = null;
         const _normStoreName = (s) => (s || '').toLowerCase().replace(/\s+/g, '').replace(/[()（）\-·,，.、!！]/g, '');
+        window.normStoreName = _normStoreName; // 心願重複偵測（classic script）需跨作用域使用
         window.checkRevisit = function () {
             const box = document.getElementById('revisitHint');
             if (!box) return;
@@ -323,6 +324,98 @@
                     <p class="text-xs text-gray-400 mb-3">依 Google 地點或「店名+縣市」判斷，僅提示不會自動合併。請自行「編輯」或「刪除」多餘的一筆。</p>
                     <div class="space-y-3">${groupsHtml}</div>
                 </section>`;
+        };
+
+        // ✨ 已吃過卻還在心願：用與新增時相同的比對規則（placeId 優先→正規化店名，限同分類）掃全庫
+        window.__eatenWishes = [];
+        window.renderEatenWishes = function () {
+            const box = document.getElementById('eatenWishSection');
+            if (!box) return;
+            const all = window.allFetchedEntries || [];
+            const hits = [];
+            all.forEach(w => {
+                if (w.type !== 'wishlist') return;
+                const cat = w.category || 'food';
+                const mem = window.findExistingEntry(w.name, w.placeId, cat, w.id, 'memory');
+                if (!mem) return;
+                // 心願有、回憶沒有的標籤 → 刪除前建議先搬
+                const memTags = Array.isArray(mem.tags) ? mem.tags.map(t => t.toLowerCase()) : [];
+                const lostTags = (Array.isArray(w.tags) ? w.tags : []).filter(t => t && !memTags.includes(t.toLowerCase()));
+                hits.push({ w, mem, lostTags });
+            });
+            window.__eatenWishes = hits;
+
+            if (hits.length === 0) {
+                box.innerHTML = `<div class="bg-white p-4 rounded-2xl shadow-lg border border-brand-100 text-sm text-gray-500 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-check text-green-500"></i> 心願清單裡沒有已經吃過的店。</div>`;
+                return;
+            }
+
+            const cats = window.CATEGORIES || {};
+            const rows = hits.map((h, i) => {
+                const c = cats[h.w.category || 'food'] || {};
+                const esc = (t) => String(t || '').replace(/</g, '&lt;');
+                return `<div class="py-2 border-t border-dashed border-gray-100">
+                    <div class="flex items-center gap-2">
+                        <span class="min-w-0 flex-1">
+                            <span class="block text-sm font-bold text-gray-800 truncate">${esc(h.w.name)}</span>
+                            <span class="block text-xs text-gray-400 truncate">${c.titleIcon || ''}${c.pillLabel || ''} · 心願 ${h.w.date || ''} → 已吃過 ${h.mem.date || ''}</span>
+                        </span>
+                        <button type="button" onclick="deleteEatenWish('${h.w.id}')"
+                            class="text-xs font-bold text-white bg-brand-500 hover:bg-brand-600 px-3 py-1 rounded-lg shrink-0">刪心願</button>
+                    </div>
+                    ${h.lostTags.length ? `<div class="mt-1 flex items-center gap-1.5 flex-wrap">
+                        <span class="text-[10px] text-amber-600">刪除會少這些標籤：</span>
+                        ${h.lostTags.map(t => `<span class="text-[10px] text-amber-700 bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded-full">${esc(t)}</span>`).join('')}
+                        <button type="button" onclick="moveTagsToMemory('${h.w.id}')"
+                            class="text-[10px] font-bold text-brand-600 bg-brand-50 border border-brand-100 px-2 py-0.5 rounded-full hover:bg-brand-100">先搬到回憶</button>
+                    </div>` : ''}
+                </div>`;
+            }).join('');
+
+            const withTags = hits.filter(h => h.lostTags.length).length;
+            box.innerHTML = `
+                <section class="bg-white p-4 rounded-2xl shadow-lg border border-brand-100">
+                    <h2 class="flex items-center gap-2 font-bold text-brand-900 text-base mb-1">
+                        <span class="text-lg">🍽️</span> 已吃過卻還在心願
+                        <span class="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full ml-auto">${hits.length} 筆</span>
+                    </h2>
+                    <p class="text-xs text-gray-400 mb-2">這些店已經有美食回憶了，心願可以刪掉。${withTags ? '有標籤標記的請先「搬到回憶」再刪，否則會少掉那些標籤。' : ''}</p>
+                    <button type="button" onclick="deleteAllEatenWishes()"
+                        class="w-full mb-1 text-sm font-bold text-brand-600 bg-brand-50 hover:bg-brand-100 border border-brand-100 py-2 rounded-lg transition">
+                        <i class="fa-solid fa-broom mr-1"></i>全部刪除（${hits.length} 筆）
+                    </button>
+                    <div>${rows}</div>
+                </section>`;
+        };
+
+        window.deleteEatenWish = async function (wishId) {
+            const h = (window.__eatenWishes || []).find(x => x.w.id === wishId);
+            if (!h) return;
+            const warn = h.lostTags.length ? `\n注意：會少掉標籤「${h.lostTags.join('、')}」（可先按「先搬到回憶」）。` : '';
+            if (!confirm(`刪除心願「${h.w.name}」？（已於 ${h.mem.date || ''} 吃過並記在回憶裡）${warn}`)) return;
+            await window.deleteEntryFromCloud(wishId, true);
+        };
+
+        window.moveTagsToMemory = async function (wishId) {
+            const h = (window.__eatenWishes || []).find(x => x.w.id === wishId);
+            if (!h || !h.lostTags.length) return;
+            const merged = (Array.isArray(h.mem.tags) ? h.mem.tags.slice() : []).concat(h.lostTags);
+            const ok = await window.updateWishlistFields(h.mem.id, { tags: merged });
+            if (ok) alert(`已把「${h.lostTags.join('、')}」加到回憶「${h.mem.name}」的標籤。`);
+        };
+
+        window.deleteAllEatenWishes = async function () {
+            const list = (window.__eatenWishes || []).slice();
+            if (!list.length) return;
+            const withTags = list.filter(h => h.lostTags.length);
+            const warn = withTags.length ? `\n\n其中 ${withTags.length} 筆帶有回憶沒有的標籤（${withTags.map(h => h.w.name).join('、')}），刪掉就會消失。建議先個別按「先搬到回憶」。` : '';
+            if (!confirm(`確定刪除這 ${list.length} 筆已經吃過的心願嗎？${warn}`)) return;
+            let ok = 0, fail = 0;
+            for (const h of list) {
+                try { await window.deleteEntryFromCloud(h.w.id, true); ok++; } catch (e) { fail++; }
+            }
+            alert(`心願清理完成：刪除 ${ok} 筆${fail ? `、失敗 ${fail} 筆` : ''}`);
         };
 
         // ✨ 疑似放錯分類（跨分類健檢）：店名關鍵字建議搬移，逐筆確認或一鍵套用；只改 category 欄位、可逆
@@ -1333,11 +1426,45 @@
             } catch (e) { alert('里程碑更新失敗：' + e.message); }
         };
 
+        // ✨ 心願專用輕量更新：只改傳入欄位，不碰 editingDocId / submitBtn / cancelEdit（那些是回憶表單的狀態）
+        window.addWishlistEntry = async function (entry) {
+            if (!currentUser) { alert("尚未連線"); return false; }
+            if (!coupleCode) { window.openSettings(); return false; }
+            if (entry && typeof entry === 'object') {
+                Object.keys(entry).forEach(k => { if (entry[k] === undefined) entry[k] = null; });
+            }
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'food_entries'), {
+                    ...entry, imageUrls: [], coupleCode: coupleCode, timestamp: Date.now(), userId: currentUser.uid
+                });
+                return true;
+            } catch (e) {
+                alert("儲存失敗：" + e.message);
+                return false;
+            }
+        };
+
+        window.updateWishlistFields = async function (docId, patch) {
+            if (!currentUser) { alert("尚未連線"); return false; }
+            if (patch && typeof patch === 'object') {
+                Object.keys(patch).forEach(k => { if (patch[k] === undefined) patch[k] = null; });
+            }
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'food_entries', docId);
+                await updateDoc(docRef, { ...patch, timestamp: Date.now() });
+                return true;
+            } catch (e) {
+                alert("更新失敗：" + e.message);
+                return false;
+            }
+        };
+
         window.deleteEntryFromCloud = async function (docId, silent = false) {
             if (!currentUser) return;
             if (silent || confirm('確定要刪除這筆回憶嗎？')) {
                 try {
                     await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'food_entries', docId));
+                    if (window.isEditingWishlist && window.isEditingWishlist(docId) && window.cancelWishlistEdit) window.cancelWishlistEdit();
                 } catch (e) { alert("刪除失敗"); }
             }
         }
@@ -1900,10 +2027,16 @@
                         </div>
                         <div id="wishlistTagSuggestions" class="flex flex-wrap gap-1.5 mt-1.5"></div>
                     </div>
-                    <button type="submit"
-                        class="w-full bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-lg shadow-md hover:shadow-lg transition duration-200 flex items-center justify-center gap-2">
+                    <div class="flex gap-2">
+                    <button type="submit" id="wishlistSubmitBtn"
+                        class="flex-1 bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 rounded-lg shadow-md hover:shadow-lg transition duration-200 flex items-center justify-center gap-2">
                         <i class="fa-solid fa-heart"></i> 加入心願清單
                     </button>
+                    <button type="button" id="wishlistCancelBtn" onclick="cancelWishlistEdit()"
+                        class="hidden px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-700 font-bold hover:bg-gray-50 transition">
+                        取消
+                    </button>
+                    </div>
                 </form>
             </section>
         </div>
@@ -2155,6 +2288,9 @@
 
         <!-- ✨ 里程碑（由 JS 動態填入） -->
         <div id="milestonesSection"></div>
+
+        <!-- ✨ 已吃過卻還在心願（心願 vs 回憶健檢）由 renderEatenWishes 動態填入 -->
+        <div id="eatenWishSection"></div>
 
         <!-- ✨ 疑似放錯分類（跨分類健檢，關鍵字建議、逐筆確認）由 renderReclass 動態填入 -->
         <div id="reclassSection"></div>
@@ -3352,6 +3488,9 @@
                 if (currentTab === 'wishlist') {
                     actionButtons = `
                         <div class="absolute top-4 right-4 z-10 flex gap-2">
+                            <button onclick="editWishlist('${entry.id}')" class="text-gray-400 hover:text-blue-500 transition p-2 bg-white/80 rounded-full w-10 h-10 flex items-center justify-center shadow-sm" title="編輯">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
                             <button onclick="openCategoryPicker('${entry.id}')" class="text-gray-400 hover:text-brand-500 transition p-2 bg-white/80 rounded-full w-10 h-10 flex items-center justify-center shadow-sm" title="換分類">
                                 <i class="fa-solid fa-layer-group"></i>
                             </button>
@@ -3466,7 +3605,71 @@
         let wishlistAutocomplete;
         let wishlistPlaceDetails = null;
 
+        let editingWishlistId = null; // 心願編輯狀態（與回憶的 editingDocId 完全分離）
+
+        // ✨ 心願重複偵測：回傳已存在的「美食回憶」或「心願」，沒有則 null
+        //   比對規則：placeId 優先（同名連鎖店不誤擋），否則正規化店名；限同分類；排除自己
+        window.findExistingEntry = function (name, placeId, category, excludeId, type) {
+            const norm = window.normStoreName || ((x) => (x || '').toLowerCase().replace(/\s+/g, ''));
+            const key = norm(name);
+            if (!key && !placeId) return null;
+            return (window.allFetchedEntries || []).find(e => {
+                if (excludeId && e.id === excludeId) return false;
+                const isWish = e.type === 'wishlist';
+                if (type === 'memory' && isWish) return false;
+                if (type === 'wishlist' && !isWish) return false;
+                if ((e.category || 'food') !== category) return false;
+                if (placeId && e.placeId) return e.placeId === placeId;   // 兩邊都有 placeId → 以它為準
+                return !!key && norm(e.name) === key;
+            }) || null;
+        };
+
+        // ✨ 編輯心願：填回心願表單（不碰回憶表單的 editingDocId）
+        window.editWishlist = function (docId) {
+            const entry = (window.allFetchedEntries || []).find(e => e.id === docId);
+            if (!entry) return;
+            // 心願屬於哪個分類就先切過去，避免表單欄位與資料屬性不一致
+            const cat = entry.category || 'food';
+            if (cat !== currentMode && window.switchMode) window.switchMode(cat);
+            window.switchTab('wishlist');
+
+            editingWishlistId = docId;
+            document.getElementById('wishlistName').value = entry.name || '';
+            document.getElementById('wishlistDishes').value = entry.dishes || '';
+            document.getElementById('wishlistTagsInput').value = Array.isArray(entry.tags) ? entry.tags.join(', ') : '';
+            document.getElementById('wishlistAddress').value = entry.address || '';
+            document.getElementById('wishlistRating').value = (entry.rating != null) ? entry.rating : '';
+            document.getElementById('wishlistPriceLevel').value = entry.priceLevel ? '$'.repeat(parseInt(entry.priceLevel)) : '';
+            wishlistPlaceDetails = null; // 未重新搜尋時，送出將保留原有 place 資料
+
+            const btn = document.getElementById('wishlistSubmitBtn');
+            if (btn) btn.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> 更新心願';
+            const cancel = document.getElementById('wishlistCancelBtn');
+            if (cancel) cancel.classList.remove('hidden');
+            const sec = document.getElementById('wishlistSection');
+            if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        window.isEditingWishlist = function (docId) { return !!editingWishlistId && (!docId || editingWishlistId === docId); };
+
+        window.cancelWishlistEdit = function () {
+            editingWishlistId = null;
+            const form = document.getElementById('wishlistForm');
+            if (form) form.reset();
+            wishlistPlaceDetails = null;
+            ['wishlistDishes', 'wishlistTagsInput', 'wishlistAddress', 'wishlistRating', 'wishlistPriceLevel'].forEach(id => {
+                const el = document.getElementById(id); if (el) el.value = '';
+            });
+            const btn = document.getElementById('wishlistSubmitBtn');
+            if (btn) btn.innerHTML = '<i class="fa-solid fa-heart"></i> 加入心願清單';
+            const cancel = document.getElementById('wishlistCancelBtn');
+            if (cancel) cancel.classList.add('hidden');
+        };
+
         window.switchTab = function (tab) {
+            // 兩個編輯狀態互斥：離開該分頁就結束該邊的編輯，避免 editingDocId 殘留讓心願寫入覆蓋到回憶
+            if (tab !== 'memory' && window.cancelEdit) window.cancelEdit();
+            if (tab !== 'wishlist' && window.cancelWishlistEdit) window.cancelWishlistEdit();
             currentTab = tab;
 
             // UI Toggles
@@ -3536,6 +3739,7 @@
 
             // ✨ 疑似重複偵測 + 分類健檢 + 回憶再現引擎（不依賴 Chart，放在 guard 前確保一定執行）
             window.renderDuplicates();
+            window.renderEatenWishes();
             window.renderReclass();
             window.renderYearReview();
             window.renderMilestones();
@@ -3761,6 +3965,22 @@
 
             const wishlistTags = window.parseTags(document.getElementById('wishlistTagsInput').value);
 
+            // ✨ 新增時檢查重複（編輯模式不檢，否則會誤擋自己）
+            {
+                const pendingName = document.getElementById('wishlistName').value;
+                const pendingPid = (!isSimple && wishlistPlaceDetails) ? wishlistPlaceDetails.placeId : null;
+                const dupMemory = window.findExistingEntry(pendingName, pendingPid, currentMode, editingWishlistId, 'memory');
+                if (dupMemory) {
+                    alert('「' + (dupMemory.name || pendingName) + '」已經在美食回憶裡了（' + (dupMemory.date || '') + '），不需要再加入心願清單；想再吃就直接到「美食回憶」新增一筆（會自動帶入上次的標籤與價格）。');
+                    return;
+                }
+                const dupWish = window.findExistingEntry(pendingName, pendingPid, currentMode, editingWishlistId, 'wishlist');
+                if (dupWish) {
+                    alert('「' + (dupWish.name || pendingName) + '」已經在心願清單裡了（' + (dupWish.date || '') + '），不用重複加入。');
+                    return;
+                }
+            }
+
             let entry;
             if (isSimple) {
                 const name = document.getElementById('wishlistName').value;
@@ -3776,12 +3996,13 @@
                     timestamp: Date.now()
                 };
             } else {
-                if (!wishlistPlaceDetails) {
+                if (!wishlistPlaceDetails && !editingWishlistId) { // 編輯既有心願時不必重新搜尋 Google
                     alert("請先搜尋並選擇餐廳！");
                     return;
                 }
                 entry = {
                     ...wishlistPlaceDetails,
+                    name: document.getElementById('wishlistName').value, // 編輯時無 placeDetails，且尊重手改的店名
                     type: 'wishlist', // Tag as wishlist
                     category: currentMode,
                     tags: wishlistTags, // ✨ 由可見的標籤欄取得（含 Google 自動分類 + 手動增刪）
@@ -3790,13 +4011,27 @@
                 };
             }
 
-            await addEntryToCloud(entry);
+            if (editingWishlistId) {
+                // ✨ 編輯模式：只更新可編輯欄位；未重新搜尋時不碰 address/placeId/coords 等原資料
+                const patch = { name: entry.name, tags: entry.tags };
+                if (isSimple) patch.dishes = entry.dishes || ''; // search 樣式的 dishes 欄位隱藏，不動它
+                if (!isSimple && wishlistPlaceDetails) {
+                    Object.assign(patch, {
+                        address: wishlistPlaceDetails.address, rating: wishlistPlaceDetails.rating,
+                        phoneNumber: wishlistPlaceDetails.phoneNumber, priceLevel: wishlistPlaceDetails.priceLevel,
+                        coords: wishlistPlaceDetails.coords, placeId: wishlistPlaceDetails.placeId
+                    });
+                }
+                const ok = await window.updateWishlistFields(editingWishlistId, patch);
+                if (!ok) return;
+                window.cancelWishlistEdit();
+                alert("心願已更新！");
+                return;
+            }
 
-            // Reset
-            document.getElementById('wishlistForm').reset();
-            wishlistPlaceDetails = null;
-            document.getElementById('wishlistDishes').value = '';
-            document.getElementById('wishlistTagsInput').value = '';
+            const added = await window.addWishlistEntry(entry); // 心願自有寫入路徑：不碰 editingDocId / #submitBtn / cancelEdit
+            if (!added) return;
+            window.cancelWishlistEdit(); // 只清心願表單本身
             alert("已加入心願清單！");
         });
 
