@@ -72,7 +72,7 @@
   </div>
 </div>
 
-<div class="frameRes"><span class="chk">✓</span>本畫面核對成功 <b id="frameOk">0</b> 筆</div>
+<div class="frameRes"><span class="chk">✓</span>本畫面讀到 <b id="frameSeen" style="color:var(--acc)">0</b> 個條碼，核對成功 <b id="frameOk">0</b> 筆</div>
 <table>
   <thead><tr><th>序號</th><th>掛號號碼</th><th>姓名</th><th style="text-align:center">核對</th></tr></thead>
   <tbody id="tbody"><tr><td colspan="4" style="color:var(--mut)">（尚無掃描）</td></tr></tbody>
@@ -121,7 +121,7 @@ let cfg = load(CFG_KEY) || { url: '', token: '', device: '手機' };
   try {
     const p = new URLSearchParams(location.hash.slice(1));
     if (!p.get('url') && !p.get('token')) return;
-    cfg = { url: (p.get('url') || cfg.url || '').trim(), token: (p.get('token') || cfg.token || '').trim(), device: (p.get('device') || cfg.device || '手機').trim() };
+    cfg = { url: clean(p.get('url') || cfg.url), token: clean(p.get('token') || cfg.token), device: clean(p.get('device') || cfg.device) || '手機' };
     save(CFG_KEY, cfg);
     history.replaceState(null, '', location.pathname + location.search);
   } catch {}
@@ -142,6 +142,9 @@ function load(k){ try { return JSON.parse(localStorage.getItem(k)); } catch { re
 function save(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
 function toast(msg, ms = 2200){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._h); toast._h = setTimeout(() => t.classList.remove('show'), ms); }
 const digitsOf = s => String(s ?? '').replace(/\D/g, '');
+// Setup values get pasted from chat, mail and docs, so they arrive wrapped in the
+// placeholder's angle brackets, in quotes, or with stray whitespace. Strip that.
+const clean = s => String(s ?? '').trim().replace(/^[<"'「〈＜]+|[>"'」〉＞]+$/g, '').trim();
 const isMasked = s => /\.{2,}|…/.test(String(s));
 function beep(freq = 1200, dur = 0.09){
   try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.frequency.value = freq; g.gain.value = 0.12; o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + dur); } catch {}
@@ -226,7 +229,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 /* ---------- camera + decode loop ---------- */
 const video = $('video'), overlay = $('overlay'), work = document.createElement('canvas');
 async function startCamera(){
-  stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+  stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 2560 }, height: { ideal: 1440 } }, audio: false });
   video.srcObject = stream; await video.play();
   const track = stream.getVideoTracks()[0];
   try { const caps = track.getCapabilities ? track.getCapabilities() : {}; if (caps.focusMode && caps.focusMode.includes('continuous')) await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }); } catch {}
@@ -244,12 +247,15 @@ async function analyse(){
   busy = true;
   try {
     const vw = video.videoWidth, vh = video.videoHeight;
-    const scale = Math.min(1, 1280 / Math.max(vw, vh));
+    // Keep as many pixels per barcode as the device gives us: with several labels in one
+    // frame each barcode only gets a fraction of the width, and downscaling to 1280 was
+    // enough to stop the narrow bars resolving.
+    const scale = Math.min(1, 2560 / Math.max(vw, vh));
     work.width = Math.round(vw * scale); work.height = Math.round(vh * scale);
     const ctx = work.getContext('2d', { willReadFrequently: true });
     ctx.drawImage(video, 0, 0, work.width, work.height);
     const img = ctx.getImageData(0, 0, work.width, work.height);
-    const found = await readBarcodes(img, { formats: FORMATS, tryHarder: true, tryRotate: true, tryInvert: false, maxNumberOfSymbols: 16 });
+    const found = await readBarcodes(img, { formats: FORMATS, tryHarder: true, tryRotate: true, tryInvert: false, tryDownscale: true, maxNumberOfSymbols: 32 });
     const seen = new Set(); lastFramePos = []; let okInFrame = 0;
     for (const f of found) {
       const digits = digitsOf(f.text); if (!digits || digits.length < 6 || seen.has(digits)) continue; seen.add(digits);
@@ -264,6 +270,7 @@ async function analyse(){
         if (!k) { known.set(digits, { status: 'pending', row: r, ts: Date.now() }); upsertSession(digits, { raw: f.text, seq: r?.seq, code: r?.code || f.text, name: r?.name, status: 'pending' }); renderTable(); }
       }
     }
+    $('frameSeen').textContent = seen.size;
     $('frameOk').textContent = okInFrame;
     drawOverlay(work.width, work.height);
     flushQueue();
@@ -297,9 +304,10 @@ async function loop(){
 function openSettings(){ $('cfgUrl').value = cfg.url || ''; $('cfgToken').value = cfg.token || ''; $('cfgDevice').value = cfg.device || ''; $('settings').classList.add('show'); }
 $('btnSettings').onclick = openSettings;
 $('settings').addEventListener('click', e => { if (e.target === $('settings')) $('settings').classList.remove('show'); });
-$('btnSave').onclick = () => { cfg = { url: $('cfgUrl').value.trim(), token: $('cfgToken').value.trim(), device: $('cfgDevice').value.trim() || '手機' }; save(CFG_KEY, cfg); $('settings').classList.remove('show'); toast('已儲存'); fetchList().then(j => foot(`清單 ${j.total} 筆，已核對 ${j.checked}`)).catch(e => foot(e.message)); };
+$('btnSave').onclick = () => { cfg = { url: clean($('cfgUrl').value), token: clean($('cfgToken').value), device: clean($('cfgDevice').value) || '手機' }; save(CFG_KEY, cfg); $('cfgUrl').value = cfg.url; $('cfgToken').value = cfg.token; $('settings').classList.remove('show'); toast('已儲存'); fetchList().then(j => foot(`清單 ${j.total} 筆，已核對 ${j.checked}`)).catch(e => foot(e.message)); };
 $('btnTest').onclick = async () => {
-  const tmp = cfg; cfg = { url: $('cfgUrl').value.trim(), token: $('cfgToken').value.trim(), device: $('cfgDevice').value.trim() || '手機' };
+  const tmp = cfg; cfg = { url: clean($('cfgUrl').value), token: clean($('cfgToken').value), device: clean($('cfgDevice').value) || '手機' };
+  $('cfgUrl').value = cfg.url; $('cfgToken').value = cfg.token;
   $('cfgHint').textContent = '連線中…';
   try { const j = await fetchList(); $('cfgHint').textContent = `✅ 連線成功：分頁「${j.sheet}」共 ${j.total} 筆，已核對 ${j.checked} 筆`; }
   catch (e) { $('cfgHint').textContent = '❌ ' + e.message; cfg = tmp; }
