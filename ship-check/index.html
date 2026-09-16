@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<title>出貨掃碼核對</title>
+<style>
+  :root{--bg:#0f1115;--panel:#171a21;--line:#262b36;--txt:#e8ecf3;--mut:#8b94a7;--ok:#22c55e;--warn:#f5b301;--bad:#ef4444;--acc:#3b82f6}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.5 system-ui,-apple-system,"Microsoft JhengHei","PingFang TC",sans-serif;-webkit-tap-highlight-color:transparent}
+  header{display:flex;align-items:center;gap:10px;padding:12px 14px 6px}
+  header h1{font-size:20px;margin:0;flex:1;display:flex;align-items:center;gap:8px}
+  header h1 .ico{width:22px;height:22px;border:2px solid var(--ok);border-radius:5px;position:relative}
+  header h1 .ico::after{content:"";position:absolute;left:4px;right:4px;top:8px;height:2px;background:var(--ok)}
+  .state{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--mut)}
+  .state i{width:8px;height:8px;border-radius:50%;background:#555;display:inline-block}
+  .state.on i{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+  .gear{background:var(--panel);border:1px solid var(--line);color:var(--txt);border-radius:999px;padding:6px 12px;font-size:13px}
+  .progress{padding:0 14px 8px;display:flex;align-items:center;gap:10px;font-size:15px}
+  .progress b{font-size:20px}
+  .bar{flex:1;height:8px;background:var(--panel);border-radius:999px;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:var(--ok);transition:width .3s}
+  .cam{position:relative;margin:0 10px;background:#000;border-radius:14px;overflow:hidden;aspect-ratio:3/4;max-height:62vh}
+  .cam video,.cam canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .cam canvas{pointer-events:none}
+  .start{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:rgba(0,0,0,.55);color:#fff;text-align:center;padding:20px}
+  .start button{font-size:18px;padding:14px 28px;border-radius:999px;border:0;background:var(--ok);color:#03210c;font-weight:700}
+  .start small{color:#cbd5e1}
+  .frameRes{margin:10px 14px 4px;display:flex;align-items:center;gap:8px;font-size:16px}
+  .frameRes .chk{width:22px;height:22px;border-radius:50%;background:var(--ok);color:#03210c;display:inline-flex;align-items:center;justify-content:center;font-weight:900}
+  .frameRes b{color:var(--ok);font-size:20px}
+  table{width:calc(100% - 28px);margin:6px 14px;border-collapse:collapse;font-size:14px}
+  th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+  th{color:var(--mut);font-weight:600;font-size:12px}
+  td.code{font-family:Consolas,ui-monospace,monospace}
+  td.st{text-align:center}
+  .pill{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:13px;font-weight:900}
+  .pill.ok{background:var(--ok);color:#03210c}.pill.already{background:var(--warn);color:#2a1e00}.pill.not_found{background:var(--bad);color:#fff}.pill.pending{background:#3a4152;color:#cbd5e1}
+  footer{position:sticky;bottom:0;display:flex;align-items:center;gap:10px;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(15,17,21,0),var(--bg) 30%)}
+  footer .msg{flex:1;color:var(--mut);font-size:13px;display:flex;align-items:center;gap:8px}
+  footer .msg i{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block}
+  footer button{background:var(--panel);border:1px solid var(--line);color:var(--txt);border-radius:999px;padding:10px 16px;font-size:14px}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:flex-end;justify-content:center;z-index:20}
+  .modal.show{display:flex}
+  .sheet{background:var(--panel);width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+  .sheet h2{margin:0 0 10px;font-size:18px}
+  .sheet label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+  .sheet input{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:#0f1115;color:var(--txt);font-size:15px}
+  .row{display:flex;gap:10px;margin-top:14px}
+  .row button{flex:1;padding:12px;border-radius:10px;border:0;font-size:15px;font-weight:600}
+  .btnAcc{background:var(--acc);color:#fff}.btnMut{background:#2a3040;color:var(--txt)}
+  .hint{font-size:12px;color:var(--mut);margin-top:8px;line-height:1.6}
+  .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#222833;color:#fff;padding:10px 14px;border-radius:10px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:30;max-width:90vw}
+  .toast.show{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="ico"></span>即時掃描</h1>
+  <span class="state" id="state"><i></i><span id="stateTxt">未開始</span></span>
+  <button class="gear" id="btnSettings">設定</button>
+</header>
+<div class="progress">已核對 <b id="done">–</b> / <b id="total">–</b><div class="bar"><i id="barFill"></i></div></div>
+
+<div class="cam">
+  <video id="video" playsinline muted autoplay></video>
+  <canvas id="overlay"></canvas>
+  <div class="start" id="startPane">
+    <button id="btnStart">開始掃描</button>
+    <small id="startHint">需要相機權限；第一次請先按右上「設定」填入後端網址與 TOKEN</small>
+  </div>
+</div>
+
+<div class="frameRes"><span class="chk">✓</span>本畫面核對成功 <b id="frameOk">0</b> 筆</div>
+<table>
+  <thead><tr><th>序號</th><th>掛號號碼</th><th>姓名</th><th style="text-align:center">核對</th></tr></thead>
+  <tbody id="tbody"><tr><td colspan="4" style="color:var(--mut)">（尚無掃描）</td></tr></tbody>
+</table>
+
+<footer>
+  <span class="msg"><i></i><span id="footTxt">尚未開始</span></span>
+  <button id="btnPause" disabled>⏸ 暫停掃描</button>
+</footer>
+
+<div class="modal" id="settings">
+  <div class="sheet">
+    <h2>後端設定</h2>
+    <label>Apps Script 網頁應用程式網址</label>
+    <input id="cfgUrl" placeholder="https://script.google.com/macros/s/…/exec" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <label>TOKEN（與指令碼屬性相同）</label>
+    <input id="cfgToken" placeholder="貼上 TOKEN" autocapitalize="off" autocorrect="off" spellcheck="false">
+    <label>裝置名稱（寫進掃描紀錄）</label>
+    <input id="cfgDevice" placeholder="例如：出貨台-1">
+    <div class="row">
+      <button class="btnMut" id="btnTest">連線測試</button>
+      <button class="btnAcc" id="btnSave">儲存</button>
+    </div>
+    <div class="hint" id="cfgHint">設定只存在這支手機的瀏覽器裡。清單資料每次從 Apps Script 讀取，頁面本身不含任何資料。</div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script type="module">
+const ZX_VER = '3.1.4';
+const ZX_BASE = `https://cdn.jsdelivr.net/npm/zxing-wasm@${ZX_VER}/dist/`;
+const { readBarcodes, prepareZXingModule } = await import(ZX_BASE + 'es/reader/index.js');
+prepareZXingModule({ overrides: { locateFile: (p, prefix) => p.endsWith('.wasm') ? ZX_BASE + 'reader/zxing_reader.wasm' : prefix + p } });
+
+const $ = id => document.getElementById(id);
+const CFG_KEY = 'shipcheck.cfg', QUEUE_KEY = 'shipcheck.queue';
+const FORMATS = ['Code128', 'Code39', 'Code93', 'ITF', 'Codabar', 'EAN-13', 'EAN-8', 'UPC-A', 'UPC-E', 'QRCode', 'DataMatrix'];
+
+let cfg = load(CFG_KEY) || { url: '', token: '', device: '手機' };
+
+// One-link setup: open .../#url=<endpoint>&token=<token>&device=<name> to configure the phone
+// without typing. The hash is never sent to any server; it is wiped from the address bar
+// (and from history) as soon as it has been stored locally.
+(function readSetupHash(){
+  if (!location.hash || location.hash.length < 2) return;
+  try {
+    const p = new URLSearchParams(location.hash.slice(1));
+    if (!p.get('url') && !p.get('token')) return;
+    cfg = { url: (p.get('url') || cfg.url || '').trim(), token: (p.get('token') || cfg.token || '').trim(), device: (p.get('device') || cfg.device || '手機').trim() };
+    save(CFG_KEY, cfg);
+    history.replaceState(null, '', location.pathname + location.search);
+  } catch {}
+})();
+let rows = [];                 // from server: {row, seq, code, name, result}
+let exact = new Map();         // full-number cells: digits -> row
+let masked = new Map();        // masked cells:      digits(head+tail) -> row
+let maskedLens = new Set();
+let known = new Map();         // scanned digits -> {status, row, ts}
+let queue = load(QUEUE_KEY) || [];   // [{raw, ts}]
+let session = [];              // table rows, newest first
+let stream = null, running = false, paused = false, busy = false, posting = false;
+let lastFramePos = [];         // overlays for the last analysed frame
+let audioCtx = null;
+
+/* ---------- utils ---------- */
+function load(k){ try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }
+function save(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+function toast(msg, ms = 2200){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast._h); toast._h = setTimeout(() => t.classList.remove('show'), ms); }
+const digitsOf = s => String(s ?? '').replace(/\D/g, '');
+const isMasked = s => /\.{2,}|…/.test(String(s));
+function beep(freq = 1200, dur = 0.09){
+  try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); const o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.frequency.value = freq; g.gain.value = 0.12; o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + dur); } catch {}
+  try { navigator.vibrate && navigator.vibrate(60); } catch {}
+}
+function setState(on, txt){ $('state').classList.toggle('on', on); $('stateTxt').textContent = txt; }
+function foot(txt){ $('footTxt').textContent = txt; }
+
+/* ---------- list / matching ---------- */
+function rebuildIndex(){
+  exact = new Map(); masked = new Map(); maskedLens = new Set();
+  for (const r of rows) {
+    const d = digitsOf(r.code); if (!d) continue;
+    if (isMasked(r.code)) { masked.set(d, r); maskedLens.add(d.length); } else exact.set(d, r);
+  }
+}
+function matchLocal(digits){
+  if (!digits) return null;
+  if (exact.has(digits)) return exact.get(digits);
+  for (const [cell, r] of exact) if (cell.length >= 8 && digits.endsWith(cell)) return r;
+  if (digits.length >= 10) for (const L of maskedLens) {
+    const head = Math.min(6, L - 4);
+    const key = digits.slice(0, head) + digits.slice(-4);
+    if (masked.has(key)) return masked.get(key);
+  }
+  return null;
+}
+function applyState(s){
+  if (!s || !s.ok) return;
+  rows = s.rows || []; rebuildIndex();
+  $('done').textContent = s.checked; $('total').textContent = s.total;
+  $('barFill').style.width = (s.total ? Math.round(100 * s.checked / s.total) : 0) + '%';
+}
+async function fetchList(){
+  if (!cfg.url || !cfg.token) throw new Error('尚未設定後端網址與 TOKEN');
+  const u = cfg.url + (cfg.url.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(cfg.token) + '&t=' + Date.now();
+  const r = await fetch(u, { method: 'GET', redirect: 'follow', cache: 'no-store' });
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error || '後端回傳錯誤');
+  applyState(j); return j;
+}
+async function flushQueue(){
+  if (posting || queue.length === 0 || !cfg.url) return;
+  posting = true;
+  const batch = queue.slice(0, 12);
+  try {
+    // text/plain avoids a CORS preflight, which Apps Script cannot answer
+    const r = await fetch(cfg.url, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ token: cfg.token, device: cfg.device || '手機', scans: batch }) });
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error || '後端回傳錯誤');
+    queue = queue.slice(batch.length); save(QUEUE_KEY, queue);
+    applyState(j);
+    for (const res of (j.results || [])) {
+      const d = digitsOf(res.raw);
+      known.set(d, { status: res.status, row: res, ts: Date.now() });
+      upsertSession(d, res);
+      if (res.status === 'ok') beep(1400);
+      else if (res.status === 'not_found') beep(300, 0.18);
+    }
+    renderTable();
+    foot(queue.length ? `尚有 ${queue.length} 筆待送出` : '持續掃描中，移向下一批包裹');
+  } catch (e) {
+    foot(`連線失敗，${queue.length} 筆已暫存，會自動重送（${e.message}）`);
+  } finally { posting = false; }
+}
+function upsertSession(digits, res){
+  const i = session.findIndex(x => x.digits === digits);
+  const item = { digits, seq: res.seq ?? '', code: res.code ?? res.raw, name: res.name ?? '', status: res.status, ts: Date.now() };
+  if (i >= 0) session[i] = item; else session.unshift(item);
+  if (session.length > 60) session.length = 60;
+}
+function renderTable(){
+  const tb = $('tbody');
+  if (!session.length) { tb.innerHTML = '<tr><td colspan="4" style="color:var(--mut)">（尚無掃描）</td></tr>'; return; }
+  const icon = { ok: '✓', already: '↺', not_found: '✕', pending: '…' };
+  const title = { ok: '已核對', already: '重複（先前已核對）', not_found: '不在清單', pending: '確認中' };
+  tb.innerHTML = session.map(x => `<tr><td>${x.seq === '' ? '—' : String(x.seq).padStart(2, '0')}</td><td class="code">${esc(x.code)}</td><td>${esc(x.name)}</td><td class="st"><span class="pill ${x.status}" title="${title[x.status]}">${icon[x.status]}</span></td></tr>`).join('');
+}
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/* ---------- camera + decode loop ---------- */
+const video = $('video'), overlay = $('overlay'), work = document.createElement('canvas');
+async function startCamera(){
+  stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+  video.srcObject = stream; await video.play();
+  const track = stream.getVideoTracks()[0];
+  try { const caps = track.getCapabilities ? track.getCapabilities() : {}; if (caps.focusMode && caps.focusMode.includes('continuous')) await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }); } catch {}
+  try { if (navigator.wakeLock) await navigator.wakeLock.request('screen'); } catch {}
+}
+function classify(digits){
+  const k = known.get(digits);
+  if (k) return k.status;
+  const r = matchLocal(digits);
+  if (!r) return 'not_found';
+  return r.result ? 'already' : 'ok';
+}
+async function analyse(){
+  if (!running || paused || busy || video.readyState < 2) return;
+  busy = true;
+  try {
+    const vw = video.videoWidth, vh = video.videoHeight;
+    const scale = Math.min(1, 1280 / Math.max(vw, vh));
+    work.width = Math.round(vw * scale); work.height = Math.round(vh * scale);
+    const ctx = work.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(video, 0, 0, work.width, work.height);
+    const img = ctx.getImageData(0, 0, work.width, work.height);
+    const found = await readBarcodes(img, { formats: FORMATS, tryHarder: true, tryRotate: true, tryInvert: false, maxNumberOfSymbols: 16 });
+    const seen = new Set(); lastFramePos = []; let okInFrame = 0;
+    for (const f of found) {
+      const digits = digitsOf(f.text); if (!digits || digits.length < 6 || seen.has(digits)) continue; seen.add(digits);
+      const status = classify(digits);
+      const r = known.get(digits)?.row || matchLocal(digits);
+      lastFramePos.push({ p: f.position, status, seq: r?.seq, text: f.text });
+      if (status === 'ok' || status === 'already') okInFrame++;
+      const k = known.get(digits);
+      const stale = !k || (k.status === 'not_found' && Date.now() - k.ts > 20000);
+      if (stale && !queue.some(q => q.raw === f.text)) {
+        queue.push({ raw: f.text, format: f.format, ts: new Date().toISOString() }); save(QUEUE_KEY, queue);
+        if (!k) { known.set(digits, { status: 'pending', row: r, ts: Date.now() }); upsertSession(digits, { raw: f.text, seq: r?.seq, code: r?.code || f.text, name: r?.name, status: 'pending' }); renderTable(); }
+      }
+    }
+    $('frameOk').textContent = okInFrame;
+    drawOverlay(work.width, work.height);
+    flushQueue();
+  } catch (e) { foot('解碼錯誤：' + e.message); }
+  finally { busy = false; }
+}
+function drawOverlay(aw, ah){
+  const cw = overlay.clientWidth, ch = overlay.clientHeight;
+  if (overlay.width !== cw || overlay.height !== ch) { overlay.width = cw; overlay.height = ch; }
+  const g = overlay.getContext('2d'); g.clearRect(0, 0, cw, ch);
+  // video is object-fit:cover — compute the drawn region so boxes line up with what the user sees
+  const s = Math.max(cw / aw, ch / ah), dw = aw * s, dh = ah * s, ox = (cw - dw) / 2, oy = (ch - dh) / 2;
+  const color = { ok: '#22c55e', already: '#f5b301', not_found: '#ef4444', pending: '#94a3b8' };
+  const label = { ok: 'OK', already: '重複', not_found: '不在清單', pending: '確認中' };
+  for (const it of lastFramePos) {
+    const pts = [it.p.topLeft, it.p.topRight, it.p.bottomRight, it.p.bottomLeft].map(q => ({ x: ox + q.x * s, y: oy + q.y * s }));
+    const xs = pts.map(q => q.x), ys = pts.map(q => q.y);
+    const x0 = Math.min(...xs) - 10, y0 = Math.min(...ys) - 10, x1 = Math.max(...xs) + 10, y1 = Math.max(...ys) + 10;
+    g.lineWidth = 3; g.strokeStyle = color[it.status]; g.strokeRect(x0, y0, x1 - x0, y1 - y0);
+    const txt = (it.status === 'ok' ? '✓ ' : '') + label[it.status] + (it.seq != null && it.seq !== '' ? ' #' + String(it.seq).padStart(2, '0') : '');
+    g.font = '600 15px system-ui, sans-serif'; const tw = g.measureText(txt).width + 16;
+    g.fillStyle = color[it.status]; g.fillRect(x0, y0 - 24, tw, 24);
+    g.fillStyle = it.status === 'not_found' ? '#fff' : '#0b1a0f'; g.fillText(txt, x0 + 8, y0 - 7);
+  }
+}
+async function loop(){
+  while (running) { await analyse(); await new Promise(r => setTimeout(r, 120)); }
+}
+
+/* ---------- UI wiring ---------- */
+function openSettings(){ $('cfgUrl').value = cfg.url || ''; $('cfgToken').value = cfg.token || ''; $('cfgDevice').value = cfg.device || ''; $('settings').classList.add('show'); }
+$('btnSettings').onclick = openSettings;
+$('settings').addEventListener('click', e => { if (e.target === $('settings')) $('settings').classList.remove('show'); });
+$('btnSave').onclick = () => { cfg = { url: $('cfgUrl').value.trim(), token: $('cfgToken').value.trim(), device: $('cfgDevice').value.trim() || '手機' }; save(CFG_KEY, cfg); $('settings').classList.remove('show'); toast('已儲存'); fetchList().then(j => foot(`清單 ${j.total} 筆，已核對 ${j.checked}`)).catch(e => foot(e.message)); };
+$('btnTest').onclick = async () => {
+  const tmp = cfg; cfg = { url: $('cfgUrl').value.trim(), token: $('cfgToken').value.trim(), device: $('cfgDevice').value.trim() || '手機' };
+  $('cfgHint').textContent = '連線中…';
+  try { const j = await fetchList(); $('cfgHint').textContent = `✅ 連線成功：分頁「${j.sheet}」共 ${j.total} 筆，已核對 ${j.checked} 筆`; }
+  catch (e) { $('cfgHint').textContent = '❌ ' + e.message; cfg = tmp; }
+};
+$('btnStart').onclick = async () => {
+  if (!cfg.url || !cfg.token) { openSettings(); toast('請先填入後端網址與 TOKEN'); return; }
+  try {
+    beep(0, 0.001); // unlock audio on iOS with this user gesture
+    $('startHint').textContent = '啟動相機中…';
+    await startCamera();
+    try { const j = await fetchList(); foot(`清單 ${j.total} 筆，已核對 ${j.checked}`); } catch (e) { foot('清單載入失敗：' + e.message + '（仍可掃描，稍後自動重試）'); }
+    running = true; paused = false; $('startPane').style.display = 'none'; $('btnPause').disabled = false; setState(true, '辨識中');
+    loop(); setInterval(() => { if (running && !paused) fetchList().catch(() => {}); }, 30000); setInterval(flushQueue, 4000);
+  } catch (e) { $('startHint').textContent = '相機啟動失敗：' + e.message + '（需要 HTTPS 與相機權限）'; }
+};
+$('btnPause').onclick = () => { paused = !paused; $('btnPause').textContent = paused ? '▶ 繼續掃描' : '⏸ 暫停掃描'; setState(!paused, paused ? '已暫停' : '辨識中'); if (paused) { overlay.getContext('2d').clearRect(0, 0, overlay.width, overlay.height); } };
+
+if (!cfg.url || !cfg.token) $('startHint').textContent = '第一次使用：請按右上「設定」填入 Apps Script 網址與 TOKEN';
+else { foot('設定已就緒，按「開始掃描」'); fetchList().then(j => foot(`清單 ${j.total} 筆，已核對 ${j.checked}`)).catch(e => foot('清單載入失敗：' + e.message)); }
+if (queue.length) foot(`有 ${queue.length} 筆上次未送出的掃描，連線後自動補送`);
+</script>
+</body>
+</html>
