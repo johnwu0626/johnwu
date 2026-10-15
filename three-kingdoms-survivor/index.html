@@ -956,7 +956,7 @@
   <div class="hud-top" id="hudTop" style="display:none;">
     <div class="hud-left">
       <div class="hud-pill">
-        <img id="hudHeroAvatar" class="hud-avatar" src="assets/hero_zhaoyun.png" alt="Hero" />
+        <img id="hudHeroAvatar" class="hud-avatar" src="assets/hero_zhaoyun.webp" decoding="async" alt="Hero" />
         <span id="hudHeroLabel" style="font-weight:900;color:var(--gold-bright);font-size:13px;">趙雲</span>
         <div class="hp-bar-wrap">
           <div class="hp-bar-fill" id="hpBarFill"></div>
@@ -964,7 +964,7 @@
         </div>
       </div>
       <div class="hud-pill" title="戰功玉石（用於波次結束購買與鍛造神兵）">
-        <img class="hud-jade-icon" src="assets/item_jade.png" alt="Jade" />
+        <img class="hud-jade-icon" src="assets/item_jade.webp" decoding="async" alt="Jade" />
         <span class="coin-count" id="jadeCount">0</span>
       </div>
     </div>
@@ -985,7 +985,7 @@
 
   <!-- Boss HP Banner -->
   <div class="boss-banner" id="bossBanner">
-    <img class="boss-avatar" src="assets/boss_lubu.png" alt="鬼神呂奉先" />
+    <img class="boss-avatar" src="assets/boss_lubu.webp" decoding="async" alt="鬼神呂奉先" />
     <div class="boss-info">
       <div class="boss-header">
         <span id="bossNameTitle">【無雙魔將】鬼神・呂奉先</span>
@@ -1011,7 +1011,7 @@
   <div class="overlay" id="titleOverlay">
     <div class="panel">
       <div class="title-kv-wrap">
-        <img class="title-kv-img" src="assets/title_banner.png" alt="無雙割草：三國奇兵" />
+        <img class="title-kv-img" src="assets/title_banner.webp" decoding="async" fetchpriority="high" alt="無雙割草：三國奇兵" />
         <div class="title-kv-overlay">
           <h1 class="title-main">無雙割草：三國奇兵</h1>
           <div class="title-sub">單指走位 × 六槽十階神兵合成 × 無限古戰場（百陣無雙遠征 1～100 關）</div>
@@ -1071,7 +1071,7 @@
         </div>
         <div style="display:flex;align-items:center;gap:12px;">
           <div class="hud-pill">
-            <img class="hud-jade-icon" src="assets/item_jade.png" alt="Jade" />
+            <img class="hud-jade-icon" src="assets/item_jade.webp" decoding="async" alt="Jade" />
             <span style="font-size:12px;color:var(--text-muted);">戰功翠玉</span>
             <span class="coin-count" id="shopJadeCount">0</span>
           </div>
@@ -1102,7 +1102,7 @@
   <div class="overlay hidden" id="resultOverlay">
     <div class="panel" style="max-width:540px;text-align:center;">
       <div class="title-kv-wrap" style="height:140px;margin-bottom:14px;">
-        <img class="title-kv-img" id="resultBannerImg" src="assets/title_banner.png" alt="Result Banner" />
+        <img class="title-kv-img" id="resultBannerImg" src="assets/title_banner.webp" decoding="async" alt="Result Banner" />
         <div class="title-kv-overlay">
           <h2 class="title-main" id="resultTitle" style="font-size:28px;">威震華夏！破陣大捷</h2>
         </div>
@@ -1124,40 +1124,41 @@
   // 0. Preload UI Assets & Survivor.io 2.5D Paper-Doll Rig Cutout Sprites
   // =========================================================================
   const ASSET_URLS = {
-    hero_zhaoyun: 'assets/hero_zhaoyun.png',
-    hero_guanyu: 'assets/hero_guanyu.png',
-    hero_zhugeliang: 'assets/hero_zhugeliang.png',
-    boss_lubu: 'assets/boss_lubu.png',
-    wpn_spear: 'assets/wpn_spear.png',
-    wpn_halberd: 'assets/wpn_halberd.png',
-    wpn_bow: 'assets/wpn_bow.png',
-    wpn_thunder: 'assets/wpn_thunder.png',
-    wpn_bladering: 'assets/wpn_bladering.png',
-    item_jade: 'assets/item_jade.png',
-    tactic_scroll: 'assets/tactic_scroll.png',
-    arena_floor: 'assets/arena_floor.png',
-    title_banner: 'assets/title_banner.png'
+    hero_zhaoyun: 'assets/hero_zhaoyun.webp',
+    hero_guanyu: 'assets/hero_guanyu.webp',
+    hero_zhugeliang: 'assets/hero_zhugeliang.webp',
+    boss_lubu: 'assets/boss_lubu.webp',
+    wpn_spear: 'assets/wpn_spear.webp',
+    wpn_halberd: 'assets/wpn_halberd.webp',
+    wpn_bow: 'assets/wpn_bow.webp',
+    wpn_thunder: 'assets/wpn_thunder.webp',
+    wpn_bladering: 'assets/wpn_bladering.webp',
+    item_jade: 'assets/item_jade.webp',
+    tactic_scroll: 'assets/tactic_scroll.webp',
+    arena_floor: 'assets/arena_floor.webp',
+    title_banner: 'assets/title_banner.webp'
   };
 
-  // Survivor.io-style weaponless chibi bodies + isolated weapon sprites on #FF00FF
+  // Pre-trimmed lossless RGBA WebP sprites for instant loading & zero CPU keying lag
   const RIG_URLS = {
-    body_zhaoyun: 'assets/body_zhaoyun.png',
-    body_guanyu: 'assets/body_guanyu.png',
-    body_zhugeliang: 'assets/body_zhugeliang.png',
-    body_grunt: 'assets/body_grunt.png',
-    body_shield: 'assets/body_shield.png',
-    body_charger: 'assets/body_charger.png',
-    body_lubu: 'assets/body_lubu.png',
-    rig_spear: 'assets/rig_spear.png',
-    rig_halberd: 'assets/rig_halberd.png',
-    rig_bow: 'assets/rig_bow.png',
-    rig_thunder: 'assets/rig_thunder.png',
-    rig_bladering: 'assets/rig_bladering.png'
+    body_zhaoyun: 'assets/body_zhaoyun.webp',
+    body_guanyu: 'assets/body_guanyu.webp',
+    body_zhugeliang: 'assets/body_zhugeliang.webp',
+    body_grunt: 'assets/body_grunt.webp',
+    body_shield: 'assets/body_shield.webp',
+    body_charger: 'assets/body_charger.webp',
+    body_lubu: 'assets/body_lubu.webp',
+    rig_spear: 'assets/rig_spear.webp',
+    rig_halberd: 'assets/rig_halberd.webp',
+    rig_bow: 'assets/rig_bow.webp',
+    rig_thunder: 'assets/rig_thunder.webp',
+    rig_bladering: 'assets/rig_bladering.webp'
   };
 
   const IMAGES = {};
   Object.entries(ASSET_URLS).forEach(([key, url]) => {
     const img = new Image();
+    img.decoding = 'async';
     img.src = url;
     IMAGES[key] = img;
   });
@@ -1165,56 +1166,58 @@
   const CUTOUT_RIGS = {};
 
   function createCutoutAndTrim(img) {
-    const w = img.naturalWidth || 512;
-    const h = img.naturalHeight || 512;
+    const w = img.naturalWidth || 384;
+    const h = img.naturalHeight || 384;
     const off = document.createElement('canvas');
     off.width = w;
     off.height = h;
     const octx = off.getContext('2d');
     octx.drawImage(img, 0, 0);
 
-    const imgData = octx.getImageData(0, 0, w, h);
-    const d = imgData.data;
+    // Check if already pre-keyed & pre-trimmed offline (top-left pixel is transparent)
+    const cornerAlpha = octx.getImageData(0, 0, 1, 1).data[3];
+    let trimmed = off;
+    let cw = w, ch = h;
 
-    let minX = w, minY = h, maxX = 0, maxY = 0;
+    if (cornerAlpha > 10) {
+      const imgData = octx.getImageData(0, 0, w, h);
+      const d = imgData.data;
+      let minX = w, minY = h, maxX = 0, maxY = 0;
 
-    for (let i = 0; i < d.length; i += 4) {
-      const r = d[i];
-      const g = d[i + 1];
-      const b = d[i + 2];
-      const magentaScore = Math.min(r, b) - g;
-      if (magentaScore > 75 && r > 120 && b > 120) {
-        if (magentaScore > 125) {
-          d[i + 3] = 0;
-        } else {
-          const factor = 1 - (magentaScore - 75) / 50;
-          d[i + 3] = Math.round(d[i + 3] * factor);
-          d[i] = g;
-          d[i + 2] = g;
+      for (let i = 0; i < d.length; i += 4) {
+        const r = d[i], g = d[i + 1], b = d[i + 2];
+        const magentaScore = Math.min(r, b) - g;
+        if (magentaScore > 75 && r > 120 && b > 120) {
+          if (magentaScore > 125) {
+            d[i + 3] = 0;
+          } else {
+            const factor = 1 - (magentaScore - 75) / 50;
+            d[i + 3] = Math.round(d[i + 3] * factor);
+            d[i] = g;
+            d[i + 2] = g;
+          }
+        }
+        if (d[i + 3] > 25) {
+          const px = (i >> 2) % w;
+          const py = Math.floor((i >> 2) / w);
+          if (px < minX) minX = px;
+          if (px > maxX) maxX = px;
+          if (py < minY) minY = py;
+          if (py > maxY) maxY = py;
         }
       }
-      if (d[i + 3] > 25) {
-        const px = (i >> 2) % w;
-        const py = Math.floor((i >> 2) / w);
-        if (px < minX) minX = px;
-        if (px > maxX) maxX = px;
-        if (py < minY) minY = py;
-        if (py > maxY) maxY = py;
+      octx.putImageData(imgData, 0, 0);
+
+      if (maxX <= minX || maxY <= minY) {
+        minX = 0; minY = 0; maxX = w - 1; maxY = h - 1;
       }
+      cw = maxX - minX + 1;
+      ch = maxY - minY + 1;
+      trimmed = document.createElement('canvas');
+      trimmed.width = cw;
+      trimmed.height = ch;
+      trimmed.getContext('2d').drawImage(off, minX, minY, cw, ch, 0, 0, cw, ch);
     }
-    octx.putImageData(imgData, 0, 0);
-
-    // Crop tight bounding box so feet attach seamlessly to the bottom of the torso
-    if (maxX <= minX || maxY <= minY) {
-      minX = 0; minY = 0; maxX = w - 1; maxY = h - 1;
-    }
-    const cw = maxX - minX + 1;
-    const ch = maxY - minY + 1;
-
-    const trimmed = document.createElement('canvas');
-    trimmed.width = cw;
-    trimmed.height = ch;
-    trimmed.getContext('2d').drawImage(off, minX, minY, cw, ch, 0, 0, cw, ch);
 
     const whiteCanvas = document.createElement('canvas');
     whiteCanvas.width = cw;
@@ -1231,6 +1234,7 @@
   Object.entries(RIG_URLS).forEach(([key, url]) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
+    img.decoding = 'async';
     img.onload = () => {
       try {
         CUTOUT_RIGS[key] = createCutoutAndTrim(img);
