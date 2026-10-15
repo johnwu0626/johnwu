@@ -1,0 +1,3569 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>無雙割草：三國奇兵 — 典藏商用版</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;700;900&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-void: #090807;
+      --bg-iron: #15120f;
+      --bg-card: rgba(31, 26, 22, 0.94);
+      --bg-card-hover: rgba(45, 37, 31, 0.98);
+      --gold-bright: #f7d779;
+      --gold-brass: #d4a84f;
+      --gold-dim: #7a5f28;
+      --crimson: #c83e31;
+      --crimson-glow: #ff5747;
+      --jade: #3ca370;
+      --jade-bright: #5ce6a0;
+      --cyan-thunder: #4fc3f7;
+      --purple-tier: #b388ff;
+      --orange-tier: #ff9100;
+      --text-main: #f6f0e6;
+      --text-muted: #b3a696;
+      --border-brass: rgba(212, 168, 79, 0.45);
+      --shadow-heavy: 0 18px 48px rgba(0, 0, 0, 0.85);
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-void);
+      color: var(--text-main);
+      font-family: 'Noto Sans TC', sans-serif;
+      overscroll-behavior: none;
+    }
+
+    #app {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at center, #1f1b16 0%, #090807 100%);
+    }
+
+    canvas#gameCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+      touch-action: none;
+    }
+
+    /* Top HUD */
+    .hud-top {
+      position: absolute;
+      top: max(10px, env(safe-area-inset-top));
+      left: 12px;
+      right: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .hud-left, .hud-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      pointer-events: auto;
+    }
+
+    .hud-center {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .hud-pill {
+      background: linear-gradient(180deg, rgba(30, 25, 21, 0.94) 0%, rgba(16, 13, 11, 0.96) 100%);
+      border: 1.5px solid var(--border-brass);
+      border-radius: 12px;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.65);
+    }
+
+    .hud-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1.5px solid var(--gold-bright);
+      object-fit: cover;
+      box-shadow: 0 0 10px rgba(247, 215, 121, 0.35);
+    }
+
+    .hud-jade-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      object-fit: cover;
+      filter: drop-shadow(0 0 6px rgba(92, 230, 160, 0.5));
+    }
+
+    .hp-bar-wrap {
+      width: 156px;
+      height: 16px;
+      background: #0d0b0a;
+      border: 1px solid var(--gold-dim);
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hp-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #9e211b, #ef473a);
+      width: 100%;
+      transition: width 0.15s ease-out;
+    }
+
+    .hp-bar-text {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 800;
+      color: #fff;
+      text-shadow: 0 1px 2px #000;
+    }
+
+    .wave-badge {
+      background: linear-gradient(180deg, rgba(43, 33, 24, 0.96) 0%, rgba(20, 15, 11, 0.98) 100%);
+      border: 1.5px solid var(--gold-brass);
+      border-radius: 12px;
+      padding: 6px 22px;
+      text-align: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.75), inset 0 0 14px rgba(212, 168, 79, 0.18);
+    }
+
+    .wave-title {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: var(--gold-bright);
+    }
+
+    .wave-timer {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 24px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.1;
+    }
+
+    .wave-timer.danger {
+      color: var(--crimson-glow);
+      animation: pulseScale 0.55s infinite alternate;
+    }
+
+    @keyframes pulseScale {
+      from { transform: scale(1); }
+      to { transform: scale(1.1); }
+    }
+
+    .coin-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--gold-bright);
+    }
+
+    .icon-btn {
+      background: rgba(28, 24, 21, 0.92);
+      border: 1px solid var(--border-brass);
+      color: var(--text-main);
+      border-radius: 8px;
+      padding: 7px 11px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s;
+    }
+
+    .icon-btn:hover {
+      border-color: var(--gold-bright);
+      background: var(--bg-card-hover);
+    }
+
+    .icon-btn.active {
+      border-color: var(--jade-bright);
+      color: var(--jade-bright);
+    }
+
+    /* Bottom Weapon Bar & Musou Skill */
+    .hud-bottom {
+      position: absolute;
+      bottom: max(14px, env(safe-area-inset-bottom));
+      left: 12px;
+      right: 12px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 8px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .weapon-rack {
+      display: flex;
+      gap: 8px;
+      background: rgba(18, 15, 13, 0.92);
+      border: 1.5px solid var(--border-brass);
+      padding: 8px 12px;
+      border-radius: 14px;
+      pointer-events: auto;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.75);
+    }
+
+    .weapon-slot-mini {
+      width: 52px;
+      height: 52px;
+      border-radius: 10px;
+      background: #12100e;
+      border: 2px solid #3a322b;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .weapon-slot-mini img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .weapon-slot-mini.tier-1 { border-color: #b0a89f; }
+    .weapon-slot-mini.tier-2 { border-color: #4fc3f7; box-shadow: 0 0 10px rgba(79,195,247,0.45); }
+    .weapon-slot-mini.tier-3 { border-color: #b388ff; box-shadow: 0 0 12px rgba(179,136,255,0.55); }
+    .weapon-slot-mini.tier-4 { border-color: #ff9100; box-shadow: 0 0 16px rgba(255,145,0,0.75); }
+    .weapon-slot-mini.tier-5 { border-color: #ff5252; box-shadow: 0 0 18px rgba(255,82,82,0.8); }
+    .weapon-slot-mini.tier-6 { border-color: #00e5ff; box-shadow: 0 0 18px rgba(0,229,255,0.85); }
+    .weapon-slot-mini.tier-7 { border-color: #ffd740; box-shadow: 0 0 20px rgba(255,215,64,0.88); }
+    .weapon-slot-mini.tier-8 { border-color: #ff4081; box-shadow: 0 0 20px rgba(255,64,129,0.9); }
+    .weapon-slot-mini.tier-9 { border-color: #69f0ae; box-shadow: 0 0 22px rgba(105,240,174,0.92); }
+    .weapon-slot-mini.tier-10 { border-color: #ffffff; box-shadow: 0 0 24px rgba(255,255,255,0.98); }
+
+    .weapon-slot-mini .tier-dot {
+      position: absolute;
+      bottom: 2px;
+      right: 3px;
+      font-size: 9px;
+      font-weight: 900;
+      padding: 0 4px;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.82);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .musou-btn {
+      pointer-events: auto;
+      position: relative;
+      width: 84px;
+      height: 84px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #3a1814 0%, #1a0b09 100%);
+      border: 2.5px solid var(--gold-dim);
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.85);
+      transition: transform 0.15s, border-color 0.2s;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .musou-btn.ready {
+      border-color: var(--gold-bright);
+      color: #fff;
+      background: radial-gradient(circle, #c82c20 0%, #4a0e0a 100%);
+      box-shadow: 0 0 28px rgba(255, 87, 71, 0.85), inset 0 0 16px rgba(244, 208, 111, 0.6);
+      animation: musouPulse 0.85s infinite alternate;
+    }
+
+    @keyframes musouPulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.08); }
+    }
+
+    .musou-fill {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(244, 208, 111, 0.28);
+      pointer-events: none;
+      transition: height 0.15s;
+    }
+
+    .musou-label {
+      font-family: 'Noto Serif TC', serif;
+      font-weight: 900;
+      font-size: 17px;
+      z-index: 1;
+      letter-spacing: 1px;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+    }
+
+    .musou-sub {
+      font-size: 10px;
+      z-index: 1;
+      opacity: 0.9;
+    }
+
+    /* Boss HP Banner */
+    .boss-banner {
+      position: absolute;
+      top: 76px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(500px, 92vw);
+      background: rgba(22, 11, 11, 0.94);
+      border: 1.5px solid var(--crimson-glow);
+      border-radius: 12px;
+      padding: 8px 14px;
+      z-index: 10;
+      pointer-events: none;
+      display: none;
+      box-shadow: 0 0 28px rgba(200, 62, 49, 0.55);
+    }
+
+    .boss-banner.visible {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .boss-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid var(--crimson-glow);
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .boss-info {
+      flex: 1;
+    }
+
+    .boss-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: 'Noto Serif TC', serif;
+      font-size: 13px;
+      font-weight: 900;
+      color: var(--gold-bright);
+      margin-bottom: 5px;
+    }
+
+    .boss-hp-track {
+      width: 100%;
+      height: 12px;
+      background: #120808;
+      border: 1px solid rgba(255, 87, 71, 0.45);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .boss-hp-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #ff9100, #ff2a00);
+      transition: width 0.1s;
+    }
+
+    /* Mobile Portrait & Small Screen RWD */
+    @media (max-width: 720px) {
+      .hud-top {
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 6px;
+      }
+      .hud-center {
+        position: static;
+        transform: none;
+        order: 3;
+        width: 100%;
+      }
+      .wave-badge {
+        width: 100%;
+        padding: 4px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .wave-title {
+        font-size: 12px;
+        letter-spacing: 1px;
+      }
+      .wave-timer {
+        font-size: 18px;
+      }
+      .hp-bar-wrap {
+        width: 96px;
+      }
+      .hud-pill {
+        padding: 4px 8px;
+        gap: 6px;
+      }
+      .hud-avatar {
+        width: 26px;
+        height: 26px;
+      }
+      .icon-btn {
+        padding: 5px 8px;
+        font-size: 11px;
+      }
+      .boss-banner {
+        top: 96px;
+        padding: 6px 10px;
+      }
+      .weapon-rack {
+        gap: 4px;
+        padding: 6px 8px;
+      }
+      .weapon-slot-mini {
+        width: 38px;
+        height: 38px;
+        border-radius: 8px;
+      }
+      .musou-btn {
+        width: 68px;
+        height: 68px;
+      }
+      .musou-label {
+        font-size: 14px;
+      }
+    }
+
+    /* Modal Overlays */
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(6, 5, 4, 0.86);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 30;
+      padding: 12px;
+    }
+
+    .overlay.hidden {
+      display: none;
+    }
+
+    .panel {
+      width: min(920px, 96vw);
+      max-height: 92vh;
+      max-height: 92dvh;
+      overflow-y: auto;
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
+      background: linear-gradient(180deg, #211c18 0%, #120f0d 100%);
+      border: 2px solid var(--gold-brass);
+      border-radius: 18px;
+      padding: 18px 20px;
+      box-shadow: var(--shadow-heavy), inset 0 0 36px rgba(212, 168, 79, 0.12);
+      color: var(--text-main);
+    }
+
+    .title-kv-wrap {
+      position: relative;
+      width: 100%;
+      height: clamp(150px, 24vh, 215px);
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1.5px solid var(--border-brass);
+      margin-bottom: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+    }
+
+    .title-kv-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 28%;
+      filter: brightness(0.88) contrast(1.08);
+    }
+
+    .title-kv-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(0deg, rgba(16, 13, 11, 0.96) 0%, rgba(16, 13, 11, 0.35) 55%, rgba(16, 13, 11, 0.15) 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .title-main {
+      font-family: 'Noto Serif TC', serif;
+      font-size: clamp(26px, 4.2vw, 38px);
+      font-weight: 900;
+      color: var(--gold-bright);
+      letter-spacing: 4px;
+      margin: 0;
+      text-shadow: 0 3px 16px rgba(0, 0, 0, 0.95), 0 0 24px rgba(244, 208, 111, 0.45);
+    }
+
+    .title-sub {
+      font-size: 13px;
+      color: #e2d7c7;
+      margin-top: 4px;
+      text-shadow: 0 2px 6px #000;
+    }
+
+    /* Hero Selection Cards */
+    .hero-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 14px;
+      margin: 14px 0;
+    }
+
+    .hero-card {
+      background: var(--bg-card);
+      border: 1.5px solid #3c332a;
+      border-radius: 14px;
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .hero-card:hover, .hero-card.selected {
+      border-color: var(--gold-bright);
+      background: var(--bg-card-hover);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 28px rgba(212, 168, 79, 0.28);
+    }
+
+    .hero-card-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .hero-portrait {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--gold-brass);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.65);
+      flex-shrink: 0;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      width: fit-content;
+      margin-bottom: 4px;
+    }
+
+    .hero-name {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--gold-bright);
+    }
+
+    .hero-desc {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+
+    .hero-perk {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--jade-bright);
+      font-weight: 600;
+      margin-top: auto;
+      padding-top: 8px;
+      border-top: 1px dashed rgba(255,255,255,0.12);
+    }
+
+    .hero-perk img {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid var(--border-brass);
+      object-fit: cover;
+    }
+
+    /* Camp Shop UI */
+    .camp-top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-brass);
+    }
+
+    .camp-section-title {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 15px;
+      font-weight: 900;
+      color: var(--gold-bright);
+      margin: 10px 0 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .arsenal-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+    }
+
+    @media (max-width: 680px) {
+      .arsenal-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .arsenal-slot {
+      background: #14110e;
+      border: 2px solid #3c342d;
+      border-radius: 12px;
+      padding: 10px 8px;
+      min-height: 132px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      text-align: center;
+      position: relative;
+    }
+
+    .arsenal-slot.tier-1 { border-color: #8d8d8d; }
+    .arsenal-slot.tier-2 { border-color: var(--cyan-thunder); box-shadow: inset 0 0 12px rgba(79,195,247,0.18); }
+    .arsenal-slot.tier-3 { border-color: var(--purple-tier); box-shadow: inset 0 0 14px rgba(179,136,255,0.24); }
+    .arsenal-slot.tier-4 { border-color: var(--orange-tier); box-shadow: inset 0 0 18px rgba(255,145,0,0.35); }
+    .arsenal-slot.tier-5 { border-color: #ff5252; box-shadow: inset 0 0 18px rgba(255,82,82,0.35); }
+    .arsenal-slot.tier-6 { border-color: #00e5ff; box-shadow: inset 0 0 20px rgba(0,229,255,0.38); }
+    .arsenal-slot.tier-7 { border-color: #ffd740; box-shadow: inset 0 0 22px rgba(255,215,64,0.42); }
+    .arsenal-slot.tier-8 { border-color: #ff4081; box-shadow: inset 0 0 22px rgba(255,64,129,0.45); }
+    .arsenal-slot.tier-9 { border-color: #69f0ae; box-shadow: inset 0 0 24px rgba(105,240,174,0.48); }
+    .arsenal-slot.tier-10 { border-color: #ffffff; box-shadow: inset 0 0 26px rgba(255,255,255,0.55); }
+
+    .campaign-selector-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: rgba(18, 15, 12, 0.9);
+      border: 1px solid var(--border-brass);
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin-top: 10px;
+    }
+
+    .campaign-select-input {
+      background: #14110e;
+      color: var(--gold-bright);
+      border: 1px solid var(--gold-brass);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-family: 'Noto Sans TC', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-continue {
+      background: linear-gradient(180deg, #43c687 0%, #20734b 100%);
+      color: #07170f;
+      font-family: 'Noto Serif TC', serif;
+      font-weight: 900;
+      font-size: 16px;
+      padding: 11px 24px;
+      border-radius: 10px;
+      border: 1px solid #9ef7c9;
+      cursor: pointer;
+      letter-spacing: 1.2px;
+      box-shadow: 0 6px 22px rgba(60, 163, 112, 0.45);
+      transition: all 0.15s;
+    }
+
+    .btn-continue:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+    }
+
+    .slot-art {
+      width: 56px;
+      height: 56px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 1px solid rgba(255,255,255,0.2);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+    }
+
+    .slot-name {
+      font-weight: 800;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+
+    .slot-tier {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.08);
+      margin-bottom: 4px;
+    }
+
+    .slot-actions {
+      display: flex;
+      gap: 4px;
+      margin-top: 6px;
+      width: 100%;
+    }
+
+    .btn-mini {
+      flex: 1;
+      font-size: 10px;
+      padding: 4px;
+      border-radius: 5px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: #28221e;
+      color: var(--text-main);
+      cursor: pointer;
+    }
+
+    .btn-mini.merge {
+      background: #1b3b2b;
+      border-color: var(--jade-bright);
+      color: var(--jade-bright);
+      font-weight: 800;
+    }
+
+    .btn-mini.sell {
+      background: #331a18;
+      border-color: #a94438;
+      color: #f29b91;
+    }
+
+    .shop-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .shop-card {
+      background: var(--bg-card);
+      border: 1.5px solid #453a30;
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 10px;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+
+    .shop-card:hover {
+      border-color: var(--gold-bright);
+      transform: translateY(-2px);
+    }
+
+    .shop-card.sold {
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    .shop-card-head {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .shop-card-art {
+      width: 58px;
+      height: 58px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 1.5px solid var(--border-brass);
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+    }
+
+    .card-tag {
+      font-size: 10px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 4px;
+      width: fit-content;
+    }
+
+    .tag-weapon { background: rgba(79, 195, 247, 0.18); color: var(--cyan-thunder); border: 1px solid rgba(79,195,247,0.4); }
+    .tag-tactic { background: rgba(92, 230, 160, 0.16); color: var(--jade-bright); border: 1px solid rgba(92,230,160,0.4); }
+
+    .btn-primary {
+      background: linear-gradient(180deg, #f0c565 0%, #b88424 100%);
+      color: #17120b;
+      font-family: 'Noto Serif TC', serif;
+      font-weight: 900;
+      font-size: 16px;
+      padding: 11px 28px;
+      border-radius: 10px;
+      border: 1px solid #ffe8a3;
+      cursor: pointer;
+      letter-spacing: 1.5px;
+      box-shadow: 0 6px 22px rgba(212, 168, 79, 0.4);
+      transition: all 0.15s;
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #2b241f;
+      color: var(--gold-bright);
+      border: 1px solid var(--gold-brass);
+      font-weight: 700;
+      font-size: 13px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .btn-buy {
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid var(--gold-brass);
+      background: linear-gradient(180deg, #33291f 0%, #211a14 100%);
+      color: var(--gold-bright);
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-buy:disabled {
+      opacity: 0.42;
+      cursor: not-allowed;
+    }
+
+    .stats-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      background: rgba(0,0,0,0.42);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 12px;
+    }
+
+    .stats-strip span strong {
+      color: var(--text-main);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .controls-hint {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 8px 0 6px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .controls-hint span {
+      background: rgba(255,255,255,0.05);
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- Top HUD -->
+  <div class="hud-top" id="hudTop" style="display:none;">
+    <div class="hud-left">
+      <div class="hud-pill">
+        <img id="hudHeroAvatar" class="hud-avatar" src="assets/hero_zhaoyun.png" alt="Hero" />
+        <span id="hudHeroLabel" style="font-weight:900;color:var(--gold-bright);font-size:13px;">趙雲</span>
+        <div class="hp-bar-wrap">
+          <div class="hp-bar-fill" id="hpBarFill"></div>
+          <div class="hp-bar-text" id="hpBarText">100 / 100</div>
+        </div>
+      </div>
+      <div class="hud-pill" title="戰功玉石（用於波次結束購買與鍛造神兵）">
+        <img class="hud-jade-icon" src="assets/item_jade.png" alt="Jade" />
+        <span class="coin-count" id="jadeCount">0</span>
+      </div>
+    </div>
+
+    <div class="hud-center">
+      <div class="wave-badge">
+        <div class="wave-title" id="waveTitle">第 1 / 100 陣・黃巾前鋒</div>
+        <div class="wave-timer" id="waveTimer">22.0</div>
+      </div>
+    </div>
+
+    <div class="hud-right">
+      <button class="icon-btn active" id="btnAudio" type="button">音效：開</button>
+      <button class="icon-btn" id="btnMotion" type="button">減震：關</button>
+      <button class="icon-btn" id="btnHelp" type="button">？兵法</button>
+    </div>
+  </div>
+
+  <!-- Boss HP Banner -->
+  <div class="boss-banner" id="bossBanner">
+    <img class="boss-avatar" src="assets/boss_lubu.png" alt="鬼神呂奉先" />
+    <div class="boss-info">
+      <div class="boss-header">
+        <span id="bossNameTitle">【無雙魔將】鬼神・呂奉先</span>
+        <span id="bossHpText">2400 / 2400</span>
+      </div>
+      <div class="boss-hp-track">
+        <div class="boss-hp-fill" id="bossHpFill"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom HUD -->
+  <div class="hud-bottom" id="hudBottom" style="display:none;">
+    <div class="weapon-rack" id="hudWeaponRack"></div>
+    <button class="musou-btn" id="btnMusou" type="button" title="空白鍵 或 點擊施放無雙奧義">
+      <div class="musou-fill" id="musouFill" style="height:0%;"></div>
+      <span class="musou-label">無雙</span>
+      <span class="musou-sub" id="musouPct">0%</span>
+    </button>
+  </div>
+
+  <!-- Title / Hero Select Overlay -->
+  <div class="overlay" id="titleOverlay">
+    <div class="panel">
+      <div class="title-kv-wrap">
+        <img class="title-kv-img" src="assets/title_banner.png" alt="無雙割草：三國奇兵" />
+        <div class="title-kv-overlay">
+          <h1 class="title-main">無雙割草：三國奇兵</h1>
+          <div class="title-sub">單指走位 × 六槽十階神兵合成 × 無限古戰場（百陣無雙遠征 1～100 關）</div>
+        </div>
+      </div>
+
+      <div class="controls-hint">
+        <span><strong>單指拖曳 / 滑鼠按住</strong>：虛擬搖桿走位閃避</span>
+        <span><strong>鍵盤 WASD / 方向鍵</strong>：八向走位</span>
+        <span><strong>空白鍵 / 點擊右下無雙</strong>：施放全屏破軍奧義</span>
+      </div>
+
+      <div class="camp-section-title">
+        <span>選擇出戰名將</span>
+        <span id="bestWaveBadge" style="font-size:12px;color:var(--jade-bright);font-family:'JetBrains Mono', monospace;">最高突破：第 1 陣 / 100 陣</span>
+      </div>
+      <div class="hero-grid" id="heroSelectGrid"></div>
+
+      <div class="campaign-selector-bar">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="font-weight:800;font-size:13px;color:var(--gold-bright);">戰役章節 / 起始陣數：</span>
+          <select id="chapterSelect" class="campaign-select-input">
+            <option value="1">第 1 陣｜第一章：黃巾起義（1～10 陣）</option>
+            <option value="11">第 11 陣｜第二章：虎牢關血戰（11～20 陣）</option>
+            <option value="21">第 21 陣｜第三章：官渡爭霸（21～30 陣）</option>
+            <option value="31">第 31 陣｜第四章：長坂坡突圍（31～40 陣）</option>
+            <option value="41">第 41 陣｜第五章：赤壁連環火海（41～50 陣）</option>
+            <option value="51">第 51 陣｜第六章：潼關西涼鐵騎（51～60 陣）</option>
+            <option value="61">第 61 陣｜第七章：合淝逍遙津（61～70 陣）</option>
+            <option value="71">第 71 陣｜第八章：定軍山斬將（71～80 陣）</option>
+            <option value="81">第 81 陣｜第九章：南蠻七擒七縱（81～90 陣）</option>
+            <option value="91">第 91 陣｜第十章：五丈原真魔決戰（91～100 陣）</option>
+            <option value="100">第 100 陣｜終極死鬥：九天無雙魔神・呂奉先</option>
+          </select>
+          <label style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px;">
+            自訂陣數 (1-100)：
+            <input id="customWaveInput" type="number" min="1" max="100" value="1" class="campaign-select-input" style="width:72px;text-align:center;" />
+          </label>
+        </div>
+        <span style="font-size:11.5px;color:var(--text-muted);">※ 選擇中後段陣數開局時，將自動配發對應進度的神兵階級與戰力加成</span>
+      </div>
+
+      <div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:14px;">
+        <button class="btn-continue" id="btnContinueRun" type="button" style="display:none;">繼續遠征</button>
+        <button class="btn-primary" id="btnStartGame" type="button">擂鼓出征（進入第 1 陣）</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Camp Shop Overlay (Between Waves) -->
+  <div class="overlay hidden" id="shopOverlay">
+    <div class="panel">
+      <div class="camp-top-bar">
+        <div>
+          <h2 class="title-main" style="font-size:24px;text-align:left;" id="shopTitle">中軍鍛造營帳 — 備戰第 2 陣</h2>
+          <div class="title-sub" style="text-align:left;">兩把同階同款神兵可【升階合成】；最多同時佩帶 6 把環繞神兵</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="hud-pill">
+            <img class="hud-jade-icon" src="assets/item_jade.png" alt="Jade" />
+            <span style="font-size:12px;color:var(--text-muted);">戰功翠玉</span>
+            <span class="coin-count" id="shopJadeCount">0</span>
+          </div>
+          <button class="btn-secondary" id="btnReroll" type="button">重鑄補給 (-8 玉)</button>
+        </div>
+      </div>
+
+      <div class="camp-section-title">
+        <span>隨身神兵架（<span id="arsenalCountText">1/6</span>）</span>
+        <span style="font-size:12px;color:var(--jade-bright);font-family:'Noto Sans TC';">提示：點擊「升階合成」將兩把同名同階神兵融合，威力與彈幕數大幅躍升！</span>
+      </div>
+      <div class="arsenal-grid" id="shopArsenalGrid"></div>
+
+      <div class="camp-section-title" style="margin-top:16px;">
+        <span>軍需補給（神兵與兵法錦囊）</span>
+      </div>
+      <div class="shop-cards" id="shopCardsGrid"></div>
+
+      <div class="stats-strip" id="shopStatsStrip"></div>
+
+      <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+        <button class="btn-primary" id="btnNextWave" type="button">拔劍迎敵（進入下一陣）</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Result Overlay (Victory / Defeat) -->
+  <div class="overlay hidden" id="resultOverlay">
+    <div class="panel" style="max-width:540px;text-align:center;">
+      <div class="title-kv-wrap" style="height:140px;margin-bottom:14px;">
+        <img class="title-kv-img" id="resultBannerImg" src="assets/title_banner.png" alt="Result Banner" />
+        <div class="title-kv-overlay">
+          <h2 class="title-main" id="resultTitle" style="font-size:28px;">威震華夏！破陣大捷</h2>
+        </div>
+      </div>
+      <p class="title-sub" id="resultSub" style="font-size:14px;margin:10px 0 16px;"></p>
+      <div class="stats-strip" id="resultStats" style="justify-content:center;margin-bottom:20px;"></div>
+      <div style="display:flex;gap:12px;justify-content:center;">
+        <button class="btn-primary" id="btnPlayAgain" type="button">再次出征</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // =========================================================================
+  // 0. Preload UI Assets & Survivor.io 2.5D Paper-Doll Rig Cutout Sprites
+  // =========================================================================
+  const ASSET_URLS = {
+    hero_zhaoyun: 'assets/hero_zhaoyun.png',
+    hero_guanyu: 'assets/hero_guanyu.png',
+    hero_zhugeliang: 'assets/hero_zhugeliang.png',
+    boss_lubu: 'assets/boss_lubu.png',
+    wpn_spear: 'assets/wpn_spear.png',
+    wpn_halberd: 'assets/wpn_halberd.png',
+    wpn_bow: 'assets/wpn_bow.png',
+    wpn_thunder: 'assets/wpn_thunder.png',
+    wpn_bladering: 'assets/wpn_bladering.png',
+    item_jade: 'assets/item_jade.png',
+    tactic_scroll: 'assets/tactic_scroll.png',
+    arena_floor: 'assets/arena_floor.png',
+    title_banner: 'assets/title_banner.png'
+  };
+
+  // Survivor.io-style weaponless chibi bodies + isolated weapon sprites on #FF00FF
+  const RIG_URLS = {
+    body_zhaoyun: 'assets/body_zhaoyun.png',
+    body_guanyu: 'assets/body_guanyu.png',
+    body_zhugeliang: 'assets/body_zhugeliang.png',
+    body_grunt: 'assets/body_grunt.png',
+    body_shield: 'assets/body_shield.png',
+    body_charger: 'assets/body_charger.png',
+    body_lubu: 'assets/body_lubu.png',
+    rig_spear: 'assets/rig_spear.png',
+    rig_halberd: 'assets/rig_halberd.png',
+    rig_bow: 'assets/rig_bow.png',
+    rig_thunder: 'assets/rig_thunder.png',
+    rig_bladering: 'assets/rig_bladering.png'
+  };
+
+  const IMAGES = {};
+  Object.entries(ASSET_URLS).forEach(([key, url]) => {
+    const img = new Image();
+    img.src = url;
+    IMAGES[key] = img;
+  });
+
+  const CUTOUT_RIGS = {};
+
+  function createCutoutAndTrim(img) {
+    const w = img.naturalWidth || 512;
+    const h = img.naturalHeight || 512;
+    const off = document.createElement('canvas');
+    off.width = w;
+    off.height = h;
+    const octx = off.getContext('2d');
+    octx.drawImage(img, 0, 0);
+
+    const imgData = octx.getImageData(0, 0, w, h);
+    const d = imgData.data;
+
+    let minX = w, minY = h, maxX = 0, maxY = 0;
+
+    for (let i = 0; i < d.length; i += 4) {
+      const r = d[i];
+      const g = d[i + 1];
+      const b = d[i + 2];
+      const magentaScore = Math.min(r, b) - g;
+      if (magentaScore > 75 && r > 120 && b > 120) {
+        if (magentaScore > 125) {
+          d[i + 3] = 0;
+        } else {
+          const factor = 1 - (magentaScore - 75) / 50;
+          d[i + 3] = Math.round(d[i + 3] * factor);
+          d[i] = g;
+          d[i + 2] = g;
+        }
+      }
+      if (d[i + 3] > 25) {
+        const px = (i >> 2) % w;
+        const py = Math.floor((i >> 2) / w);
+        if (px < minX) minX = px;
+        if (px > maxX) maxX = px;
+        if (py < minY) minY = py;
+        if (py > maxY) maxY = py;
+      }
+    }
+    octx.putImageData(imgData, 0, 0);
+
+    // Crop tight bounding box so feet attach seamlessly to the bottom of the torso
+    if (maxX <= minX || maxY <= minY) {
+      minX = 0; minY = 0; maxX = w - 1; maxY = h - 1;
+    }
+    const cw = maxX - minX + 1;
+    const ch = maxY - minY + 1;
+
+    const trimmed = document.createElement('canvas');
+    trimmed.width = cw;
+    trimmed.height = ch;
+    trimmed.getContext('2d').drawImage(off, minX, minY, cw, ch, 0, 0, cw, ch);
+
+    const whiteCanvas = document.createElement('canvas');
+    whiteCanvas.width = cw;
+    whiteCanvas.height = ch;
+    const wctx = whiteCanvas.getContext('2d');
+    wctx.drawImage(trimmed, 0, 0);
+    wctx.globalCompositeOperation = 'source-in';
+    wctx.fillStyle = '#ffffff';
+    wctx.fillRect(0, 0, cw, ch);
+
+    return { normal: trimmed, white: whiteCanvas, aspect: cw / ch };
+  }
+
+  Object.entries(RIG_URLS).forEach(([key, url]) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        CUTOUT_RIGS[key] = createCutoutAndTrim(img);
+      } catch (e) {
+        CUTOUT_RIGS[key] = { normal: img, white: img, aspect: 1 };
+      }
+    };
+    img.src = url;
+  });
+
+  // =========================================================================
+  // 1. Web Audio Synthesizer
+  // =========================================================================
+  class SoundEngine {
+    constructor() {
+      this.ctx = null;
+      this.enabled = true;
+      this.lastGemTime = 0;
+      this.gemPitchStep = 0;
+    }
+
+    init() {
+      if (!this.ctx) {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) this.ctx = new AudioCtx();
+      }
+      if (this.ctx && this.ctx.state === 'suspended') {
+        this.ctx.resume();
+      }
+    }
+
+    playSlash() {
+      if (!this.enabled || !this.ctx) return;
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(520, now);
+      osc.frequency.exponentialRampToValueAtTime(110, now + 0.09);
+      gain.gain.setValueAtTime(0.14, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+      osc.connect(gain).connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.09);
+    }
+
+    playArrow() {
+      if (!this.enabled || !this.ctx) return;
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, now);
+      osc.frequency.exponentialRampToValueAtTime(260, now + 0.06);
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+      osc.connect(gain).connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.06);
+    }
+
+    playThunder() {
+      if (!this.enabled || !this.ctx) return;
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(360, now);
+      osc.frequency.linearRampToValueAtTime(90, now + 0.14);
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+      osc.connect(gain).connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.14);
+    }
+
+    playGemPickup() {
+      if (!this.enabled || !this.ctx) return;
+      const now = this.ctx.currentTime;
+      if (now - this.lastGemTime < 0.035) return;
+      if (now - this.lastGemTime < 0.35) {
+        this.gemPitchStep = Math.min(10, this.gemPitchStep + 1);
+      } else {
+        this.gemPitchStep = 0;
+      }
+      this.lastGemTime = now;
+
+      const pentatonic = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 1174.66, 1318.5, 1567.98, 1760.0, 2093.0];
+      const freq = pentatonic[this.gemPitchStep % pentatonic.length];
+
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now);
+      gain.gain.setValueAtTime(0.11, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+      osc.connect(gain).connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.11);
+    }
+
+    playMergeClang() {
+      if (!this.enabled || !this.ctx) return;
+      const now = this.ctx.currentTime;
+      [523.25, 659.25, 1046.5].forEach((f, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(f, now + idx * 0.05);
+        gain.gain.setValueAtTime(0.18, now + idx * 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.05 + 0.25);
+        osc.connect(gain).connect(this.ctx.destination);
+        osc.start(now + idx * 0.05);
+        osc.stop(now + idx * 0.05 + 0.25);
+      });
+    }
+
+    playWarDrum() {
+      if (!this.enabled || !this.ctx) return;
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(135, now);
+      osc.frequency.exponentialRampToValueAtTime(42, now + 0.35);
+      gain.gain.setValueAtTime(0.32, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.36);
+      osc.connect(gain).connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.36);
+    }
+  }
+
+  const sfx = new SoundEngine();
+
+  // =========================================================================
+  // 2. Game Data Definitions (Heroes, Weapons, Tactics, Waves)
+  // =========================================================================
+  const HEROES = [
+    {
+      id: 'zhaoyun',
+      name: '趙雲・子龍',
+      title: '常山槍神',
+      bodyKey: 'body_zhaoyun',
+      bootColor: '#cfd8dc',
+      capeColor: '#e3f2fd',
+      imgUrl: ASSET_URLS.hero_zhaoyun,
+      badge: '疾風突刺',
+      badgeColor: '#4fc3f7',
+      desc: '單騎救主，七進七出。擁有極高移動速度與靈巧閃避能力。',
+      perk: '移速 +18%｜起始神兵：【龍膽亮銀槍】',
+      color: '#4fc3f7',
+      startWeapon: 'spear',
+      mods: { speedMul: 1.18, dmgMul: 1.0, maxHpBonus: 0, pickupBonus: 20 }
+    },
+    {
+      id: 'guanyu',
+      name: '關羽・雲長',
+      title: '美髯武聖',
+      bodyKey: 'body_guanyu',
+      bootColor: '#2e7d32',
+      capeColor: '#1b5e20',
+      imgUrl: ASSET_URLS.hero_guanyu,
+      badge: '重斬破軍',
+      badgeColor: '#5ce6a0',
+      desc: '青龍偃月，刀勢如虹。氣血雄厚且暴擊傷害驚人。',
+      perk: '最大氣血 +35、傷害 +15%｜起始神兵：【青龍偃月刀】',
+      color: '#5ce6a0',
+      startWeapon: 'halberd',
+      mods: { speedMul: 1.0, dmgMul: 1.15, maxHpBonus: 35, pickupBonus: 0 }
+    },
+    {
+      id: 'zhugeliang',
+      name: '諸葛亮・孔明',
+      title: '臥龍星師',
+      bodyKey: 'body_zhugeliang',
+      bootColor: '#f5f5f5',
+      capeColor: '#29b6f6',
+      imgUrl: ASSET_URLS.hero_zhugeliang,
+      badge: '奇門八卦',
+      badgeColor: '#f4d06f',
+      desc: '羽扇綸巾，呼風喚雷。能從遠處吸納戰功玉石並高速釋放神兵。',
+      perk: '拾取範圍 +65%、攻速 +15%｜起始神兵：【太平落雷符】',
+      color: '#f4d06f',
+      startWeapon: 'thunder',
+      mods: { speedMul: 1.04, dmgMul: 1.05, maxHpBonus: -10, pickupBonus: 80, cdMul: 0.85 }
+    }
+  ];
+
+  const WEAPON_CATALOG = {
+    spear: {
+      id: 'spear',
+      name: '龍膽亮銀槍',
+      imgKey: 'wpn_spear',
+      rigKey: 'rig_spear',
+      imgUrl: ASSET_URLS.wpn_spear,
+      type: '鎖定貫穿突刺',
+      baseCost: 15,
+      baseCd: 0.72,
+      baseDmg: 24,
+      color: '#4fc3f7',
+      desc: '朝最近敵軍刺出銀龍寒芒，直線貫穿多名敵兵。'
+    },
+    halberd: {
+      id: 'halberd',
+      name: '青龍偃月刀',
+      imgKey: 'wpn_halberd',
+      rigKey: 'rig_halberd',
+      imgUrl: ASSET_URLS.wpn_halberd,
+      type: '大範圍弧光斬',
+      baseCost: 16,
+      baseCd: 1.05,
+      baseDmg: 36,
+      color: '#5ce6a0',
+      desc: '揮舞青龍巨刃，對前方扇形敵群造成重創與擊退。'
+    },
+    bow: {
+      id: 'bow',
+      name: '諸葛連弩',
+      imgKey: 'wpn_bow',
+      rigKey: 'rig_bow',
+      imgUrl: ASSET_URLS.wpn_bow,
+      type: '高速散射箭雨',
+      baseCost: 14,
+      baseCd: 0.42,
+      baseDmg: 14,
+      color: '#f4d06f',
+      desc: '機關連發弩箭，升階後同時齊射多枚破甲箭。'
+    },
+    thunder: {
+      id: 'thunder',
+      name: '太平落雷符',
+      imgKey: 'wpn_thunder',
+      rigKey: 'rig_thunder',
+      imgUrl: ASSET_URLS.wpn_thunder,
+      type: '連鎖天雷轟頂',
+      baseCost: 18,
+      baseCd: 1.15,
+      baseDmg: 30,
+      color: '#b388ff',
+      desc: '召喚九天玄雷劈向強敵，並在敵群間彈跳連鎖。'
+    },
+    bladeRing: {
+      id: 'bladeRing',
+      name: '乾坤護體飛輪',
+      imgKey: 'wpn_bladering',
+      rigKey: 'rig_bladering',
+      imgUrl: ASSET_URLS.wpn_bladering,
+      type: '環繞貼身絞殺',
+      baseCost: 16,
+      baseCd: 0.25,
+      baseDmg: 12,
+      color: '#ff9100',
+      desc: '召喚高速旋轉的護身火輪，持續切割靠近的敵兵。'
+    }
+  };
+
+  const TACTICS_CATALOG = [
+    { id: 'tactic_might', name: '破釜沉舟印', baseCost: 18, desc: '全神兵傷害 +22%', apply: (s) => { s.dmgMul += 0.22; } },
+    { id: 'tactic_haste', name: '兵貴神速令', baseCost: 18, desc: '神兵冷卻時間縮短 12%', apply: (s) => { s.cdMul = Math.max(0.22, s.cdMul * 0.88); } },
+    { id: 'tactic_vitality', name: '華佗青囊書', baseCost: 16, desc: '最大氣血 +45 並立即回滿氣血', apply: (s) => { s.maxHp += 45; s.hp = s.maxHp; } },
+    { id: 'tactic_magnet', name: '摸金玉璽', baseCost: 15, desc: '翠玉吸取範圍 +55% 且每陣額外 +12 玉', apply: (s) => { s.pickupRadius += 65; s.waveBonusJade += 12; } },
+    { id: 'tactic_wind', name: '的盧飛電鐙', baseCost: 15, desc: '武將移動速度 +14%', apply: (s) => { s.speedMul = Math.min(2.6, s.speedMul + 0.14); } },
+    { id: 'tactic_crit', name: '霸王暴擊紋', baseCost: 20, desc: '暴擊率 +12%（超過 100% 轉為暴擊傷害加成）', apply: (s) => { s.critChance += 0.12; } }
+  ];
+
+  // =========================================================================
+  // 2B. 100-Wave Campaign Generator (十大歷史戰役篇章 × 每章 10 陣 = 100 陣)
+  // =========================================================================
+  const CHAPTERS = [
+    {
+      chap: 1,
+      name: '第一章・黃巾起義',
+      ringTint: 'rgba(212, 168, 79, 0.16)',
+      torchTint: 'rgba(255, 160, 64, 0.38)',
+      subTitles: ['黃巾前鋒', '蒼天死士', '廣宗圍城', '符水妖兵', '【先鋒】管亥突襲', '曲陽亂軍', '黑山賊眾', '天公祭壇', '黃天禁衛', '【鎮關魔將】天公妖師・張角'],
+      midBoss: { name: '黃巾猛將・管亥', color: '#ffa726', bootColor: '#5d4037', bodyKey: 'body_shield' },
+      finalBoss: { name: '天公妖師・張角', color: '#ffd54f', bootColor: '#f57f17', bodyKey: 'body_lubu' }
+    },
+    {
+      chap: 2,
+      name: '第二章・虎牢關血戰',
+      ringTint: 'rgba(255, 87, 71, 0.18)',
+      torchTint: 'rgba(255, 70, 50, 0.40)',
+      subTitles: ['汜水關前哨', '董卓鐵甲軍', '西涼狼騎', '飛熊重步', '【先鋒】驍騎校尉・華雄', '洛陽火海', '郿塢親衛', '赤兔掠影', '方天血陣', '【鎮關魔將】虎牢鬼神・呂奉先'],
+      midBoss: { name: '西涼猛將・華雄', color: '#ef5350', bootColor: '#8e0000', bodyKey: 'body_charger' },
+      finalBoss: { name: '虎牢鬼神・呂奉先', color: '#ff3d00', bootColor: '#d50000', bodyKey: 'body_lubu' }
+    },
+    {
+      chap: 3,
+      name: '第三章・官渡爭霸',
+      ringTint: 'rgba(79, 195, 247, 0.16)',
+      torchTint: 'rgba(79, 195, 247, 0.34)',
+      subTitles: ['白馬津渡口', '河北大戟士', '延津伏兵', '高櫓連弩營', '【先鋒】河北上將・顏良', '烏巢糧營', '先登死士', '袁軍重鎧陣', '黃河朔風', '【鎮關魔將】河北雙雄・文醜'],
+      midBoss: { name: '河北上將・顏良', color: '#29b6f6', bootColor: '#0277bd', bodyKey: 'body_shield' },
+      finalBoss: { name: '河北雙雄・文醜', color: '#00e5ff', bootColor: '#00838f', bodyKey: 'body_lubu' }
+    },
+    {
+      chap: 4,
+      name: '第四章：長坂坡突圍',
+      ringTint: 'rgba(144, 202, 249, 0.18)',
+      torchTint: 'rgba(100, 181, 246, 0.35)',
+      subTitles: ['新野火陣', '曹軍追擊營', '當陽迷霧', '青釭掠影', '【先鋒】背劍將軍・夏侯恩', '景山重圍', '虎豹精騎', '七進七出', '長坂橋頭', '【鎮關魔將】虎豹統領・曹純'],
+      midBoss: { name: '背劍將軍・夏侯恩', color: '#64b5f6', bootColor: '#1565c0', bodyKey: 'body_charger' },
+      finalBoss: { name: '虎豹統領・曹純', color: '#42a5f5', bootColor: '#0d47a1', bodyKey: 'body_lubu' }
+    },
+    {
+      chap: 5,
+      name: '第五章・赤壁連環火海',
+      ringTint: 'rgba(255, 112, 67, 0.22)',
+      torchTint: 'rgba(255, 87, 34, 0.45)',
+      subTitles: ['三江口水寨', '鐵索連舟', '東南風起', '火船衝陣', '【先鋒】水軍都督・蔡瑁', '烏林烈焰', '荊州降卒', '華容道伏擊', '烈火張天', '【鎮關魔將】亂世奸雄・曹孟德'],
+      midBoss: { name: '水軍都督・蔡瑁', color: '#ff7043', bootColor: '#bf360c', bodyKey: 'body_shield' },
+      finalBoss: { name: '亂世奸雄・曹孟德', color: '#ff5722', bootColor: '#b71c1c', bodyKey: 'body_lubu' }
+    },
+    {
+      chap: 6,
+      name: '第六章・潼關西涼鐵騎',
+      ringTint: 'rgba(179, 136, 255, 0.18)',
+      torchTint: 'rgba(179, 136, 255, 0.36)',
+      subTitles: ['潼關風沙', '西涼長標營', '渭水渡口', '割鬚棄袍', '【先鋒】白馬將軍・龐德', '冰城防線', '羌族狼騎', '銀鎧獅盔', '鐵騎連環', '【鎮關魔將】神威天將軍・馬超'],
+      midBoss: { name: '白馬將軍・龐德', color: '#b388ff', bootColor: '#4527a0', bodyKey: 'body_charger' },
+      finalBoss: { name: '神威天將軍・馬超', color: '#e040fb', bootColor: '#6a1b9a', bodyKey: 'body_lubu' }
+    },
+    {
+      chap: 7,
+      name: '第七章・合淝逍遙津',
+      ringTint: 'rgba(92, 230, 160, 0.18)',
+      torchTint: 'rgba(92, 230, 160, 0.36)',
+      subTitles: ['合淝城外', '八百敢死營', '藏舟渡河', '甘寧百騎', '【先鋒】先登猛將・樂進', '小師橋斷', '虎步江南', '陷陣重戟', '江東驚魂', '【鎮關魔將】威震逍遙・張遼'],
+      midBoss: { name: '先登猛將・樂進', color: '#69f0ae', bootColor: '#1b5e20', bodyKey: 'body_shield' },
+      finalBoss: { name: '威震逍遙・張遼', color: '#00e676', bootColor: '#004d40', bodyKey: 'body_lubu' }
+    },
+    {
+      chap: 8,
+      name: '第八章・定軍山斬將',
+      ringTint: 'rgba(255, 215, 64, 0.20)',
+      torchTint: 'rgba(255, 193, 7, 0.38)',
+      subTitles: ['葭萌關口', '瓦口隘爭奪', '天蕩山燒糧', '漢水背水陣', '【先鋒】巧變名將・張郃', '定軍山麓', '鹿角重圍', '法正奇謀', '黃忠老當益壯', '【鎮關魔將】疾行虎步・夏侯淵'],
+      midBoss: { name: '巧變名將・張郃', color: '#ffd740', bootColor: '#ff6f00', bodyKey: 'body_charger' },
+      finalBoss: { name: '疾行虎步・夏侯淵', color: '#ffc400', bootColor: '#e65100', bodyKey: 'body_lubu' }
+    },
+    {
+      chap: 9,
+      name: '第九章・南蠻七擒七縱',
+      ringTint: 'rgba(118, 255, 3, 0.18)',
+      torchTint: 'rgba(100, 221, 23, 0.36)',
+      subTitles: ['瀘水毒瘴', '三洞蠻兵', '金環三結', '朵思毒泉', '【先鋒】火神後裔・祝融夫人', '木鹿狂象營', '烏戈藤甲兵', '盤蛇谷火攻', '南中歸心', '【鎮關魔將】南蠻獸王・孟獲'],
+      midBoss: { name: '火神後裔・祝融夫人', color: '#ff4081', bootColor: '#880e4f', bodyKey: 'body_charger' },
+      finalBoss: { name: '南蠻獸王・孟獲', color: '#76ff03', bootColor: '#33691e', bodyKey: 'body_lubu' }
+    },
+    {
+      chap: 10,
+      name: '第十章・五丈原真魔決戰',
+      ringTint: 'rgba(255, 23, 68, 0.25)',
+      torchTint: 'rgba(255, 23, 68, 0.48)',
+      subTitles: ['祁山六出', '上方谷火雨', '木牛流馬', '七星續命燈', '【先鋒】狂骨魔將・魏延', '八門金鎖破', '九天修羅陣', '百陣無雙劫', '煉獄虎牢再現', '【終極魔神】九天無雙魔神・呂奉先'],
+      midBoss: { name: '狂骨魔將・魏延', color: '#ff5252', bootColor: '#b71c1c', bodyKey: 'body_shield' },
+      finalBoss: { name: '九天無雙魔神・呂奉先', color: '#ff1744', bootColor: '#d50000', bodyKey: 'body_lubu' }
+    }
+  ];
+
+  const TOTAL_WAVES = 100;
+  const WAVES = Array.from({ length: TOTAL_WAVES }, (_, idx) => {
+    const waveNum = idx + 1;
+    const chapIdx = Math.floor(idx / 10);
+    const subIdx = idx % 10;
+    const chap = CHAPTERS[chapIdx];
+    const isMajorBoss = waveNum % 10 === 0;
+    const isMidBoss = !isMajorBoss && waveNum % 5 === 0;
+    const isBoss = isMajorBoss || isMidBoss;
+
+    // Smoothly scaled difficulty & enemy density across 100 waves
+    const hpMul = +(Math.pow(1.092, idx) * (1 + chapIdx * 0.18)).toFixed(2);
+    const speedMul = +(1.0 + Math.min(1.05, idx * 0.0095 + chapIdx * 0.03)).toFixed(2);
+    const dmgMul = +(1.0 + idx * 0.055).toFixed(2);
+    const spawnInterval = Math.max(0.11, +(0.64 * Math.pow(0.982, idx)).toFixed(3));
+    const maxEnemies = Math.min(175, 75 + Math.floor(idx * 1.0));
+    const duration = isMajorBoss ? 38 : (isMidBoss ? 30 : Math.min(28, 20 + (subIdx % 5)));
+
+    return {
+      wave: waveNum,
+      chapIdx,
+      chapterName: chap.name,
+      title: `第 ${waveNum} / 100 陣｜${chap.subTitles[subIdx]}`,
+      shortTitle: chap.subTitles[subIdx],
+      duration,
+      spawnInterval,
+      maxEnemies,
+      speedMul,
+      hpMul,
+      dmgMul,
+      boss: isBoss,
+      isMajorBoss,
+      bossSpec: isMajorBoss ? chap.finalBoss : (isMidBoss ? chap.midBoss : null),
+      ringTint: chap.ringTint,
+      torchTint: chap.torchTint
+    };
+  });
+
+  const MAX_WEAPON_TIER = 10;
+  const TIER_NAMES = [
+    '',
+    '凡鐵 I',
+    '百煉 II',
+    '天工 III',
+    '無雙 IV',
+    '鬼神 V',
+    '天罡 VI',
+    '太古 VII',
+    '軒轅 VIII',
+    '混沌 IX',
+    '神話 X'
+  ];
+  const TIER_SHORT = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+  const TIER_COLORS = [
+    '',
+    '#b0a89f',
+    '#4fc3f7',
+    '#b388ff',
+    '#ff9100',
+    '#ff5252',
+    '#00e5ff',
+    '#ffd740',
+    '#ff4081',
+    '#69f0ae',
+    '#ffffff'
+  ];
+
+  const SAVE_KEY = 'tk_survivor_save_v1';
+  const BEST_WAVE_KEY = 'tk_survivor_best_wave_v1';
+
+  // =========================================================================
+  // 3. Game State
+  // =========================================================================
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+
+  // Infinite Seamless Battlefield Chunk Configuration
+  const TILE_W = 1120;
+  const TILE_H = 800;
+  let selectedHeroId = 'zhaoyun';
+  let reduceMotion = false;
+
+  const state = {
+    phase: 'TITLE',
+    waveIdx: 0,
+    waveTimer: 0,
+    spawnAccum: 0,
+    jade: 0,
+    kills: 0,
+    totalJadeEarned: 0,
+    rerollCost: 8,
+    shopOffers: [],
+
+    hero: HEROES[0],
+    x: 0,
+    y: 0,
+    vx: 0,
+    vy: 0,
+    isMoving: false,
+    facing: 1,
+    walkPhase: 0,
+    dustTimer: 0,
+    radius: 24,
+    hp: 100,
+    maxHp: 100,
+    invulnTimer: 0,
+    baseSpeed: 255,
+    speedMul: 1.0,
+    dmgMul: 1.0,
+    cdMul: 1.0,
+    critChance: 0.12,
+    pickupRadius: 135,
+    waveBonusJade: 0,
+    musouGauge: 0,
+    bladeAngle: 0,
+
+    // Equipped weapons: [{ id, tier, cdTimer, aimAngle, thrustOffset, swingPhase }]
+    weapons: [],
+    enemies: [],
+    projectiles: [],
+    slashes: [],
+    lightnings: [],
+    gems: [],
+    floatTexts: [],
+    particles: [],
+    boss: null,
+
+    shakeTime: 0,
+    shakeMag: 0
+  };
+
+  const keys = {};
+  const pointer = {
+    active: false,
+    id: null,
+    startX: 0,
+    startY: 0,
+    currX: 0,
+    currY: 0,
+    dx: 0,
+    dy: 0
+  };
+
+  // =========================================================================
+  // 4. Initialization, Save/Load & UI Binding
+  // =========================================================================
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  function getBestWave() {
+    try {
+      return Math.max(1, Math.min(TOTAL_WAVES, Number(localStorage.getItem(BEST_WAVE_KEY)) || 1));
+    } catch (e) {
+      return 1;
+    }
+  }
+
+  function recordBestWave(waveNum) {
+    try {
+      const prev = getBestWave();
+      if (waveNum > prev) {
+        localStorage.setItem(BEST_WAVE_KEY, String(Math.min(TOTAL_WAVES, waveNum)));
+      }
+    } catch (e) {}
+    refreshTitleProgressUI();
+  }
+
+  function saveCampaignProgress() {
+    try {
+      const payload = {
+        heroId: state.hero.id,
+        nextWaveIdx: state.waveIdx + 1,
+        jade: state.jade,
+        kills: state.kills,
+        totalJadeEarned: state.totalJadeEarned,
+        maxHp: state.maxHp,
+        hp: state.hp,
+        speedMul: state.speedMul,
+        dmgMul: state.dmgMul,
+        cdMul: state.cdMul,
+        critChance: state.critChance,
+        pickupRadius: state.pickupRadius,
+        waveBonusJade: state.waveBonusJade,
+        musouGauge: state.musouGauge,
+        weapons: state.weapons.map(w => ({ id: w.id, tier: w.tier }))
+      };
+      localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+    } catch (e) {}
+    refreshTitleProgressUI();
+  }
+
+  function loadCampaignProgress() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (!data || typeof data.nextWaveIdx !== 'number' || data.nextWaveIdx < 0 || data.nextWaveIdx >= TOTAL_WAVES) {
+        return null;
+      }
+      return data;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function clearCampaignProgress() {
+    try {
+      localStorage.removeItem(SAVE_KEY);
+    } catch (e) {}
+    refreshTitleProgressUI();
+  }
+
+  function refreshTitleProgressUI() {
+    const best = getBestWave();
+    const badgeEl = document.getElementById('bestWaveBadge');
+    if (badgeEl) {
+      badgeEl.textContent = `最高突破：第 ${best} 陣 / 100 陣`;
+    }
+
+    const saved = loadCampaignProgress();
+    const btnCont = document.getElementById('btnContinueRun');
+    if (btnCont) {
+      if (saved) {
+        const h = HEROES.find(item => item.id === saved.heroId) || HEROES[0];
+        btnCont.style.display = 'inline-block';
+        btnCont.textContent = `繼續遠征（第 ${saved.nextWaveIdx + 1} / 100 陣・${h.name.split('・')[0]}）`;
+      } else {
+        btnCont.style.display = 'none';
+      }
+    }
+  }
+
+  function renderHeroSelect() {
+    const container = document.getElementById('heroSelectGrid');
+    container.innerHTML = '';
+    HEROES.forEach((h) => {
+      const startWpn = WEAPON_CATALOG[h.startWeapon];
+      const card = document.createElement('div');
+      card.className = 'hero-card' + (h.id === selectedHeroId ? ' selected' : '');
+      card.innerHTML = `
+        <div class="hero-card-top">
+          <img class="hero-portrait" src="${h.imgUrl}" alt="${h.name}" />
+          <div>
+            <span class="hero-badge" style="background:${h.badgeColor}22;color:${h.badgeColor};border:1px solid ${h.badgeColor}66;">${h.badge}</span>
+            <div class="hero-name">${h.name}</div>
+          </div>
+        </div>
+        <div class="hero-desc">${h.desc}</div>
+        <div class="hero-perk">
+          <img src="${startWpn.imgUrl}" alt="${startWpn.name}" />
+          <span>${h.perk}</span>
+        </div>
+      `;
+      card.addEventListener('click', () => {
+        sfx.init();
+        sfx.playGemPickup();
+        selectedHeroId = h.id;
+        renderHeroSelect();
+      });
+      container.appendChild(card);
+    });
+    refreshTitleProgressUI();
+  }
+  renderHeroSelect();
+
+  const chapterSelectEl = document.getElementById('chapterSelect');
+  const customWaveInputEl = document.getElementById('customWaveInput');
+  const btnStartGameEl = document.getElementById('btnStartGame');
+
+  function syncStartWaveButtonText() {
+    const targetWave = Math.max(1, Math.min(TOTAL_WAVES, Number(customWaveInputEl.value) || 1));
+    btnStartGameEl.textContent = `擂鼓出征（進入第 ${targetWave} / 100 陣）`;
+  }
+
+  chapterSelectEl.addEventListener('change', () => {
+    customWaveInputEl.value = chapterSelectEl.value;
+    syncStartWaveButtonText();
+  });
+
+  customWaveInputEl.addEventListener('input', () => {
+    syncStartWaveButtonText();
+  });
+
+  function startNewRun() {
+    sfx.init();
+    sfx.playWarDrum();
+    const hero = HEROES.find(h => h.id === selectedHeroId) || HEROES[0];
+    const startWaveNum = Math.max(1, Math.min(TOTAL_WAVES, Number(customWaveInputEl.value) || 1));
+    const startIdx = startWaveNum - 1;
+
+    state.hero = hero;
+    state.waveIdx = startIdx;
+    state.kills = 0;
+    state.x = 0;
+    state.y = 0;
+
+    // Auto-scale starting stats & weapon tiers when jumping directly into mid/late waves (2..100)
+    const boostWaves = startIdx;
+    state.jade = 20 + boostWaves * 18;
+    state.totalJadeEarned = state.jade;
+    state.maxHp = Math.round((100 + (hero.mods.maxHpBonus || 0)) + boostWaves * 18);
+    state.hp = state.maxHp;
+    state.speedMul = Math.min(2.2, (hero.mods.speedMul || 1.0) + Math.floor(boostWaves / 10) * 0.08);
+    state.dmgMul = +((hero.mods.dmgMul || 1.0) * Math.pow(1.045, boostWaves)).toFixed(2);
+    state.cdMul = Math.max(0.28, +((hero.mods.cdMul || 1.0) * Math.pow(0.988, boostWaves)).toFixed(2));
+    state.critChance = +(0.12 + Math.min(0.65, boostWaves * 0.008)).toFixed(2);
+    state.pickupRadius = 135 + (hero.mods.pickupBonus || 0) + Math.floor(boostWaves / 8) * 20;
+    state.waveBonusJade = Math.floor(boostWaves / 5) * 6;
+    state.musouGauge = boostWaves >= 9 ? 100 : 40;
+
+    const baseTier = Math.min(MAX_WEAPON_TIER, 1 + Math.floor(boostWaves / 11));
+    const subTier = Math.min(MAX_WEAPON_TIER, Math.max(1, baseTier - 1));
+    const wpnPool = ['spear', 'halberd', 'bow', 'thunder', 'bladeRing'];
+    const slotCount = Math.min(6, 2 + Math.floor(boostWaves / 8));
+
+    state.weapons = [
+      { id: hero.startWeapon, tier: baseTier, cdTimer: 0.1, aimAngle: 0, thrustOffset: 0, swingPhase: 0 },
+      { id: 'bow', tier: baseTier, cdTimer: 0.2, aimAngle: 0, thrustOffset: 0, swingPhase: 0 }
+    ];
+    for (let s = 2; s < slotCount; s++) {
+      const wId = wpnPool[(s + startIdx) % wpnPool.length];
+      state.weapons.push({
+        id: wId,
+        tier: s % 2 === 0 ? baseTier : subTier,
+        cdTimer: 0.15 * s,
+        aimAngle: 0,
+        thrustOffset: 0,
+        swingPhase: 0
+      });
+    }
+
+    document.getElementById('titleOverlay').classList.add('hidden');
+    document.getElementById('resultOverlay').classList.add('hidden');
+    document.getElementById('shopOverlay').classList.add('hidden');
+    document.getElementById('hudTop').style.display = 'flex';
+    document.getElementById('hudBottom').style.display = 'flex';
+    document.getElementById('hudHeroLabel').textContent = hero.name.split('・')[0];
+    document.getElementById('hudHeroAvatar').src = hero.imgUrl;
+
+    startWave(startIdx);
+  }
+
+  function continueSavedRun() {
+    const saved = loadCampaignProgress();
+    if (!saved) {
+      startNewRun();
+      return;
+    }
+    sfx.init();
+    sfx.playWarDrum();
+    const hero = HEROES.find(h => h.id === saved.heroId) || HEROES[0];
+    selectedHeroId = hero.id;
+    state.hero = hero;
+    state.waveIdx = Math.max(0, Math.min(TOTAL_WAVES - 1, saved.nextWaveIdx));
+    state.jade = saved.jade || 20;
+    state.kills = saved.kills || 0;
+    state.totalJadeEarned = saved.totalJadeEarned || state.jade;
+    state.maxHp = saved.maxHp || 100;
+    state.hp = saved.hp || state.maxHp;
+    state.speedMul = saved.speedMul || 1.0;
+    state.dmgMul = saved.dmgMul || 1.0;
+    state.cdMul = saved.cdMul || 1.0;
+    state.critChance = saved.critChance || 0.12;
+    state.pickupRadius = saved.pickupRadius || 135;
+    state.waveBonusJade = saved.waveBonusJade || 0;
+    state.musouGauge = saved.musouGauge || 40;
+    state.x = 0;
+    state.y = 0;
+
+    state.weapons = (saved.weapons && saved.weapons.length > 0)
+      ? saved.weapons.map(w => ({
+          id: WEAPON_CATALOG[w.id] ? w.id : hero.startWeapon,
+          tier: Math.max(1, Math.min(MAX_WEAPON_TIER, w.tier || 1)),
+          cdTimer: 0.1,
+          aimAngle: 0,
+          thrustOffset: 0,
+          swingPhase: 0
+        }))
+      : [{ id: hero.startWeapon, tier: 1, cdTimer: 0.1, aimAngle: 0, thrustOffset: 0, swingPhase: 0 }];
+
+    document.getElementById('titleOverlay').classList.add('hidden');
+    document.getElementById('resultOverlay').classList.add('hidden');
+    document.getElementById('shopOverlay').classList.add('hidden');
+    document.getElementById('hudTop').style.display = 'flex';
+    document.getElementById('hudBottom').style.display = 'flex';
+    document.getElementById('hudHeroLabel').textContent = hero.name.split('・')[0];
+    document.getElementById('hudHeroAvatar').src = hero.imgUrl;
+
+    startWave(state.waveIdx);
+  }
+
+  function startWave(idx) {
+    state.waveIdx = Math.max(0, Math.min(TOTAL_WAVES - 1, idx));
+    recordBestWave(state.waveIdx + 1);
+
+    const w = WAVES[state.waveIdx];
+    state.phase = 'WAVE';
+    state.waveTimer = w.duration;
+    state.spawnAccum = 0;
+    state.walkPhase = 0;
+    state.enemies = [];
+    state.projectiles = [];
+    state.slashes = [];
+    state.lightnings = [];
+    state.gems = [];
+    state.floatTexts = [];
+    state.particles = [];
+    state.boss = null;
+
+    document.getElementById('shopOverlay').classList.add('hidden');
+    document.getElementById('waveTitle').textContent = w.title;
+    document.getElementById('bossBanner').classList.toggle('visible', !!w.boss);
+
+    const initialPack = Math.min(18, 7 + Math.floor(state.waveIdx / 8));
+    for (let i = 0; i < initialPack; i++) {
+      spawnEnemy();
+    }
+
+    if (w.boss) {
+      spawnBoss(w);
+    }
+
+    updateHud();
+  }
+
+  // =========================================================================
+  // 5. Enemy & Boss Spawning (Infinite Perimeter Ring around Camera)
+  // =========================================================================
+  function getSpawnRingCoord() {
+    const angle = Math.random() * Math.PI * 2;
+    const halfDiag = Math.hypot(canvas.width, canvas.height) * 0.5;
+    const dist = Math.max(520, Math.min(820, halfDiag + 90 + Math.random() * 140));
+    return {
+      x: state.x + Math.cos(angle) * dist,
+      y: state.y + Math.sin(angle) * dist
+    };
+  }
+
+  function spawnEnemy(forcedType) {
+    const w = WAVES[state.waveIdx];
+    const pos = getSpawnRingCoord();
+    const ex = pos.x;
+    const ey = pos.y;
+
+    let type = forcedType;
+    if (!type) {
+      const r = Math.random();
+      const chargerChance = Math.min(0.36, 0.12 + state.waveIdx * 0.003);
+      const shieldChance = Math.min(0.42, 0.22 + state.waveIdx * 0.0025);
+      if (state.waveIdx >= 2 && r < chargerChance) type = 'charger';
+      else if (state.waveIdx >= 1 && r < chargerChance + shieldChance) type = 'shield';
+      else type = 'grunt';
+    }
+
+    const basePhase = Math.random() * Math.PI * 2;
+    const jadeScale = 1 + Math.floor(state.waveIdx / 6);
+
+    if (type === 'grunt') {
+      state.enemies.push({
+        type: 'grunt',
+        bodyKey: 'body_grunt',
+        bootColor: '#5d4037',
+        name: '黃巾步卒',
+        x: ex, y: ey,
+        radius: 19,
+        drawSize: 52,
+        hp: Math.round(26 * w.hpMul),
+        maxHp: Math.round(26 * w.hpMul),
+        speed: (102 + Math.random() * 20) * w.speedMul,
+        dmg: Math.round(10 * w.dmgMul),
+        color: '#d49b35',
+        jadeValue: 2 * jadeScale,
+        hitFlash: 0,
+        walkPhase: basePhase,
+        strideFreq: 14,
+        facing: 1
+      });
+    } else if (type === 'shield') {
+      state.enemies.push({
+        type: 'shield',
+        bodyKey: 'body_shield',
+        bootColor: '#37474f',
+        name: '重甲刀盾兵',
+        x: ex, y: ey,
+        radius: 23,
+        drawSize: 60,
+        hp: Math.round(58 * w.hpMul),
+        maxHp: Math.round(58 * w.hpMul),
+        speed: 78 * w.speedMul,
+        dmg: Math.round(14 * w.dmgMul),
+        color: '#5c7cfa',
+        jadeValue: 4 * jadeScale,
+        hitFlash: 0,
+        walkPhase: basePhase,
+        strideFreq: 10.5,
+        facing: 1
+      });
+    } else if (type === 'charger') {
+      state.enemies.push({
+        type: 'charger',
+        bodyKey: 'body_charger',
+        bootColor: '#b71c1c',
+        name: '西涼鐵騎',
+        x: ex, y: ey,
+        radius: 22,
+        drawSize: 58,
+        hp: Math.round(44 * w.hpMul),
+        maxHp: Math.round(44 * w.hpMul),
+        speed: 148 * w.speedMul,
+        dmg: Math.round(16 * w.dmgMul),
+        color: '#ff6b6b',
+        jadeValue: 5 * jadeScale,
+        hitFlash: 0,
+        walkPhase: basePhase,
+        strideFreq: 18,
+        facing: 1
+      });
+    }
+  }
+
+  function spawnBoss(w) {
+    const spec = w.bossSpec || { name: '鬼神・呂奉先', color: '#ff3d00', bootColor: '#d50000', bodyKey: 'body_lubu' };
+    const isMajor = !!w.isMajorBoss;
+    const baseBossHp = isMajor ? 1400 : 750;
+    const bossHp = Math.round(baseBossHp * w.hpMul);
+    const jadeScale = 1 + Math.floor(state.waveIdx / 4);
+
+    const boss = {
+      isBoss: true,
+      isMajorBoss: isMajor,
+      type: 'boss',
+      bodyKey: spec.bodyKey || 'body_lubu',
+      bootColor: spec.bootColor || '#d50000',
+      name: spec.name,
+      x: state.x,
+      y: state.y - 380,
+      radius: isMajor ? 42 : 34,
+      drawSize: isMajor ? 110 : 88,
+      hp: bossHp,
+      maxHp: bossHp,
+      speed: (isMajor ? 126 : 118) * Math.min(1.45, 0.95 + state.waveIdx * 0.005),
+      dmg: Math.round((isMajor ? 22 : 17) * w.dmgMul),
+      color: spec.color || '#ff3d00',
+      jadeValue: (isMajor ? 45 : 25) * jadeScale,
+      hitFlash: 0,
+      walkPhase: 0,
+      strideFreq: 12,
+      facing: 1,
+      skillTimer: 3.2,
+      dashTime: 0,
+      dashVx: 0,
+      dashVy: 0
+    };
+    state.enemies.push(boss);
+    state.boss = boss;
+
+    const titleEl = document.getElementById('bossNameTitle');
+    if (titleEl) {
+      titleEl.textContent = `${isMajor ? '【鎮關魔將】' : '【鎮陣先鋒】'}${boss.name}`;
+    }
+  }
+
+  // =========================================================================
+  // 6. Combat & Detached Floating Weapons (Survivor.io / Brotato Style)
+  // =========================================================================
+  function getNearestEnemy(x, y, maxRange = 9999) {
+    let best = null;
+    let bestDist = maxRange * maxRange;
+    for (const e of state.enemies) {
+      const dx = e.x - x;
+      const dy = e.y - y;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < bestDist) {
+        bestDist = d2;
+        best = e;
+      }
+    }
+    return best;
+  }
+
+  function dealDamage(enemy, baseAmount, knockback = 18) {
+    const isCrit = Math.random() < state.critChance;
+    const extraCritBonus = Math.max(0, state.critChance - 1.0);
+    const critMult = isCrit ? (2.0 + extraCritBonus) : 1.0;
+    const dmg = Math.max(1, Math.round(baseAmount * state.dmgMul * critMult));
+    enemy.hp -= dmg;
+    enemy.hitFlash = 0.12;
+
+    const dx = enemy.x - state.x;
+    const dy = enemy.y - state.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const kbFactor = enemy.isBoss ? 0.2 : 1.0;
+    enemy.x += (dx / len) * knockback * kbFactor;
+    enemy.y += (dy / len) * knockback * kbFactor;
+
+    state.floatTexts.push({
+      x: enemy.x + (Math.random() - 0.5) * 16,
+      y: enemy.y - enemy.radius - 14,
+      text: isCrit ? `暴擊 ${dmg}!` : `${dmg}`,
+      color: isCrit ? '#f4d06f' : '#ffffff',
+      size: isCrit ? 17 : 13,
+      life: 0.55,
+      maxLife: 0.55
+    });
+
+    if (enemy.hp <= 0) {
+      killEnemy(enemy);
+    }
+  }
+
+  function killEnemy(enemy) {
+    const idx = state.enemies.indexOf(enemy);
+    if (idx === -1) return;
+    state.enemies.splice(idx, 1);
+    state.kills++;
+    state.musouGauge = Math.min(100, state.musouGauge + (enemy.isBoss ? 50 : 3.2));
+
+    state.gems.push({
+      x: enemy.x,
+      y: enemy.y,
+      value: enemy.jadeValue,
+      radius: enemy.jadeValue >= 8 ? 13 : 10,
+      magnetized: false
+    });
+
+    const pCount = reduceMotion ? 4 : 10;
+    for (let i = 0; i < pCount; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const spd = 50 + Math.random() * 140;
+      state.particles.push({
+        x: enemy.x,
+        y: enemy.y,
+        vx: Math.cos(ang) * spd,
+        vy: Math.sin(ang) * spd,
+        color: enemy.color,
+        radius: 3 + Math.random() * 3,
+        life: 0.35
+      });
+    }
+
+    if (enemy.isBoss) {
+      state.boss = null;
+      document.getElementById('bossBanner').classList.remove('visible');
+      triggerShake(0.45, 14);
+      state.floatTexts.push({
+        x: enemy.x,
+        y: enemy.y - 30,
+        text: `擊破【${enemy.name}】！`,
+        color: '#f7d779',
+        size: 21,
+        life: 1.1,
+        maxLife: 1.1
+      });
+      if (enemy.isMajorBoss) {
+        endWave(true);
+      }
+    }
+  }
+
+  function getWeaponMountPosition(slotIndex, totalSlots) {
+    const angles = [-0.45, -2.69, 0.45, 2.69, -1.57, 1.57];
+    const baseAng = angles[slotIndex % angles.length];
+    const rx = 44;
+    const ry = 28;
+    return {
+      ox: Math.cos(baseAng) * rx,
+      oy: Math.sin(baseAng) * ry - 8
+    };
+  }
+
+  function fireWeapon(wSlot, slotIndex, totalSlots) {
+    const spec = WEAPON_CATALOG[wSlot.id];
+    const tierMul = Math.pow(1.52, wSlot.tier - 1);
+    const dmg = spec.baseDmg * tierMul;
+    const mount = getWeaponMountPosition(slotIndex, totalSlots);
+    const wx = state.x + mount.ox;
+    const wy = state.y + mount.oy;
+    const target = getNearestEnemy(wx, wy, 600);
+
+    if (wSlot.id === 'spear') {
+      if (!target) return false;
+      sfx.playSlash();
+      const ang = Math.atan2(target.y - wy, target.x - wx);
+      wSlot.aimAngle = ang;
+      wSlot.thrustOffset = 26;
+      const spearCount = wSlot.tier >= 6 ? 2 : 1;
+      for (let s = 0; s < spearCount; s++) {
+        const a = ang + (s - (spearCount - 1) / 2) * 0.12;
+        state.projectiles.push({
+          x: wx + Math.cos(a) * 20,
+          y: wy + Math.sin(a) * 20,
+          vx: Math.cos(a) * 700,
+          vy: Math.sin(a) * 700,
+          radius: 10 + Math.min(12, wSlot.tier * 1.6),
+          dmg,
+          pierce: 2 + wSlot.tier * 2,
+          hitSet: new Set(),
+          color: '#4fc3f7',
+          life: 0.82,
+          shape: 'spear',
+          ang: a
+        });
+      }
+      return true;
+    }
+
+    if (wSlot.id === 'halberd') {
+      const ang = target ? Math.atan2(target.y - wy, target.x - wx) : (state.facing > 0 ? 0 : Math.PI);
+      sfx.playSlash();
+      wSlot.aimAngle = ang;
+      wSlot.swingPhase = 1.0;
+      const reach = 125 + Math.min(160, wSlot.tier * 18);
+      state.slashes.push({
+        x: wx,
+        y: wy,
+        ang,
+        radius: reach,
+        color: '#5ce6a0',
+        life: 0.24,
+        maxLife: 0.24
+      });
+
+      for (let i = state.enemies.length - 1; i >= 0; i--) {
+        const e = state.enemies[i];
+        const dx = e.x - wx;
+        const dy = e.y - wy;
+        const dist = Math.hypot(dx, dy);
+        if (dist <= reach + e.radius) {
+          const diff = Math.atan2(Math.sin(Math.atan2(dy, dx) - ang), Math.cos(Math.atan2(dy, dx) - ang));
+          if (Math.abs(diff) <= 1.3) {
+            dealDamage(e, dmg, 34);
+          }
+        }
+      }
+      return true;
+    }
+
+    if (wSlot.id === 'bow') {
+      if (!target) return false;
+      sfx.playArrow();
+      const baseAng = Math.atan2(target.y - wy, target.x - wx);
+      wSlot.aimAngle = baseAng;
+      wSlot.thrustOffset = -10;
+      const count = Math.min(9, wSlot.tier + 1);
+      const spread = 0.14;
+      for (let i = 0; i < count; i++) {
+        const offset = (i - (count - 1) / 2) * spread;
+        const a = baseAng + offset;
+        state.projectiles.push({
+          x: wx + Math.cos(a) * 14,
+          y: wy + Math.sin(a) * 14,
+          vx: Math.cos(a) * 620,
+          vy: Math.sin(a) * 620,
+          radius: 6,
+          dmg,
+          pierce: wSlot.tier >= 5 ? 2 : 1,
+          hitSet: new Set(),
+          color: '#f4d06f',
+          life: 0.9,
+          shape: 'arrow',
+          ang: a
+        });
+      }
+      return true;
+    }
+
+    if (wSlot.id === 'thunder') {
+      if (!target) return false;
+      sfx.playThunder();
+      wSlot.aimAngle = Math.atan2(target.y - wy, target.x - wx);
+      wSlot.swingPhase = 0.85;
+      const bounces = Math.min(12, 2 + wSlot.tier);
+      let curr = target;
+      let prevX = wx;
+      let prevY = wy;
+      const visited = new Set();
+
+      for (let b = 0; b < bounces && curr; b++) {
+        visited.add(curr);
+        state.lightnings.push({
+          x1: prevX, y1: prevY,
+          x2: curr.x, y2: curr.y,
+          color: '#b388ff',
+          life: 0.24
+        });
+        prevX = curr.x;
+        prevY = curr.y;
+        dealDamage(curr, dmg, 10);
+
+        let next = null;
+        let bestD = 250 * 250;
+        for (const cand of state.enemies) {
+          if (visited.has(cand)) continue;
+          const d2 = (cand.x - prevX) ** 2 + (cand.y - prevY) ** 2;
+          if (d2 < bestD) {
+            bestD = d2;
+            next = cand;
+          }
+        }
+        curr = next;
+      }
+      return true;
+    }
+
+    if (wSlot.id === 'bladeRing') {
+      const orbitR = 92;
+      const bladeCount = Math.min(8, 1 + wSlot.tier);
+      let hitAny = false;
+      for (let b = 0; b < bladeCount; b++) {
+        const a = state.bladeAngle + (b * Math.PI * 2) / bladeCount;
+        const bx = state.x + Math.cos(a) * orbitR;
+        const by = state.y + Math.sin(a) * orbitR;
+        for (let i = state.enemies.length - 1; i >= 0; i--) {
+          const e = state.enemies[i];
+          if (Math.hypot(e.x - bx, e.y - by) <= e.radius + 22) {
+            dealDamage(e, dmg, 16);
+            hitAny = true;
+          }
+        }
+      }
+      return hitAny;
+    }
+
+    return false;
+  }
+
+  function triggerMusou() {
+    if (state.phase !== 'WAVE' || state.musouGauge < 100) return;
+    state.musouGauge = 0;
+    sfx.playWarDrum();
+    sfx.playThunder();
+    triggerShake(0.42, 16);
+
+    state.slashes.push({
+      x: state.x,
+      y: state.y,
+      ang: 0,
+      radius: 460,
+      isFullCircle: true,
+      color: '#f4d06f',
+      life: 0.45,
+      maxLife: 0.45
+    });
+
+    state.floatTexts.push({
+      x: state.x,
+      y: state.y - 54,
+      text: '無雙亂舞・破軍！',
+      color: '#f4d06f',
+      size: 23,
+      life: 1.0,
+      maxLife: 1.0
+    });
+
+    const musouBase = 160 * Math.pow(1.06, state.waveIdx);
+    for (let i = state.enemies.length - 1; i >= 0; i--) {
+      const e = state.enemies[i];
+      if (Math.hypot(e.x - state.x, e.y - state.y) <= 460) {
+        dealDamage(e, musouBase, 75);
+      }
+    }
+
+    for (const g of state.gems) {
+      g.magnetized = true;
+    }
+    updateHud();
+  }
+
+  function triggerShake(duration, magnitude) {
+    if (reduceMotion) return;
+    state.shakeTime = Math.max(state.shakeTime, duration);
+    state.shakeMag = Math.max(state.shakeMag, magnitude);
+  }
+
+  // =========================================================================
+  // 7. Survivor.io 2.5D Paper-Doll Character Renderer
+  // =========================================================================
+  function drawSurvivorCharacter({
+    bodyKey,
+    x,
+    y,
+    size,
+    walkPhase,
+    isMoving,
+    facing,
+    bootColor,
+    capeColor,
+    ringColor,
+    hitFlash,
+    hpRatio
+  }) {
+    const rig = CUTOUT_RIGS[bodyKey];
+    ctx.save();
+    ctx.translate(x, y);
+
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.52)';
+    ctx.beginPath();
+    ctx.ellipse(0, 6, size * 0.36, size * 0.14, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (ringColor) {
+      ctx.strokeStyle = ringColor;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(0, 6, size * 0.38, size * 0.15, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    if (capeColor) {
+      const flutter = Math.sin(walkPhase * 1.5) * (isMoving ? 5 : 1.5);
+      ctx.save();
+      ctx.scale(facing, 1);
+      ctx.fillStyle = hitFlash ? '#ffffff' : capeColor;
+      ctx.strokeStyle = '#111111';
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.moveTo(-size * 0.18, -size * 0.42);
+      ctx.quadraticCurveTo(-size * 0.48 - (isMoving ? 8 : 0), -size * 0.24 + flutter, -size * 0.42 - (isMoving ? 10 : 0), -2 + flutter * 0.6);
+      ctx.quadraticCurveTo(-size * 0.15, 2, -size * 0.05, -size * 0.16);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    const stride = isMoving ? Math.sin(walkPhase) : 0;
+    const liftL = isMoving ? Math.max(0, -Math.cos(walkPhase)) * (size * 0.11) : 0;
+    const liftR = isMoving ? Math.max(0, Math.cos(walkPhase)) * (size * 0.11) : 0;
+    const stepRangeX = size * 0.14;
+
+    const leftFootX = -size * 0.13 + stride * stepRangeX * facing;
+    const leftFootY = 3 - liftL;
+    const rightFootX = size * 0.13 - stride * stepRangeX * facing;
+    const rightFootY = 3 - liftR;
+
+    const drawBoot = (bx, by, angle) => {
+      ctx.save();
+      ctx.translate(bx, by);
+      ctx.rotate(angle);
+      ctx.fillStyle = hitFlash ? '#ffffff' : (bootColor || '#cfd8dc');
+      ctx.strokeStyle = '#111111';
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, size * 0.11, size * 0.075, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    };
+
+    drawBoot(leftFootX, leftFootY, stride * 0.22 * facing);
+    drawBoot(rightFootX, rightFootY, -stride * 0.22 * facing);
+
+    const subtleBob = isMoving
+      ? Math.abs(Math.cos(walkPhase)) * 2.2
+      : Math.sin(performance.now() * 0.005) * 1.2;
+    const forwardLean = isMoving ? 0.065 * facing : 0;
+
+    ctx.save();
+    ctx.translate(0, -subtleBob);
+    ctx.rotate(forwardLean);
+    ctx.scale(facing, 1);
+
+    if (rig && rig.normal) {
+      const spriteToDraw = hitFlash ? rig.white : rig.normal;
+      const drawH = size * 0.92;
+      const drawW = drawH * (rig.aspect || 1);
+      ctx.drawImage(spriteToDraw, -drawW / 2, -drawH + 2, drawW, drawH);
+    } else {
+      ctx.fillStyle = hitFlash ? '#ffffff' : (bootColor || '#4fc3f7');
+      ctx.beginPath();
+      ctx.arc(0, -size * 0.45, size * 0.32, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    if (typeof hpRatio === 'number' && hpRatio < 1 && hpRatio > 0) {
+      const bw = size * 0.65;
+      ctx.fillStyle = 'rgba(0,0,0,0.75)';
+      ctx.fillRect(-bw / 2, 12, bw, 4);
+      ctx.fillStyle = '#ff5252';
+      ctx.fillRect(-bw / 2, 12, bw * hpRatio, 4);
+    }
+
+    ctx.restore();
+  }
+
+  function drawEquippedWeapons() {
+    const total = state.weapons.length;
+    state.weapons.forEach((wSlot, idx) => {
+      if (wSlot.id === 'bladeRing') return;
+      const spec = WEAPON_CATALOG[wSlot.id];
+      const rig = CUTOUT_RIGS[spec.rigKey];
+      if (!rig || !rig.normal) return;
+
+      const mount = getWeaponMountPosition(idx, total);
+      const bob = Math.sin(performance.now() * 0.006 + idx * 1.3) * 2.5;
+      const wx = state.x + mount.ox;
+      const wy = state.y + mount.oy + bob;
+
+      const target = getNearestEnemy(wx, wy, 580);
+      const desiredAng = target
+        ? Math.atan2(target.y - wy, target.x - wx)
+        : (state.facing >= 0 ? 0 : Math.PI);
+
+      const diff = Math.atan2(Math.sin(desiredAng - (wSlot.aimAngle || 0)), Math.cos(desiredAng - (wSlot.aimAngle || 0)));
+      wSlot.aimAngle = (wSlot.aimAngle || 0) + diff * 0.22;
+
+      const swingOffset = wSlot.swingPhase > 0 ? Math.sin(wSlot.swingPhase * Math.PI * 2) * 1.15 : 0;
+      const thrustX = Math.cos(wSlot.aimAngle) * (wSlot.thrustOffset || 0);
+      const thrustY = Math.sin(wSlot.aimAngle) * (wSlot.thrustOffset || 0);
+
+      ctx.save();
+      ctx.translate(wx + thrustX, wy + thrustY);
+
+      if (wSlot.tier >= 2) {
+        ctx.shadowColor = TIER_COLORS[wSlot.tier] || '#ffffff';
+        ctx.shadowBlur = 6 + Math.min(24, wSlot.tier * 2.5);
+      }
+
+      ctx.rotate(wSlot.aimAngle + swingOffset);
+      if (Math.cos(wSlot.aimAngle) < 0) {
+        ctx.scale(1, -1);
+      }
+
+      const wLen = 44 + Math.min(28, wSlot.tier * 3);
+      const wHeight = wLen / Math.max(0.5, rig.aspect || 1.6);
+      ctx.drawImage(rig.normal, -wLen * 0.35, -wHeight / 2, wLen, wHeight);
+      ctx.restore();
+    });
+  }
+
+  // =========================================================================
+  // 8. Main Game Loop (Infinite World Update & Seamless Tile Render)
+  // =========================================================================
+  let lastTime = performance.now();
+
+  function update(dt) {
+    if (state.phase !== 'WAVE') return;
+
+    const w = WAVES[state.waveIdx];
+    state.waveTimer -= dt;
+    if (state.waveTimer <= 0) {
+      endWave(true);
+      return;
+    }
+
+    let mx = 0;
+    let my = 0;
+    if (keys['KeyW'] || keys['ArrowUp']) my -= 1;
+    if (keys['KeyS'] || keys['ArrowDown']) my += 1;
+    if (keys['KeyA'] || keys['ArrowLeft']) mx -= 1;
+    if (keys['KeyD'] || keys['ArrowRight']) mx += 1;
+
+    if (pointer.active && (Math.abs(pointer.dx) > 4 || Math.abs(pointer.dy) > 4)) {
+      const dist = Math.hypot(pointer.dx, pointer.dy);
+      const clamp = Math.min(1, dist / 45);
+      mx = (pointer.dx / dist) * clamp;
+      my = (pointer.dy / dist) * clamp;
+    } else if (mx !== 0 || my !== 0) {
+      const len = Math.hypot(mx, my);
+      mx /= len;
+      my /= len;
+    }
+
+    // Unrestricted Infinite World Movement!
+    const spd = state.baseSpeed * state.speedMul;
+    state.x += mx * spd * dt;
+    state.y += my * spd * dt;
+
+    state.isMoving = Math.hypot(mx, my) > 0.08;
+    if (Math.abs(mx) > 0.08) {
+      state.facing = mx >= 0 ? 1 : -1;
+    }
+    state.walkPhase += dt * (state.isMoving ? 16.0 : 3.0);
+
+    if (state.isMoving && !reduceMotion) {
+      state.dustTimer -= dt;
+      if (state.dustTimer <= 0) {
+        state.dustTimer = 0.08;
+        state.particles.push({
+          x: state.x - state.facing * 10 + (Math.random() - 0.5) * 10,
+          y: state.y + 6,
+          vx: -mx * 35 + (Math.random() - 0.5) * 20,
+          vy: -8 - Math.random() * 14,
+          color: 'rgba(210, 190, 160, 0.42)',
+          radius: 3.5 + Math.random() * 2.5,
+          life: 0.25
+        });
+      }
+    }
+
+    if (state.invulnTimer > 0) state.invulnTimer -= dt;
+    if (state.shakeTime > 0) state.shakeTime -= dt;
+    state.bladeAngle += dt * 5.5;
+
+    state.spawnAccum += dt;
+    if (state.spawnAccum >= w.spawnInterval && state.enemies.length < (w.maxEnemies || 95)) {
+      state.spawnAccum = 0;
+      spawnEnemy();
+    }
+
+    state.weapons.forEach((wSlot, idx) => {
+      if (wSlot.thrustOffset) {
+        wSlot.thrustOffset *= Math.pow(0.001, dt);
+        if (Math.abs(wSlot.thrustOffset) < 0.5) wSlot.thrustOffset = 0;
+      }
+      if (wSlot.swingPhase > 0) {
+        wSlot.swingPhase = Math.max(0, wSlot.swingPhase - dt * 4.2);
+      }
+      wSlot.cdTimer -= dt;
+      if (wSlot.cdTimer <= 0) {
+        const spec = WEAPON_CATALOG[wSlot.id];
+        const fired = fireWeapon(wSlot, idx, state.weapons.length);
+        wSlot.cdTimer = fired ? spec.baseCd * state.cdMul : 0.12;
+      }
+    });
+
+    for (let i = state.projectiles.length - 1; i >= 0; i--) {
+      const p = state.projectiles[i];
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.life -= dt;
+
+      for (let j = state.enemies.length - 1; j >= 0; j--) {
+        const e = state.enemies[j];
+        if (p.hitSet.has(e)) continue;
+        if (Math.hypot(e.x - p.x, e.y - p.y) <= e.radius + p.radius) {
+          p.hitSet.add(e);
+          dealDamage(e, p.dmg, 18);
+          p.pierce--;
+          if (p.pierce <= 0) {
+            p.life = 0;
+            break;
+          }
+        }
+      }
+
+      if (p.life <= 0) state.projectiles.splice(i, 1);
+    }
+
+    for (let i = state.enemies.length - 1; i >= 0; i--) {
+      const e = state.enemies[i];
+      if (e.hitFlash > 0) e.hitFlash -= dt;
+
+      const dxToHero = state.x - e.x;
+      const dyToHero = state.y - e.y;
+      const distToHero = Math.hypot(dxToHero, dyToHero);
+
+      // Survivor.io Infinite Map Mechanic:
+      // If an enemy falls way behind off-screen (> 1050px), seamlessly relocate it ahead of the player!
+      if (distToHero > 1050) {
+        const respawn = getSpawnRingCoord();
+        e.x = respawn.x;
+        e.y = respawn.y;
+        continue;
+      }
+
+      if (Math.abs(dxToHero) > 4) {
+        e.facing = dxToHero >= 0 ? 1 : -1;
+      }
+
+      if (e.isBoss) {
+        e.skillTimer -= dt;
+        if (e.dashTime > 0) {
+          e.dashTime -= dt;
+          e.x += e.dashVx * dt;
+          e.y += e.dashVy * dt;
+          e.walkPhase += dt * 26;
+        } else if (e.skillTimer <= 0) {
+          e.skillTimer = Math.max(2.6, 4.2 - state.waveIdx * 0.015);
+          const ang = Math.atan2(state.y - e.y, state.x - e.x);
+          const dashSpd = 385 + Math.min(130, state.waveIdx * 1.4);
+          e.dashVx = Math.cos(ang) * dashSpd;
+          e.dashVy = Math.sin(ang) * dashSpd;
+          e.dashTime = 0.55;
+          sfx.playWarDrum();
+          state.slashes.push({
+            x: e.x,
+            y: e.y,
+            ang,
+            radius: 130,
+            isFullCircle: true,
+            color: e.color || '#ff3d00',
+            life: 0.28,
+            maxLife: 0.28
+          });
+        } else {
+          const ang = Math.atan2(state.y - e.y, state.x - e.x);
+          e.x += Math.cos(ang) * e.speed * dt;
+          e.y += Math.sin(ang) * e.speed * dt;
+          e.walkPhase += dt * e.strideFreq;
+        }
+      } else {
+        const ang = Math.atan2(state.y - e.y, state.x - e.x);
+        e.x += Math.cos(ang) * e.speed * dt;
+        e.y += Math.sin(ang) * e.speed * dt;
+        e.walkPhase += dt * e.strideFreq;
+      }
+
+      for (let k = i - 1; k >= 0; k--) {
+        const other = state.enemies[k];
+        const dx = e.x - other.x;
+        const dy = e.y - other.y;
+        const dist = Math.hypot(dx, dy);
+        const minDist = e.radius + other.radius;
+        if (dist > 0 && dist < minDist) {
+          const push = (minDist - dist) * 0.35;
+          e.x += (dx / dist) * push;
+          e.y += (dy / dist) * push;
+          other.x -= (dx / dist) * push;
+          other.y -= (dy / dist) * push;
+        }
+      }
+
+      if (distToHero < e.radius + state.radius - 5 && state.invulnTimer <= 0) {
+        state.hp = Math.max(0, state.hp - e.dmg);
+        state.invulnTimer = 0.55;
+        triggerShake(0.25, 10);
+        state.floatTexts.push({
+          x: state.x,
+          y: state.y - 36,
+          text: `-${e.dmg}`,
+          color: '#ff5747',
+          size: 16,
+          life: 0.65,
+          maxLife: 0.65
+        });
+        if (state.hp <= 0) {
+          endGame(false);
+          return;
+        }
+      }
+    }
+
+    for (let i = state.gems.length - 1; i >= 0; i--) {
+      const g = state.gems[i];
+      const dist = Math.hypot(state.x - g.x, state.y - g.y);
+      if (dist <= state.pickupRadius) {
+        g.magnetized = true;
+      }
+      if (g.magnetized) {
+        const ang = Math.atan2(state.y - g.y, state.x - g.x);
+        g.x += Math.cos(ang) * 580 * dt;
+        g.y += Math.sin(ang) * 580 * dt;
+        if (dist < state.radius + 12) {
+          state.jade += g.value;
+          state.totalJadeEarned += g.value;
+          state.musouGauge = Math.min(100, state.musouGauge + 1.5);
+          sfx.playGemPickup();
+          state.gems.splice(i, 1);
+        }
+      }
+    }
+
+    for (let i = state.slashes.length - 1; i >= 0; i--) {
+      state.slashes[i].life -= dt;
+      if (state.slashes[i].life <= 0) state.slashes.splice(i, 1);
+    }
+    for (let i = state.lightnings.length - 1; i >= 0; i--) {
+      state.lightnings[i].life -= dt;
+      if (state.lightnings[i].life <= 0) state.lightnings.splice(i, 1);
+    }
+    for (let i = state.floatTexts.length - 1; i >= 0; i--) {
+      const ft = state.floatTexts[i];
+      ft.y -= 38 * dt;
+      ft.life -= dt;
+      if (ft.life <= 0) state.floatTexts.splice(i, 1);
+    }
+    for (let i = state.particles.length - 1; i >= 0; i--) {
+      const pt = state.particles[i];
+      pt.x += pt.vx * dt;
+      pt.y += pt.vy * dt;
+      pt.life -= dt;
+      if (pt.life <= 0) state.particles.splice(i, 1);
+    }
+
+    updateHud();
+  }
+
+  function getCameraZoom() {
+    const minDim = Math.min(canvas.width, canvas.height);
+    if (minDim < 480) return 0.72;
+    if (minDim < 720) return 0.84;
+    return 1.0;
+  }
+
+  function drawInfiniteBattlefield() {
+    const zoom = getCameraZoom();
+    const halfW = (canvas.width / 2) / zoom + 160;
+    const halfH = (canvas.height / 2) / zoom + 160;
+    const viewLeft = state.x - halfW;
+    const viewRight = state.x + halfW;
+    const viewTop = state.y - halfH;
+    const viewBottom = state.y + halfH;
+
+    const startCol = Math.floor(viewLeft / TILE_W);
+    const endCol = Math.floor(viewRight / TILE_W);
+    const startRow = Math.floor(viewTop / TILE_H);
+    const endRow = Math.floor(viewBottom / TILE_H);
+
+    const floorImg = IMAGES.arena_floor;
+    const hasFloor = floorImg && floorImg.complete && floorImg.naturalWidth > 0;
+    const w = WAVES[state.waveIdx] || WAVES[0];
+
+    for (let r = startRow; r <= endRow; r++) {
+      for (let c = startCol; c <= endCol; c++) {
+        const tx = c * TILE_W;
+        const ty = r * TILE_H;
+
+        ctx.save();
+        ctx.translate(tx + TILE_W / 2, ty + TILE_H / 2);
+        // Mirror alternating tiles so stone edges blend seamlessly without hard seams!
+        const flipX = (Math.abs(c) % 2 === 1) ? -1 : 1;
+        const flipY = (Math.abs(r) % 2 === 1) ? -1 : 1;
+        ctx.scale(flipX, flipY);
+
+        if (hasFloor) {
+          ctx.drawImage(floorImg, -TILE_W / 2, -TILE_H / 2, TILE_W, TILE_H);
+        } else {
+          ctx.fillStyle = '#14110e';
+          ctx.fillRect(-TILE_W / 2, -TILE_H / 2, TILE_W, TILE_H);
+        }
+        ctx.restore();
+
+        // Procedural Battlefield Landmarks per Chunk (Flickering Braziers & Chapter Aura Rings)
+        const pulse = 0.75 + Math.sin(performance.now() * 0.008 + c * 1.7 + r * 2.3) * 0.25;
+        const bx = tx + TILE_W * 0.5;
+        const by = ty + TILE_H * 0.5;
+
+        ctx.save();
+        ctx.strokeStyle = w.ringTint || 'rgba(212, 168, 79, 0.14)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(bx, by, 145, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Corner War Torch Brazier glow
+        const torchX = tx + 140;
+        const torchY = ty + 140;
+        const grad = ctx.createRadialGradient(torchX, torchY, 4, torchX, torchY, 68 * pulse);
+        grad.addColorStop(0, w.torchTint || 'rgba(255, 160, 64, 0.38)');
+        grad.addColorStop(1, 'rgba(255, 87, 34, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(torchX, torchY, 68 * pulse, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#2d241e';
+        ctx.strokeStyle = '#d4a84f';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(torchX, torchY, 11, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#ff9100';
+        ctx.beginPath();
+        ctx.arc(torchX, torchY, 6 * pulse, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+  }
+
+  function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const zoom = getCameraZoom();
+    ctx.save();
+    let shakeX = 0;
+    let shakeY = 0;
+    if (state.shakeTime > 0 && !reduceMotion) {
+      shakeX = (Math.random() - 0.5) * state.shakeMag;
+      shakeY = (Math.random() - 0.5) * state.shakeMag;
+    }
+    ctx.translate(canvas.width / 2 + shakeX, canvas.height / 2 + shakeY);
+    ctx.scale(zoom, zoom);
+    ctx.translate(-state.x, -state.y);
+
+    // Draw Seamless Infinite Scrolling Battlefield Floor & Landmarks
+    drawInfiniteBattlefield();
+
+    // Draw Jade Gems
+    const jadeImg = IMAGES.item_jade;
+    for (const g of state.gems) {
+      ctx.save();
+      ctx.translate(g.x, g.y);
+      if (jadeImg && jadeImg.complete && jadeImg.naturalWidth > 0) {
+        ctx.beginPath();
+        ctx.arc(0, 0, g.radius, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(jadeImg, -g.radius, -g.radius, g.radius * 2, g.radius * 2);
+      } else {
+        ctx.fillStyle = '#5ce6a0';
+        ctx.beginPath();
+        ctx.arc(0, 0, g.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    // Draw Particles
+    for (const pt of state.particles) {
+      ctx.fillStyle = pt.color;
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Draw Slashes
+    for (const s of state.slashes) {
+      ctx.save();
+      ctx.translate(s.x, s.y);
+      ctx.globalAlpha = Math.max(0, s.life / s.maxLife);
+      ctx.fillStyle = s.color + '44';
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      if (s.isFullCircle) {
+        ctx.arc(0, 0, s.radius, 0, Math.PI * 2);
+      } else {
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, s.radius, s.ang - 1.15, s.ang + 1.15);
+        ctx.closePath();
+      }
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Y-Sort Entities (Hero + Enemies)
+    const renderList = [
+      ...state.enemies.map(e => ({ kind: 'enemy', y: e.y, entity: e })),
+      { kind: 'hero', y: state.y }
+    ].sort((a, b) => a.y - b.y);
+
+    for (const item of renderList) {
+      if (item.kind === 'enemy') {
+        const e = item.entity;
+        drawSurvivorCharacter({
+          bodyKey: e.bodyKey,
+          x: e.x,
+          y: e.y,
+          size: e.drawSize,
+          walkPhase: e.walkPhase,
+          isMoving: true,
+          facing: e.facing,
+          bootColor: e.bootColor,
+          capeColor: e.isBoss ? (e.color || '#b71c1c') : null,
+          ringColor: e.isBoss ? 'rgba(255, 61, 0, 0.85)' : 'rgba(220, 60, 50, 0.38)',
+          hitFlash: e.hitFlash > 0,
+          hpRatio: e.hp / e.maxHp
+        });
+      } else {
+        // Pickup Range ring
+        ctx.save();
+        ctx.translate(state.x, state.y);
+        ctx.strokeStyle = 'rgba(92, 230, 160, 0.16)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(0, 0, state.pickupRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+
+        // Draw Survivor.io-style Paper-Doll Hero
+        drawSurvivorCharacter({
+          bodyKey: state.hero.bodyKey,
+          x: state.x,
+          y: state.y,
+          size: 68,
+          walkPhase: state.walkPhase,
+          isMoving: state.isMoving,
+          facing: state.facing,
+          bootColor: state.hero.bootColor,
+          capeColor: state.hero.capeColor,
+          ringColor: 'rgba(247, 215, 121, 0.88)',
+          hitFlash: state.invulnTimer > 0.35,
+          hpRatio: 1
+        });
+
+        // Draw Detached Floating & Aiming Weapons around Hero
+        drawEquippedWeapons();
+      }
+    }
+
+    // Draw Orbiting Blade Rings (Chakram rig sprite)
+    const chakramRig = CUTOUT_RIGS.rig_bladering;
+    for (const wSlot of state.weapons) {
+      if (wSlot.id === 'bladeRing') {
+        const orbitR = 92;
+        const bladeCount = Math.min(8, 1 + wSlot.tier);
+        for (let b = 0; b < bladeCount; b++) {
+          const a = state.bladeAngle + (b * Math.PI * 2) / bladeCount;
+          const bx = state.x + Math.cos(a) * orbitR;
+          const by = state.y + Math.sin(a) * orbitR;
+          ctx.save();
+          ctx.translate(bx, by);
+          ctx.rotate(a * 3);
+          if (chakramRig && chakramRig.normal) {
+            ctx.drawImage(chakramRig.normal, -20, -20, 40, 40);
+          }
+          ctx.restore();
+        }
+      }
+    }
+
+    // Draw Projectiles
+    const spearRig = CUTOUT_RIGS.rig_spear;
+    for (const p of state.projectiles) {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.ang || 0);
+      if (p.shape === 'spear' && spearRig && spearRig.normal) {
+        ctx.shadowColor = '#4fc3f7';
+        ctx.shadowBlur = 10;
+        ctx.drawImage(spearRig.normal, -22, -9, 44, 18);
+      } else {
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = '#f4d06f';
+        ctx.shadowBlur = 6;
+        ctx.fillRect(-10, -2.5, 20, 5);
+      }
+      ctx.restore();
+    }
+
+    // Draw Lightning Chains
+    for (const l of state.lightnings) {
+      ctx.save();
+      ctx.strokeStyle = '#e1bee7';
+      ctx.shadowColor = '#b388ff';
+      ctx.shadowBlur = 12;
+      ctx.lineWidth = 3.5;
+      ctx.beginPath();
+      ctx.moveTo(l.x1, l.y1);
+      ctx.lineTo((l.x1 + l.x2) / 2 + (Math.random() - 0.5) * 20, (l.y1 + l.y2) / 2 + (Math.random() - 0.5) * 20);
+      ctx.lineTo(l.x2, l.y2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Draw Floating Damage Texts
+    for (const ft of state.floatTexts) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, ft.life / ft.maxLife);
+      ctx.font = `800 ${ft.size}px "JetBrains Mono", "Noto Sans TC"`;
+      ctx.fillStyle = ft.color;
+      ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+      ctx.lineWidth = 3;
+      ctx.textAlign = 'center';
+      ctx.strokeText(ft.text, ft.x, ft.y);
+      ctx.fillText(ft.text, ft.x, ft.y);
+      ctx.restore();
+    }
+
+    ctx.restore();
+
+    // Virtual One-Finger Joystick
+    if (pointer.active && state.phase === 'WAVE') {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(247, 215, 121, 0.5)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(pointer.startX, pointer.startY, 44, 0, Math.PI * 2);
+      ctx.stroke();
+
+      const dist = Math.hypot(pointer.dx, pointer.dy);
+      const clamp = Math.min(44, dist);
+      const jx = pointer.startX + (dist > 0 ? (pointer.dx / dist) * clamp : 0);
+      const jy = pointer.startY + (dist > 0 ? (pointer.dy / dist) * clamp : 0);
+      ctx.fillStyle = 'rgba(247, 215, 121, 0.8)';
+      ctx.beginPath();
+      ctx.arc(jx, jy, 18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  function loop(now) {
+    const dt = Math.min(0.05, (now - lastTime) / 1000);
+    lastTime = now;
+    update(dt);
+    render();
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  // =========================================================================
+  // 9. HUD & Camp Shop Logic (100 Waves + 10 Weapon Tiers)
+  // =========================================================================
+  function updateHud() {
+    const hpPct = Math.max(0, Math.min(100, (state.hp / state.maxHp) * 100));
+    document.getElementById('hpBarFill').style.width = `${hpPct}%`;
+    document.getElementById('hpBarText').textContent = `${Math.ceil(state.hp)} / ${state.maxHp}`;
+    document.getElementById('jadeCount').textContent = state.jade;
+
+    const timerEl = document.getElementById('waveTimer');
+    timerEl.textContent = Math.max(0, state.waveTimer).toFixed(1);
+    timerEl.classList.toggle('danger', state.waveTimer <= 5.0);
+
+    if (state.boss) {
+      const bPct = Math.max(0, (state.boss.hp / state.boss.maxHp) * 100);
+      document.getElementById('bossHpFill').style.width = `${bPct}%`;
+      document.getElementById('bossHpText').textContent = `${Math.max(0, Math.ceil(state.boss.hp))} / ${state.boss.maxHp}`;
+    }
+
+    const mReady = state.musouGauge >= 100;
+    const btnMusou = document.getElementById('btnMusou');
+    btnMusou.classList.toggle('ready', mReady);
+    document.getElementById('musouFill').style.height = `${Math.floor(state.musouGauge)}%`;
+    document.getElementById('musouPct').textContent = mReady ? '點擊釋放' : `${Math.floor(state.musouGauge)}%`;
+
+    const rack = document.getElementById('hudWeaponRack');
+    const sig = JSON.stringify(state.weapons.map(w => w.id + w.tier));
+    if (rack.dataset.sig !== sig) {
+      rack.dataset.sig = sig;
+      rack.innerHTML = '';
+      for (let i = 0; i < 6; i++) {
+        const wSlot = state.weapons[i];
+        const div = document.createElement('div');
+        if (wSlot) {
+          const spec = WEAPON_CATALOG[wSlot.id];
+          div.className = `weapon-slot-mini tier-${wSlot.tier}`;
+          div.title = `${spec.name} (${TIER_NAMES[wSlot.tier]})`;
+          div.innerHTML = `
+            <img src="${spec.imgUrl}" alt="${spec.name}" />
+            <span class="tier-dot" style="color:${TIER_COLORS[wSlot.tier]}">${TIER_SHORT[wSlot.tier]}</span>
+          `;
+        } else {
+          div.className = 'weapon-slot-mini';
+          div.innerHTML = `<span style="font-size:10px;color:#4a4039;">空</span>`;
+        }
+        rack.appendChild(div);
+      }
+    }
+  }
+
+  function endWave(survived) {
+    pointer.active = false;
+    if (!survived) {
+      endGame(false);
+      return;
+    }
+
+    for (const g of state.gems) {
+      state.jade += g.value;
+      state.totalJadeEarned += g.value;
+    }
+    state.gems = [];
+
+    recordBestWave(state.waveIdx + 1);
+
+    if (state.waveIdx >= WAVES.length - 1) {
+      clearCampaignProgress();
+      endGame(true);
+      return;
+    }
+
+    state.hp = Math.min(state.maxHp, Math.round(state.hp + state.maxHp * 0.35));
+    const waveClearJade = 18 + state.waveIdx * 6 + state.waveBonusJade;
+    state.jade += waveClearJade;
+    state.totalJadeEarned += waveClearJade;
+
+    saveCampaignProgress();
+    openCampShop();
+  }
+
+  function openCampShop() {
+    state.phase = 'SHOP';
+    state.rerollCost = 6 + Math.floor(state.waveIdx * 1.5);
+    sfx.playMergeClang();
+    generateShopOffers();
+    renderShopUI();
+    document.getElementById('shopOverlay').classList.remove('hidden');
+  }
+
+  function generateShopOffers() {
+    const weaponKeys = Object.keys(WEAPON_CATALOG);
+    const offers = [];
+    // Scale shop weapon tiers naturally across 100 waves so players can reach Tier 10 Mythic weapons
+    const minOfferTier = Math.min(6, 1 + Math.floor(state.waveIdx / 16));
+    const maxOfferTier = Math.min(7, minOfferTier + (state.waveIdx >= 4 ? 1 : 0));
+
+    for (let i = 0; i < 2; i++) {
+      const wKey = weaponKeys[Math.floor(Math.random() * weaponKeys.length)];
+      const spec = WEAPON_CATALOG[wKey];
+      const tier = (maxOfferTier > minOfferTier && Math.random() < 0.42) ? maxOfferTier : minOfferTier;
+      const cost = Math.round(spec.baseCost * Math.pow(1.65, tier - 1));
+      offers.push({ kind: 'weapon', id: wKey, tier, cost, sold: false });
+    }
+    const shuffledTactics = [...TACTICS_CATALOG].sort(() => Math.random() - 0.5);
+    const tacticPriceMul = 1 + Math.floor(state.waveIdx / 10) * 0.35;
+    for (let i = 0; i < 2; i++) {
+      const t = shuffledTactics[i];
+      const cost = Math.round(t.baseCost * tacticPriceMul);
+      offers.push({ kind: 'tactic', tactic: t, cost, sold: false });
+    }
+    state.shopOffers = offers;
+  }
+
+  function findMergePartnerIndex(slotIdx) {
+    const target = state.weapons[slotIdx];
+    if (!target || target.tier >= MAX_WEAPON_TIER) return -1;
+    for (let i = 0; i < state.weapons.length; i++) {
+      if (i !== slotIdx && state.weapons[i].id === target.id && state.weapons[i].tier === target.tier) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  function renderShopUI() {
+    const nextWave = WAVES[state.waveIdx + 1] || WAVES[state.waveIdx];
+    document.getElementById('shopTitle').textContent = `中軍鍛造營帳 — 備戰第 ${state.waveIdx + 2} / 100 陣（${nextWave.shortTitle}）`;
+    document.getElementById('shopJadeCount').textContent = state.jade;
+    document.getElementById('btnReroll').textContent = `重鑄補給 (-${state.rerollCost} 玉)`;
+    document.getElementById('arsenalCountText').textContent = `${state.weapons.length} / 6`;
+
+    const arsenalGrid = document.getElementById('shopArsenalGrid');
+    arsenalGrid.innerHTML = '';
+    for (let i = 0; i < 6; i++) {
+      const wSlot = state.weapons[i];
+      const cell = document.createElement('div');
+      if (wSlot) {
+        const spec = WEAPON_CATALOG[wSlot.id];
+        const partnerIdx = findMergePartnerIndex(i);
+        const sellVal = Math.round(6 * Math.pow(1.5, wSlot.tier - 1));
+        cell.className = `arsenal-slot tier-${wSlot.tier}`;
+        cell.innerHTML = `
+          <span class="slot-tier" style="color:${TIER_COLORS[wSlot.tier]}">${TIER_NAMES[wSlot.tier]}</span>
+          <img class="slot-art" src="${spec.imgUrl}" alt="${spec.name}" />
+          <div class="slot-name" style="color:${spec.color}">${spec.name}</div>
+          <div class="slot-actions">
+            ${partnerIdx !== -1 ? `<button class="btn-mini merge" data-merge="${i}">升階合成</button>` : ''}
+            ${state.weapons.length > 1 ? `<button class="btn-mini sell" data-sell="${i}">熔煉 +${sellVal}</button>` : ''}
+          </div>
+        `;
+      } else {
+        cell.className = 'arsenal-slot';
+        cell.innerHTML = `<div style="margin:auto;font-size:12px;color:#574c42;">空置神兵槽</div>`;
+      }
+      arsenalGrid.appendChild(cell);
+    }
+
+    arsenalGrid.querySelectorAll('[data-merge]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = Number(btn.dataset.merge);
+        const partnerIdx = findMergePartnerIndex(idx);
+        if (partnerIdx !== -1) {
+          state.weapons[idx].tier = Math.min(MAX_WEAPON_TIER, state.weapons[idx].tier + 1);
+          state.weapons.splice(partnerIdx, 1);
+          sfx.playMergeClang();
+          saveCampaignProgress();
+          renderShopUI();
+          updateHud();
+        }
+      });
+    });
+
+    arsenalGrid.querySelectorAll('[data-sell]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = Number(btn.dataset.sell);
+        if (state.weapons.length <= 1) return;
+        const removed = state.weapons.splice(idx, 1)[0];
+        state.jade += Math.round(6 * Math.pow(1.5, removed.tier - 1));
+        sfx.playGemPickup();
+        saveCampaignProgress();
+        renderShopUI();
+        updateHud();
+      });
+    });
+
+    const cardsGrid = document.getElementById('shopCardsGrid');
+    cardsGrid.innerHTML = '';
+    state.shopOffers.forEach((offer, idx) => {
+      const card = document.createElement('div');
+      card.className = 'shop-card' + (offer.sold ? ' sold' : '');
+      if (offer.kind === 'weapon') {
+        const spec = WEAPON_CATALOG[offer.id];
+        const canAutoMerge = state.weapons.some(w => w.id === offer.id && w.tier === offer.tier && w.tier < MAX_WEAPON_TIER);
+        const canBuy = !offer.sold && state.jade >= offer.cost && (state.weapons.length < 6 || canAutoMerge);
+        card.innerHTML = `
+          <div class="shop-card-head">
+            <img class="shop-card-art" src="${spec.imgUrl}" alt="${spec.name}" />
+            <div>
+              <span class="card-tag tag-weapon">${TIER_NAMES[offer.tier]}・神兵</span>
+              <div style="font-weight:900;font-size:15px;color:${spec.color};margin-top:4px;">${spec.name}</div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted);">${spec.desc}</div>
+          <button class="btn-buy" ${canBuy ? '' : 'disabled'} data-buy="${idx}">
+            <span>${canAutoMerge && state.weapons.length >= 6 ? '購買並直接合成' : '招納神兵'}</span>
+            <span>(${offer.cost} 玉)</span>
+          </button>
+        `;
+      } else {
+        const t = offer.tactic;
+        const canBuy = !offer.sold && state.jade >= offer.cost;
+        card.innerHTML = `
+          <div class="shop-card-head">
+            <img class="shop-card-art" src="${ASSET_URLS.tactic_scroll}" alt="${t.name}" />
+            <div>
+              <span class="card-tag tag-tactic">兵法錦囊</span>
+              <div style="font-weight:900;font-size:15px;color:var(--jade-bright);margin-top:4px;">${t.name}</div>
+            </div>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted);">${t.desc}</div>
+          <button class="btn-buy" ${canBuy ? '' : 'disabled'} data-buy="${idx}">
+            <span>研讀錦囊</span>
+            <span>(${offer.cost} 玉)</span>
+          </button>
+        `;
+      }
+      cardsGrid.appendChild(card);
+    });
+
+    cardsGrid.querySelectorAll('[data-buy]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = Number(btn.dataset.buy);
+        const offer = state.shopOffers[idx];
+        if (!offer || offer.sold || state.jade < offer.cost) return;
+
+        if (offer.kind === 'weapon') {
+          if (state.weapons.length < 6) {
+            state.jade -= offer.cost;
+            offer.sold = true;
+            state.weapons.push({ id: offer.id, tier: offer.tier, cdTimer: 0.1, aimAngle: 0, thrustOffset: 0, swingPhase: 0 });
+            sfx.playMergeClang();
+          } else {
+            const match = state.weapons.find(w => w.id === offer.id && w.tier === offer.tier && w.tier < MAX_WEAPON_TIER);
+            if (match) {
+              state.jade -= offer.cost;
+              offer.sold = true;
+              match.tier += 1;
+              sfx.playMergeClang();
+            }
+          }
+        } else {
+          state.jade -= offer.cost;
+          offer.sold = true;
+          offer.tactic.apply(state);
+          sfx.playMergeClang();
+        }
+        saveCampaignProgress();
+        renderShopUI();
+        updateHud();
+      });
+    });
+
+    document.getElementById('shopStatsStrip').innerHTML = `
+      <span>當前進度：<strong>第 ${state.waveIdx + 1} / 100 陣</strong></span>
+      <span>氣血上限：<strong>${state.maxHp}</strong></span>
+      <span>傷害加成：<strong>${Math.round(state.dmgMul * 100)}%</strong></span>
+      <span>攻速冷卻：<strong>${Math.round(state.cdMul * 100)}%</strong></span>
+      <span>移速加成：<strong>${Math.round(state.speedMul * 100)}%</strong></span>
+      <span>暴擊機率：<strong>${Math.round(state.critChance * 100)}%</strong></span>
+    `;
+  }
+
+  function endGame(victory) {
+    state.phase = 'RESULT';
+    pointer.active = false;
+    sfx.playWarDrum();
+    refreshTitleProgressUI();
+    document.getElementById('resultOverlay').classList.remove('hidden');
+    document.getElementById('resultTitle').textContent = victory ? '百陣無雙！一統天下大捷' : '馬革裹屍・戰陣失守';
+    document.getElementById('resultTitle').style.color = victory ? 'var(--gold-bright)' : 'var(--crimson-glow)';
+    document.getElementById('resultSub').textContent = victory
+      ? `${state.hero.name} 成功突破全 100 陣、擊潰九天無雙魔神呂奉先，威震華夏！`
+      : `於【${WAVES[state.waveIdx].title}】力戰不支（可回主畫面點擊「繼續遠征」從本陣營帳重整再戰）！`;
+
+    document.getElementById('resultStats').innerHTML = `
+      <span>突破陣數：<strong>${victory ? 100 : state.waveIdx + 1} / 100</strong></span>
+      <span>斬獲敵首：<strong>${state.kills}</strong></span>
+      <span>累積戰功翠玉：<strong>${state.totalJadeEarned}</strong></span>
+    `;
+  }
+
+  // =========================================================================
+  // 10. Event Listeners
+  // =========================================================================
+  window.addEventListener('keydown', (e) => {
+    keys[e.code] = true;
+    if (e.code === 'Space' && state.phase === 'WAVE') {
+      e.preventDefault();
+      triggerMusou();
+    }
+  });
+
+  window.addEventListener('keyup', (e) => {
+    keys[e.code] = false;
+  });
+
+  canvas.addEventListener('pointerdown', (e) => {
+    sfx.init();
+    if (state.phase !== 'WAVE') return;
+    if (pointer.active && pointer.id !== null && pointer.id !== e.pointerId) return;
+    pointer.active = true;
+    pointer.id = e.pointerId;
+    pointer.startX = e.clientX;
+    pointer.startY = e.clientY;
+    pointer.currX = e.clientX;
+    pointer.currY = e.clientY;
+    pointer.dx = 0;
+    pointer.dy = 0;
+  });
+
+  window.addEventListener('pointermove', (e) => {
+    if (!pointer.active || (pointer.id !== null && e.pointerId !== pointer.id)) return;
+    pointer.currX = e.clientX;
+    pointer.currY = e.clientY;
+    pointer.dx = pointer.currX - pointer.startX;
+    pointer.dy = pointer.currY - pointer.startY;
+  });
+
+  const cancelPointer = (e) => {
+    if (e && e.pointerId !== undefined && pointer.id !== null && e.pointerId !== pointer.id) return;
+    pointer.active = false;
+    pointer.id = null;
+    pointer.dx = 0;
+    pointer.dy = 0;
+  };
+  window.addEventListener('pointerup', cancelPointer);
+  window.addEventListener('pointercancel', cancelPointer);
+  window.addEventListener('blur', () => cancelPointer());
+
+  document.getElementById('btnStartGame').addEventListener('click', startNewRun);
+  document.getElementById('btnContinueRun').addEventListener('click', continueSavedRun);
+  document.getElementById('btnPlayAgain').addEventListener('click', () => {
+    refreshTitleProgressUI();
+    document.getElementById('resultOverlay').classList.add('hidden');
+    document.getElementById('titleOverlay').classList.remove('hidden');
+  });
+
+  document.getElementById('btnNextWave').addEventListener('click', () => {
+    sfx.playWarDrum();
+    startWave(state.waveIdx + 1);
+  });
+
+  document.getElementById('btnReroll').addEventListener('click', () => {
+    if (state.jade < state.rerollCost) return;
+    state.jade -= state.rerollCost;
+    state.rerollCost += 4;
+    sfx.playGemPickup();
+    generateShopOffers();
+    renderShopUI();
+    updateHud();
+  });
+
+  document.getElementById('btnMusou').addEventListener('click', triggerMusou);
+
+  document.getElementById('btnAudio').addEventListener('click', (e) => {
+    sfx.init();
+    sfx.enabled = !sfx.enabled;
+    e.currentTarget.textContent = `音效：${sfx.enabled ? '開' : '關'}`;
+    e.currentTarget.classList.toggle('active', sfx.enabled);
+  });
+
+  document.getElementById('btnMotion').addEventListener('click', (e) => {
+    reduceMotion = !reduceMotion;
+    e.currentTarget.textContent = `減震：${reduceMotion ? '開' : '關'}`;
+    e.currentTarget.classList.toggle('active', reduceMotion);
+  });
+
+  document.getElementById('btnHelp').addEventListener('click', () => {
+    alert('【無雙割草：三國奇兵 — 百陣遠征兵法】\n1. 單指在畫面上按住拖曳（或用 WASD / 方向鍵）在無限古戰場中自由走位。\n2. 環繞身邊的 6 把神兵會自動瞄準並攻擊敵軍；兩把同名同階神兵可於營帳合成升階（最高十階【神話 X】）。\n3. 全戰役共 10 大歷史篇章、100 陣：每 5 陣遭遇【鎮陣先鋒】，每 10 陣迎戰【鎮關魔將】。\n4. 每陣通關自動存檔，亦可於首頁直接選擇 1～100 任意陣數跳關演武！');
+  });
+})();
+</script>
+</body>
+</html>
