@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>9527 星際遠征｜直覺觸控太空射擊</title>
+  <meta name="description" content="單指滑動即可操控！駕駛游隼、稜鏡、重錨三型遠征戰機，突破地球軌道、月球補給站與火星峽谷。" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="game-canvas" aria-label="9527 太空遠征戰鬥畫面"></canvas>
+    <div class="hud-vignette"></div>
+    <div id="signal-glitch" class="signal-glitch-overlay"></div>
+
+    <!-- 極簡頂部列 -->
+    <header class="top-bar">
+      <div class="brand-pill">
+        <span class="brand-code">9527</span>
+        <span class="brand-sub" id="top-mode-label">星際遠征</span>
+      </div>
+
+      <div class="top-actions">
+        <button type="button" class="icon-btn" id="btn-mute-quick" title="聲音開關">
+          <span id="audio-btn-label">🔊</span>
+        </button>
+        <button type="button" class="icon-btn" id="btn-guide" title="玩法說明">
+          <span>❓ 說明</span>
+        </button>
+        <button type="button" class="icon-btn hidden" id="btn-pause" title="暫停與設定">
+          <span>⏸ 選單</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- 戰鬥即時 HUD（極簡不擋畫面） -->
+    <section id="combat-hud" class="hidden" aria-live="polite">
+      <div>
+        <div class="hud-top-bar">
+          <div class="pilot-cluster">
+            <div class="pilot-card p1" id="hud-p1-card">
+              <div class="pilot-header">
+                <span class="pilot-title" id="hud-p1-name">9527-A 游隼</span>
+                <span class="pilot-lv" id="hud-p1-lv">Lv.1</span>
+              </div>
+              <div class="hp-bar-track">
+                <div class="hp-bar-fill" id="hud-p1-hp"></div>
+              </div>
+              <div class="pilot-meta">
+                <span id="hud-p1-hp-text">HP 100%</span>
+                <div class="bomb-pips" id="hud-p1-bombs"></div>
+              </div>
+            </div>
+
+            <div class="pilot-card p2 hidden" id="hud-p2-card">
+              <div class="pilot-header">
+                <span class="pilot-title" id="hud-p2-name" style="color:var(--violet);">P2 稜鏡</span>
+                <span class="pilot-lv" id="hud-p2-lv">Lv.1</span>
+              </div>
+              <div class="hp-bar-track">
+                <div class="hp-bar-fill" id="hud-p2-hp" style="background:linear-gradient(90deg,#a855f7,#ec4899);"></div>
+              </div>
+              <div class="pilot-meta">
+                <span id="hud-p2-hp-text">HP 100%</span>
+                <div class="bomb-pips" id="hud-p2-bombs"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="score-cluster">
+            <div class="score-readout" id="hud-score">000000</div>
+            <div style="margin-top:2px;">
+              <span class="combo-pill" id="hud-combo">x1.0</span>
+            </div>
+            <div class="stage-progress-track">
+              <div class="stage-progress-fill" id="hud-stage-progress"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Boss 雙層血條 -->
+        <div id="boss-hud" class="boss-hud-panel hidden">
+          <div class="boss-hud-header">
+            <span class="boss-hud-title" id="boss-hud-name">BOSS // 離港管制機</span>
+            <span class="boss-hud-sub" id="boss-hud-status">外殼護甲</span>
+          </div>
+          <div class="boss-bars-stack">
+            <div class="boss-bar-row">
+              <span class="boss-bar-label">外殼</span>
+              <div class="boss-bar-track">
+                <div class="boss-bar-fill shell" id="boss-shell-bar"></div>
+              </div>
+            </div>
+            <div class="boss-bar-row">
+              <span class="boss-bar-label" style="color:#ff9ab2;">核心</span>
+              <div class="boss-bar-track">
+                <div class="boss-bar-fill core" id="boss-core-bar"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Boss 警報與自動淡出提示 Toast -->
+        <div class="combat-banner-stack">
+          <div id="boss-warning-banner" class="boss-warning-banner hidden">
+            <div style="font-family:var(--font-display);font-weight:900;font-size:0.95rem;letter-spacing:0.12em;color:#fff;">
+              ⚠ WARNING // 關底敵艦接近 ⚠
+            </div>
+            <div id="boss-warning-name" style="font-size:0.78rem;color:#ffd8e0;margin-top:2px;">
+              目標：離港管制機
+            </div>
+          </div>
+          <div id="tactical-hint-banner" class="tactical-hint-banner">
+            單指按住螢幕任意處滑動即可移動戰機（自動連射已開啟）
+          </div>
+        </div>
+      </div>
+
+      <!-- 底部：滑動提示與右下角大顆必殺炸彈按鈕 -->
+      <div class="combat-bottom-bar" id="combat-bottom-bar">
+        <div class="drag-guide-pill" id="drag-guide-pill">
+          👆 手指滑動螢幕任意處移動 · 雙擊或按右鈕放炸彈
+        </div>
+        <button type="button" class="big-bomb-btn" id="btn-combat-bomb" aria-label="施放必殺炸彈">
+          <span style="font-size:1.15rem;">💥</span>
+          <span style="font-size:0.78rem;">必殺</span>
+          <span class="big-bomb-count" id="big-bomb-count">x2</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 火力展示室控制列 -->
+    <aside id="showcase-toolbar" class="showcase-toolbar hidden" aria-label="火力展示室控制台">
+      <div class="showcase-row">
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <button type="button" class="icon-btn" id="sc-ship-0" style="padding:4px 10px;font-size:0.75rem;">游隼</button>
+          <button type="button" class="icon-btn" id="sc-ship-1" style="padding:4px 10px;font-size:0.75rem;">稜鏡</button>
+          <button type="button" class="icon-btn" id="sc-ship-2" style="padding:4px 10px;font-size:0.75rem;">重錨</button>
+          <button type="button" class="icon-btn" id="sc-test-bomb" style="padding:4px 10px;font-size:0.75rem;border-color:#ffbe55;color:#ffe6a3;">💥 炸彈</button>
+        </div>
+        <div style="display:flex;gap:5px;align-items:center;">
+          <select id="sc-boss-select" class="icon-btn" style="padding:4px 8px;font-size:0.74rem;">
+            <option value="0">選 Boss 試打</option>
+          </select>
+          <button type="button" class="icon-btn" id="sc-exit" style="padding:4px 10px;font-size:0.75rem;">返回</button>
+        </div>
+      </div>
+      <div class="showcase-row">
+        <div class="lv-pill-group" id="sc-lv-buttons"></div>
+      </div>
+    </aside>
+
+    <!-- 手機優先・單頁免捲動機庫首頁 -->
+    <main id="hangar-screen" class="overlay-screen">
+      <div class="mobile-hangar-card">
+        <div class="hangar-top-header">
+          <h1>9527 星際遠征</h1>
+          <button type="button" class="stage-picker-pill" id="btn-open-stage-modal">
+            <span id="hangar-stage-label">📍 第 01 關</span>
+            <span style="opacity:0.75;">換關 ▾</span>
+          </button>
+        </div>
+
+        <!-- 三機體分段標籤 -->
+        <div class="ship-tabs" id="ship-tabs-container">
+          <button type="button" class="ship-tab-btn active" data-index="0">
+            <span>游隼</span>
+            <small>高速追蹤</small>
+          </button>
+          <button type="button" class="ship-tab-btn" data-index="1">
+            <span>稜鏡</span>
+            <small>廣角散射</small>
+          </button>
+          <button type="button" class="ship-tab-btn" data-index="2">
+            <span>重錨</span>
+            <small>重砲穿甲</small>
+          </button>
+        </div>
+
+        <!-- 中央單一戰機大舞台展示 -->
+        <div class="ship-stage-spotlight" id="ship-spotlight">
+          <div class="spotlight-canvas-wrap">
+            <canvas id="spotlight-ship-canvas" width="220" height="220"></canvas>
+          </div>
+          <div class="spotlight-info">
+            <div class="spotlight-name-row">
+              <h2 id="sp-ship-name" style="color:#54eaff;">9527-A 游隼</h2>
+              <span class="spotlight-role-badge" id="sp-ship-role">高速雙砲 · 精準轟炸</span>
+            </div>
+            <p class="spotlight-tagline" id="sp-ship-tagline">
+              高機動攔截機，配備高頻雙脈衝電漿矛與自動鎖定追蹤飛彈。
+            </p>
+            <div class="spotlight-bars" id="sp-ship-bars"></div>
+          </div>
+        </div>
+
+        <!-- 底部一鍵出擊區 -->
+        <div class="launch-action-stack">
+          <button type="button" class="hero-start-btn" id="btn-launch-1p">
+            🚀 立即出擊 START
+          </button>
+          <div class="sub-actions-row">
+            <button type="button" class="secondary-btn" id="hangar-btn-showcase">
+              ⚡ 火力展示＆試打 Boss
+            </button>
+            <button type="button" class="secondary-btn" id="btn-launch-2p">
+              👥 雙人同樂 (桌機)
+            </button>
+          </div>
+          <div class="mobile-gesture-hint">
+            ✨ 支援手機直拿單指滑動操控 · 自動連射＋雙僚機已啟用
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- 選關 / 暫停設定 / 過關 / 失敗 / 說明 Modal -->
+    <div id="modal-overlay" class="overlay-screen hidden" role="dialog" aria-modal="true">
+      <div class="modal-card" id="modal-content"></div>
+    </div>
+  </div>
+
+  <script type="module" src="game.js"></script>
+</body>
+</html>
