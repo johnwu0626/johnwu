@@ -3161,14 +3161,16 @@
   }
 
   function getWeaponMountPosition(slotIndex, totalSlots) {
-    const angles = [-0.45, -2.69, 0.45, 2.69, -1.57, 1.57];
-    const baseAng = angles[slotIndex % angles.length];
-    const rx = 44;
-    const ry = 28;
-    return {
-      ox: Math.cos(baseAng) * rx,
-      oy: Math.sin(baseAng) * ry - 8
-    };
+    // 6 flanking wing positions (3 right, 3 left) so weapons NEVER overlap the hero's head or body
+    const wingOffsets = [
+      { ox: 54, oy: -24 },  // Slot 1: 右中
+      { ox: -54, oy: -24 }, // Slot 2: 左中
+      { ox: 48, oy: -48 },  // Slot 3: 右上
+      { ox: -48, oy: -48 }, // Slot 4: 左上
+      { ox: 50, oy: 2 },    // Slot 5: 右下
+      { ox: -50, oy: 2 }    // Slot 6: 左下
+    ];
+    return wingOffsets[slotIndex % wingOffsets.length];
   }
 
   function fireWeapon(wSlot, slotIndex, totalSlots) {
@@ -3835,11 +3837,10 @@
   function drawEquippedWeapons() {
     const total = state.weapons.length;
     state.weapons.forEach((wSlot, idx) => {
-      if (wSlot.id === 'bladeRing') return;
+      if (wSlot.id === 'bladeRing' || wSlot.id === 'baguaArray') return;
       const spec = WEAPON_CATALOG[wSlot.id];
       if (!spec) return;
       const rig = CUTOUT_RIGS[spec.rigKey];
-      if (!rig || !rig.normal) return;
 
       const mount = getWeaponMountPosition(idx, total);
       const bob = Math.sin(performance.now() * 0.006 + idx * 1.3) * 2.5;
@@ -3874,9 +3875,25 @@
         ctx.scale(1, -1);
       }
 
-      const wLen = 44 + Math.min(34, wSlot.tier * 3.4);
-      const wHeight = wLen / Math.max(0.5, rig.aspect || 1.6);
-      ctx.drawImage(rig.normal, -wLen * 0.35, -wHeight / 2, wLen, wHeight);
+      if (wSlot.id === 'cannon') {
+        // Draw custom heavy bronze-gold Xuanyuan Dragon Cannon barrel (instead of borrowing rig_bladering)
+        const cLen = 34 + Math.min(18, wSlot.tier * 1.8);
+        ctx.fillStyle = '#3e2723';
+        ctx.strokeStyle = '#ffd740';
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.roundRect(-cLen * 0.35, -9, cLen, 18, 5);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#ff6d00';
+        ctx.beginPath();
+        ctx.arc(cLen * 0.62, 0, 5.5, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (rig && rig.normal) {
+        const wLen = 44 + Math.min(34, wSlot.tier * 3.4);
+        const wHeight = wLen / Math.max(0.5, rig.aspect || 1.6);
+        ctx.drawImage(rig.normal, -wLen * 0.35, -wHeight / 2, wLen, wHeight);
+      }
       ctx.restore();
     });
   }
