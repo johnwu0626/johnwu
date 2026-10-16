@@ -13,15 +13,18 @@ class SpriteManager {
   }
 
   async loadAll() {
-    const urls = new Set([
+    // 第一階段（首屏秒開）：先載入三機體圖集、第一關背景與基礎敵機，立即渲染機庫
+    const criticalUrls = [
       'ships-realistic-atlas-v1.webp',
-      ...Object.values(ENEMY_TYPES).map((e) => e.sprite),
-      ...STAGES.map((s) => s.bgSprite),
-      ...STAGES.map((s) => s.boss.sprite)
-    ]);
+      'stage-01-earth-orbit-v1.webp',
+      'enemy-scout-realistic-v11.webp',
+      'enemy-interceptor-realistic-v11.webp',
+      'enemy-gunship-realistic-v1.webp',
+      'boss-carrier-realistic-v11.webp'
+    ];
 
     await Promise.all(
-      [...urls].map((file) => this.loadImage(file, `assets/sprites/${file}`))
+      criticalUrls.map((file) => this.loadImage(file, `assets/sprites/${file}`))
     );
 
     const atlas = this.images.get('ships-realistic-atlas-v1.webp');
@@ -38,18 +41,25 @@ class SpriteManager {
       });
     }
 
-    for (const [key, img] of this.images.entries()) {
-      if (!key.startsWith('stage-') && key !== 'ships-realistic-atlas-v1.webp') {
-        this.images.set(key, this.extractCleanRegion(img, 0, 0, img.width, img.height, true));
+    this.ready = true;
+
+    // 第二階段（背景非同步預載）：其餘關卡背景、敵機與 Boss 圖檔已離線預裁切去背並無損壓縮，直接背景串流載入
+    const allUrls = new Set([
+      ...Object.values(ENEMY_TYPES).map((e) => e.sprite),
+      ...STAGES.map((s) => s.bgSprite),
+      ...STAGES.map((s) => s.boss.sprite)
+    ]);
+    for (const file of allUrls) {
+      if (!this.images.has(file)) {
+        this.loadImage(file, `assets/sprites/${file}`);
       }
     }
-
-    this.ready = true;
   }
 
   loadImage(key, src) {
     return new Promise((resolve) => {
       const img = new Image();
+      img.decoding = 'async';
       img.onload = () => {
         this.images.set(key, img);
         resolve(img);
