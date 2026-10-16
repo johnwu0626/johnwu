@@ -4591,19 +4591,41 @@
         ctx.globalAlpha = fade;
         ctx.rotate(performance.now() * 0.0022);
         const bgGrad = ctx.createRadialGradient(0, 0, gz.radius * 0.1, 0, 0, gz.radius);
-        bgGrad.addColorStop(0, 'rgba(255, 215, 64, 0.26)');
+        bgGrad.addColorStop(0, 'rgba(255, 215, 64, 0.28)');
         bgGrad.addColorStop(0.75, 'rgba(255, 193, 7, 0.12)');
         bgGrad.addColorStop(1, 'rgba(255, 215, 64, 0)');
         ctx.fillStyle = bgGrad;
-        ctx.strokeStyle = 'rgba(255, 215, 64, 0.78)';
+        ctx.strokeStyle = 'rgba(255, 215, 64, 0.82)';
         ctx.lineWidth = 2.2;
+        // Outer Octagon for Bagua Array
         ctx.beginPath();
-        ctx.arc(0, 0, gz.radius, 0, Math.PI * 2);
+        for (let k = 0; k < 8; k++) {
+          const a = (k * Math.PI) / 4;
+          const ox = Math.cos(a) * gz.radius;
+          const oy = Math.sin(a) * gz.radius;
+          if (k === 0) ctx.moveTo(ox, oy);
+          else ctx.lineTo(ox, oy);
+        }
+        ctx.closePath();
         ctx.fill();
         ctx.stroke();
+
+        // Inner Circle & 8 Trigrams (☰☱☲☳☴☵☶☷)
         ctx.beginPath();
-        ctx.arc(0, 0, gz.radius * 0.65, 0, Math.PI * 2);
+        ctx.arc(0, 0, gz.radius * 0.62, 0, Math.PI * 2);
         ctx.stroke();
+
+        const trigrams = ['☰', '☱', '☲', '☳', '☴', '☵', '☶', '☷'];
+        ctx.font = '700 13px sans-serif';
+        ctx.fillStyle = 'rgba(255, 235, 120, 0.9)';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        for (let k = 0; k < 8; k++) {
+          const a = (k * Math.PI) / 4 + Math.PI / 8;
+          ctx.fillText(trigrams[k], Math.cos(a) * (gz.radius * 0.80), Math.sin(a) * (gz.radius * 0.80));
+        }
+        ctx.font = '700 22px sans-serif';
+        ctx.fillText('☯', 0, 0);
       } else {
         // Friendly fire_sea from 神火朱雀扇 (Phoenix Fire Sea — soft radial flame glow + dancing fire tongues, NO hard circle border)
         const fade = Math.min(1, gz.life / 0.6);
