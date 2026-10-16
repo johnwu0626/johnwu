@@ -4552,22 +4552,34 @@
         ctx.strokeRect(-gz.length / 2, -gz.width / 2, gz.length, gz.width);
       } else if (gz.kind === 'bomb_telegraph') {
         const prog = 1 - gz.life / gz.maxLife;
-        ctx.fillStyle = 'rgba(255, 23, 68, 0.26)';
+        ctx.fillStyle = 'rgba(255, 23, 68, 0.22)';
         ctx.strokeStyle = '#ff1744';
         ctx.lineWidth = 3;
+        ctx.setLineDash([8, 6]);
         ctx.beginPath();
         ctx.arc(0, 0, gz.radius, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
-        ctx.fillStyle = 'rgba(255, 82, 82, 0.45)';
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(255, 23, 68, 0.48)';
         ctx.beginPath();
         ctx.arc(0, 0, gz.radius * prog, 0, Math.PI * 2);
         ctx.fill();
+        ctx.font = '800 12px "Noto Sans TC"';
+        ctx.fillStyle = '#ffeb3b';
+        ctx.textAlign = 'center';
+        ctx.fillText('⚠️敵方自爆', 0, 4);
       } else if (gz.kind === 'bagua') {
-        ctx.rotate(performance.now() * 0.002);
-        ctx.strokeStyle = '#ffd740';
-        ctx.fillStyle = 'rgba(255, 215, 64, 0.14)';
-        ctx.lineWidth = 2.5;
+        const fade = Math.min(1, gz.life / 0.5);
+        ctx.globalAlpha = fade;
+        ctx.rotate(performance.now() * 0.0022);
+        const bgGrad = ctx.createRadialGradient(0, 0, gz.radius * 0.1, 0, 0, gz.radius);
+        bgGrad.addColorStop(0, 'rgba(255, 215, 64, 0.26)');
+        bgGrad.addColorStop(0.75, 'rgba(255, 193, 7, 0.12)');
+        bgGrad.addColorStop(1, 'rgba(255, 215, 64, 0)');
+        ctx.fillStyle = bgGrad;
+        ctx.strokeStyle = 'rgba(255, 215, 64, 0.78)';
+        ctx.lineWidth = 2.2;
         ctx.beginPath();
         ctx.arc(0, 0, gz.radius, 0, Math.PI * 2);
         ctx.fill();
@@ -4576,14 +4588,42 @@
         ctx.arc(0, 0, gz.radius * 0.65, 0, Math.PI * 2);
         ctx.stroke();
       } else {
-        // fire_sea
-        ctx.fillStyle = 'rgba(255, 87, 34, 0.30)';
-        ctx.strokeStyle = 'rgba(255, 171, 64, 0.75)';
-        ctx.lineWidth = 2;
+        // Friendly fire_sea from 神火朱雀扇 (Phoenix Fire Sea — soft radial flame glow + dancing fire tongues, NO hard circle border)
+        const fade = Math.min(1, gz.life / 0.6);
+        const t = performance.now() * 0.006;
+        ctx.globalAlpha = fade;
+        const fireGrad = ctx.createRadialGradient(0, 0, gz.radius * 0.08, 0, 0, gz.radius);
+        fireGrad.addColorStop(0, 'rgba(255, 235, 59, 0.38)');
+        fireGrad.addColorStop(0.45, 'rgba(255, 111, 0, 0.28)');
+        fireGrad.addColorStop(0.82, 'rgba(213, 0, 0, 0.14)');
+        fireGrad.addColorStop(1, 'rgba(213, 0, 0, 0)');
+        ctx.fillStyle = fireGrad;
         ctx.beginPath();
         ctx.arc(0, 0, gz.radius, 0, Math.PI * 2);
         ctx.fill();
+
+        // Animated inner swirling flame tongues so it clearly reads as friendly burning fire
+        ctx.save();
+        ctx.rotate(t * 0.45);
+        ctx.strokeStyle = 'rgba(255, 193, 7, 0.48)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([12, 16]);
+        ctx.beginPath();
+        ctx.arc(0, 0, gz.radius * 0.62, 0, Math.PI * 2);
         ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+
+        for (let f = 0; f < 5; f++) {
+          const fa = t * 0.8 + f * ((Math.PI * 2) / 5);
+          const fr = gz.radius * (0.28 + 0.32 * Math.abs(Math.sin(t + f)));
+          const fx = Math.cos(fa) * fr;
+          const fy = Math.sin(fa) * fr - Math.sin(t * 2 + f) * 5;
+          ctx.fillStyle = f % 2 === 0 ? 'rgba(255, 235, 59, 0.65)' : 'rgba(255, 112, 67, 0.65)';
+          ctx.beginPath();
+          ctx.arc(fx, fy, 4 + (f % 2) * 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
       ctx.restore();
     }
