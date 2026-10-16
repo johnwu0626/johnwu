@@ -1046,7 +1046,7 @@
 
   <!-- Boss HP Banner -->
   <div class="boss-banner" id="bossBanner">
-    <img class="boss-avatar" src="assets/boss_lubu.webp" decoding="async" alt="鬼神呂奉先" />
+    <img class="boss-avatar" id="bossAvatarImg" src="assets/boss_lubu.webp" decoding="async" alt="鬼神呂奉先" />
     <div class="boss-info">
       <div class="boss-header">
         <span id="bossNameTitle">【無雙魔將】鬼神・呂奉先</span>
@@ -1620,6 +1620,56 @@
       this.playMergeClang(true);
     }
 
+    playCutInFanfare(isBoss = false) {
+      if (!this.enabled || !this.ctx) return;
+      const now = this.ctx.currentTime;
+      // Dramatic metallic unsheathe sweep + triple taiko thunder
+      this._playPercNoise(0.16, 0.22, isBoss ? 800 : 1400);
+      this._playTaiko(isBoss ? 110 : 150, 0.35, 0.38);
+      setTimeout(() => { if (this.enabled) this._playTaiko(isBoss ? 88 : 130, 0.32, 0.34); }, 110);
+      setTimeout(() => { if (this.enabled) this._playTaiko(isBoss ? 140 : 175, 0.42, 0.40); }, 230);
+
+      const chord = isBoss
+        ? [196.00, 233.08, 293.66, 392.00, 466.16, 587.33]
+        : [293.66, 369.99, 440.00, 587.33, 739.99, 880.00];
+      chord.forEach((f, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = isBoss ? 'sawtooth' : 'triangle';
+        osc.frequency.setValueAtTime(f, now + idx * 0.045);
+        gain.gain.setValueAtTime(0.20, now + idx * 0.045);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.045 + 0.48);
+        osc.connect(gain).connect(this.ctx.destination);
+        osc.start(now + idx * 0.045);
+        osc.stop(now + idx * 0.045 + 0.48);
+      });
+    }
+
+    playBossSlainFanfare() {
+      if (!this.enabled || !this.ctx) return;
+      const now = this.ctx.currentTime;
+      // Decisive lethal blade cleave + quad triumphant war drums + rising golden chord
+      this.playSlash();
+      this._playPercNoise(0.24, 0.28, 1750);
+      this._playTaiko(165, 0.42, 0.44);
+      setTimeout(() => { if (this.enabled) this._playTaiko(138, 0.35, 0.38); }, 105);
+      setTimeout(() => { if (this.enabled) this._playTaiko(185, 0.45, 0.42); }, 215);
+      setTimeout(() => { if (this.enabled) this._playTaiko(210, 0.55, 0.45); }, 340);
+
+      const victoryChord = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50];
+      victoryChord.forEach((f, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = idx >= 4 ? 'sawtooth' : 'triangle';
+        osc.frequency.setValueAtTime(f, now + idx * 0.055);
+        gain.gain.setValueAtTime(0.22, now + idx * 0.055);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.055 + 0.65);
+        osc.connect(gain).connect(this.ctx.destination);
+        osc.start(now + idx * 0.055);
+        osc.stop(now + idx * 0.055 + 0.65);
+      });
+    }
+
     playHurt() {
       if (!this.enabled || !this.ctx) return;
       this._playTaiko(90, 0.16, 0.28);
@@ -1643,6 +1693,7 @@
       faction: '蜀',
       name: '趙雲・子龍',
       title: '常山槍神',
+      portraitKey: 'hero_zhaoyun',
       bodyKey: 'body_zhaoyun',
       bootColor: '#cfd8dc',
       capeColor: '#29b6f6',
@@ -1655,6 +1706,8 @@
       color: '#4fc3f7',
       startWeapon: 'spear',
       musouName: '七進七出・蒼龍破',
+      musouQuote: '「吾乃常山趙子龍！百萬軍中，看我銀槍破陣！」',
+      victoryQuote: '「常山趙子龍在此！敵將首級已取，全軍隨我突擊！」',
       mods: { speedMul: 1.18, dmgMul: 1.08, maxHpBonus: 10, pickupBonus: 25, cdMul: 0.92 }
     },
     {
@@ -1662,6 +1715,7 @@
       faction: '蜀',
       name: '關羽・雲長',
       title: '美髯武聖',
+      portraitKey: 'hero_guanyu',
       bodyKey: 'body_guanyu',
       bootColor: '#2e7d32',
       capeColor: '#00e676',
@@ -1674,6 +1728,8 @@
       color: '#5ce6a0',
       startWeapon: 'halberd',
       musouName: '水淹七軍・青龍斬',
+      musouQuote: '「青龍偃月再起，爾等插標賣首之徒休走！」',
+      victoryQuote: '「酒且斟下，關某去去便來——敵將已斬於青龍刀下！」',
       mods: { speedMul: 1.02, dmgMul: 1.22, maxHpBonus: 45, pickupBonus: 10, critBonus: 0.10 }
     },
     {
@@ -1681,6 +1737,7 @@
       faction: '蜀',
       name: '諸葛亮・孔明',
       title: '臥龍星師',
+      portraitKey: 'hero_zhugeliang',
       bodyKey: 'body_zhugeliang',
       bootColor: '#f5f5f5',
       capeColor: '#b388ff',
@@ -1693,6 +1750,8 @@
       color: '#f4d06f',
       startWeapon: 'thunder',
       musouName: '奇門遁甲・八陣天雷',
+      musouQuote: '「乾坤八門金鎖開，九天玄雷聽吾號令！」',
+      victoryQuote: '「天命星象早已註定，逆天而行者終歸塵土！」',
       mods: { speedMul: 1.05, dmgMul: 1.10, maxHpBonus: 0, pickupBonus: 90, cdMul: 0.82 }
     },
     {
@@ -1700,6 +1759,7 @@
       faction: '蜀',
       name: '張飛・翼德',
       title: '萬人敵猛虎',
+      portraitKey: 'hero_zhangfei',
       bodyKey: 'body_zhangfei',
       bootColor: '#212121',
       capeColor: '#ff7043',
@@ -1712,6 +1772,8 @@
       color: '#ffab40',
       startWeapon: 'serpentSpear',
       musouName: '長坂咆哮・萬軍辟易',
+      musouQuote: '「燕人張翼德在此！誰敢與俺決一死戰！」',
+      victoryQuote: '「痛快！痛快！俺老張一矛便捅穿了這廝！」',
       mods: { speedMul: 1.04, dmgMul: 1.28, maxHpBonus: 65, pickupBonus: 15, cdMul: 0.95 }
     },
     {
@@ -1719,6 +1781,7 @@
       faction: '魏',
       name: '曹操・孟德',
       title: '亂世奸雄',
+      portraitKey: 'hero_caocao',
       bodyKey: 'body_caocao',
       bootColor: '#ffd740',
       capeColor: '#7c4dff',
@@ -1731,6 +1794,8 @@
       color: '#b388ff',
       startWeapon: 'twinSwords',
       musouName: '短歌行・萬劍歸宗',
+      musouQuote: '「周公吐哺，天下歸心！萬劍齊發平四海！」',
+      victoryQuote: '「擋孤霸業者，唯有死路一條！傳令三軍，入營受賞！」',
       mods: { speedMul: 1.08, dmgMul: 1.18, maxHpBonus: 25, pickupBonus: 50, cdMul: 0.90, bonusJade: 22 }
     },
     {
@@ -1738,6 +1803,7 @@
       faction: '魏',
       name: '夏侯惇・元讓',
       title: '獨目蒼狼',
+      portraitKey: 'hero_xiahoudun',
       bodyKey: 'body_xiahoudun',
       bootColor: '#263238',
       capeColor: '#5c6bc0',
@@ -1750,6 +1816,8 @@
       color: '#8c9eff',
       startWeapon: 'bladeRing',
       musouName: '拔矢啖睛・血狼狂嵐',
+      musouQuote: '「父精母血不可棄！蒼狼噬血，百倍奉還！」',
+      victoryQuote: '「獨目亦能視破汝之死穴！這顆首級，某收下了！」',
       mods: { speedMul: 1.10, dmgMul: 1.20, maxHpBonus: 55, pickupBonus: 20, critBonus: 0.15 }
     },
     {
@@ -1757,6 +1825,7 @@
       faction: '吳',
       name: '周瑜・公瑾',
       title: '赤壁美周郎',
+      portraitKey: 'hero_zhouyu',
       bodyKey: 'body_zhouyu',
       bootColor: '#b71c1c',
       capeColor: '#ff5252',
@@ -1769,6 +1838,8 @@
       color: '#ff6e40',
       startWeapon: 'fireFan',
       musouName: '赤壁業火・燒連環',
+      musouQuote: '「借東南狂風一用，讓這百萬大軍化為火海！」',
+      victoryQuote: '「談笑間，強敵已灰飛煙滅！此曲名為得勝令！」',
       mods: { speedMul: 1.08, dmgMul: 1.25, maxHpBonus: 15, pickupBonus: 40, cdMul: 0.88 }
     },
     {
@@ -1776,6 +1847,7 @@
       faction: '吳',
       name: '孫尚香・梟姬',
       title: '江東弓腰姬',
+      portraitKey: 'hero_sunshangxiang',
       bodyKey: 'body_sunshangxiang',
       bootColor: '#ad1457',
       capeColor: '#ff4081',
@@ -1788,6 +1860,8 @@
       color: '#ff80ab',
       startWeapon: 'bow',
       musouName: '紅妝梟姬・鳳凰箭嵐',
+      musouQuote: '「本小姐的連環紅蓮箭，看你們往哪裡躲！」',
+      victoryQuote: '「哼，還以為有多厲害，連本小姐三支紅蓮箭都接不住！」',
       mods: { speedMul: 1.16, dmgMul: 1.15, maxHpBonus: 5, pickupBonus: 35, cdMul: 0.80, critBonus: 0.12 }
     },
     {
@@ -1795,6 +1869,7 @@
       faction: '群',
       name: '呂布・奉先',
       title: '無雙飛將',
+      portraitKey: 'boss_lubu',
       bodyKey: 'body_lubu',
       bootColor: '#d50000',
       capeColor: '#ff1744',
@@ -1807,6 +1882,8 @@
       color: '#ff5252',
       startWeapon: 'fangtian',
       musouName: '鬼神無雙・方天滅世',
+      musouQuote: '「擋我者死！方天畫戟之下，眾生皆為螻蟻！」',
+      victoryQuote: '「不堪一擊！這天下還有誰能接我呂奉先一戟？！」',
       mods: { speedMul: 1.14, dmgMul: 1.38, maxHpBonus: 40, pickupBonus: 20, critBonus: 0.20 }
     }
   ];
@@ -2035,8 +2112,18 @@
       weatherColor: 'rgba(244, 208, 111, 0.55)',
       weatherType: 'talisman',
       subTitles: ['黃巾前鋒', '蒼天死士', '廣宗圍城', '符水妖兵', '【先鋒】管亥突襲', '曲陽亂軍', '黑山賊眾', '天公祭壇', '黃天禁衛', '【鎮關魔將】天公妖師・張角'],
-      midBoss: { name: '黃巾猛將・管亥', color: '#ffa726', bootColor: '#5d4037', bodyKey: 'body_zhangfei', wpnKey: 'rig_halberd' },
-      finalBoss: { name: '天公妖師・張角', color: '#ffd54f', bootColor: '#f57f17', bodyKey: 'body_zhugeliang', wpnKey: 'rig_thunder' }
+      midBoss: {
+        name: '黃巾猛將・管亥', color: '#ffa726', bootColor: '#5d4037',
+        portraitKey: 'hero_zhangfei', bodyKey: 'body_zhangfei', wpnKey: 'rig_halberd',
+        ultName: '黃天裂地・狂牛十字斬', ultType: 'guanhai_cross',
+        ultQuote: '「黃天力士在此！接俺一記裂地狂刀！」'
+      },
+      finalBoss: {
+        name: '天公妖師・張角', color: '#ffd54f', bootColor: '#f57f17',
+        portraitKey: 'hero_zhugeliang', bodyKey: 'body_zhugeliang', wpnKey: 'rig_thunder',
+        ultName: '蒼天已死・九天玄雷劫', ultType: 'zhangjiao_thunder',
+        ultQuote: '「蒼天已死，黃天當立！雷公助我轟碎敵陣！」'
+      }
     },
     {
       chap: 2,
@@ -2049,8 +2136,18 @@
       weatherColor: 'rgba(255, 90, 60, 0.65)',
       weatherType: 'ember',
       subTitles: ['汜水關前哨', '董卓鐵甲軍', '西涼狼騎', '飛熊重步', '【先鋒】驍騎校尉・華雄', '洛陽火海', '郿塢親衛', '赤兔掠影', '方天血陣', '【鎮關魔將】虎牢鬼神・呂奉先'],
-      midBoss: { name: '西涼猛將・華雄', color: '#ef5350', bootColor: '#8e0000', bodyKey: 'body_xiahoudun', wpnKey: 'rig_halberd' },
-      finalBoss: { name: '虎牢鬼神・呂奉先', color: '#ff3d00', bootColor: '#d50000', bodyKey: 'body_lubu', wpnKey: 'rig_fangtian' }
+      midBoss: {
+        name: '西涼猛將・華雄', color: '#ef5350', bootColor: '#8e0000',
+        portraitKey: 'hero_xiahoudun', bodyKey: 'body_xiahoudun', wpnKey: 'rig_halberd',
+        ultName: '汜水血戰・狂風斬首刃', ultType: 'huaxiong_whirlwind',
+        ultQuote: '「關外諸侯皆插標賣首爾！看刀！」'
+      },
+      finalBoss: {
+        name: '虎牢鬼神・呂奉先', color: '#ff3d00', bootColor: '#d50000',
+        portraitKey: 'boss_lubu', bodyKey: 'body_lubu', wpnKey: 'rig_fangtian',
+        ultName: '鬼神無雙・方天畫戟滅世', ultType: 'lubu_halberd',
+        ultQuote: '「人中呂布，馬中赤兔！誰敢擋我方天畫戟！」'
+      }
     },
     {
       chap: 3,
@@ -2063,8 +2160,18 @@
       weatherColor: 'rgba(225, 245, 254, 0.78)',
       weatherType: 'snow',
       subTitles: ['白馬津渡口', '河北大戟士', '延津伏兵', '高櫓連弩營', '【先鋒】河北上將・顏良', '烏巢糧營', '先登死士', '袁軍重鎧陣', '黃河朔風', '【鎮關魔將】河北雙雄・文醜'],
-      midBoss: { name: '河北上將・顏良', color: '#29b6f6', bootColor: '#0277bd', bodyKey: 'body_guanyu', wpnKey: 'rig_halberd' },
-      finalBoss: { name: '河北雙雄・文醜', color: '#00e5ff', bootColor: '#00838f', bodyKey: 'body_zhangfei', wpnKey: 'rig_serpent' }
+      midBoss: {
+        name: '河北上將・顏良', color: '#29b6f6', bootColor: '#0277bd',
+        portraitKey: 'hero_guanyu', bodyKey: 'body_guanyu', wpnKey: 'rig_halberd',
+        ultName: '白馬寒鋒・破軍三連斬', ultType: 'yanliang_frost',
+        ultQuote: '「河北四庭柱之首顏良在此，寒刀之下寸草不生！」'
+      },
+      finalBoss: {
+        name: '河北雙雄・文醜', color: '#00e5ff', bootColor: '#00838f',
+        portraitKey: 'hero_zhangfei', bodyKey: 'body_zhangfei', wpnKey: 'rig_serpent',
+        ultName: '延津狂瀾・冰魄蛇矛陣', ultType: 'wenchou_spears',
+        ultQuote: '「為顏良兄弟報仇！冰魄蛇矛貫穿天地！」'
+      }
     },
     {
       chap: 4,
@@ -2077,8 +2184,18 @@
       weatherColor: 'rgba(129, 199, 132, 0.68)',
       weatherType: 'leaves',
       subTitles: ['新野火陣', '曹軍追擊營', '當陽迷霧', '青釭掠影', '【先鋒】背劍將軍・夏侯恩', '景山重圍', '虎豹精騎', '七進七出', '長坂橋頭', '【鎮關魔將】虎豹統領・曹純'],
-      midBoss: { name: '背劍將軍・夏侯恩', color: '#64b5f6', bootColor: '#1565c0', bodyKey: 'body_caocao', wpnKey: 'rig_twinswords' },
-      finalBoss: { name: '虎豹統領・曹純', color: '#42a5f5', bootColor: '#0d47a1', bodyKey: 'body_xiahoudun', wpnKey: 'rig_fangtian' }
+      midBoss: {
+        name: '背劍將軍・夏侯恩', color: '#64b5f6', bootColor: '#1565c0',
+        portraitKey: 'hero_caocao', bodyKey: 'body_caocao', wpnKey: 'rig_twinswords',
+        ultName: '青釭出鞘・絕影迴旋劍獄', ultType: 'xiahouen_swords',
+        ultQuote: '「削鐵如泥青釭劍在此，化為千道寒芒斬盡敵寇！」'
+      },
+      finalBoss: {
+        name: '虎豹統領・曹純', color: '#42a5f5', bootColor: '#0d47a1',
+        portraitKey: 'hero_xiahoudun', bodyKey: 'body_xiahoudun', wpnKey: 'rig_fangtian',
+        ultName: '天下驍銳・虎豹鐵騎踏陣', ultType: 'caochun_cavalry',
+        ultQuote: '「虎豹鐵騎聽令！全軍縱橫衝殺，踏平長坂坡！」'
+      }
     },
     {
       chap: 5,
@@ -2091,8 +2208,18 @@
       weatherColor: 'rgba(255, 145, 0, 0.78)',
       weatherType: 'ember',
       subTitles: ['三江口水寨', '鐵索連舟', '東南風起', '火船衝陣', '【先鋒】水軍都督・蔡瑁', '烏林烈焰', '荊州降卒', '華容道伏擊', '烈火張天', '【鎮關魔將】亂世奸雄・曹孟德'],
-      midBoss: { name: '水軍都督・蔡瑁', color: '#ff7043', bootColor: '#bf360c', bodyKey: 'body_zhouyu', wpnKey: 'rig_firefan' },
-      finalBoss: { name: '亂世奸雄・曹孟德', color: '#ff5722', bootColor: '#b71c1c', bodyKey: 'body_caocao', wpnKey: 'rig_twinswords' }
+      midBoss: {
+        name: '水軍都督・蔡瑁', color: '#ff7043', bootColor: '#bf360c',
+        portraitKey: 'hero_zhouyu', bodyKey: 'body_zhouyu', wpnKey: 'rig_firefan',
+        ultName: '連環水師・漫天赤焰火雨', ultType: 'caimao_firearrows',
+        ultQuote: '「荊襄水師連環戰艦列陣，萬箭火雨焚江！」'
+      },
+      finalBoss: {
+        name: '亂世奸雄・曹孟德', color: '#ff5722', bootColor: '#b71c1c',
+        portraitKey: 'hero_caocao', bodyKey: 'body_caocao', wpnKey: 'rig_twinswords',
+        ultName: '短歌行・霸王萬劍歸宗', ultType: 'caocao_imperial',
+        ultQuote: '「寧教我負天下人！倚天萬劍，誅滅逆臣！」'
+      }
     },
     {
       chap: 6,
@@ -2105,8 +2232,18 @@
       weatherColor: 'rgba(255, 224, 130, 0.55)',
       weatherType: 'sandstorm',
       subTitles: ['潼關風沙', '西涼長標營', '渭水渡口', '割鬚棄袍', '【先鋒】白馬將軍・龐德', '冰城防線', '羌族狼騎', '銀鎧獅盔', '鐵騎連環', '【鎮關魔將】神威天將軍・馬超'],
-      midBoss: { name: '白馬將軍・龐德', color: '#b388ff', bootColor: '#4527a0', bodyKey: 'body_zhangfei', wpnKey: 'rig_halberd' },
-      finalBoss: { name: '神威天將軍・馬超', color: '#e040fb', bootColor: '#6a1b9a', bodyKey: 'body_zhaoyun', wpnKey: 'rig_spear' }
+      midBoss: {
+        name: '白馬將軍・龐德', color: '#b388ff', bootColor: '#4527a0',
+        portraitKey: 'hero_zhangfei', bodyKey: 'body_zhangfei', wpnKey: 'rig_halberd',
+        ultName: '抬櫬死戰・狂砂碎岳斬', ultType: 'pangde_sandstorm',
+        ultQuote: '「龐令明今日抬櫬死戰，不斬敵將誓不還！」'
+      },
+      finalBoss: {
+        name: '神威天將軍・馬超', color: '#e040fb', bootColor: '#6a1b9a',
+        portraitKey: 'hero_zhaoyun', bodyKey: 'body_zhaoyun', wpnKey: 'rig_spear',
+        ultName: '西涼錦馬超・銀槍萬道閃', ultType: 'machao_lightning',
+        ultQuote: '「西涼馬孟起在此！化為紫電銀龍穿雲裂地！」'
+      }
     },
     {
       chap: 7,
@@ -2119,8 +2256,18 @@
       weatherColor: 'rgba(128, 222, 234, 0.62)',
       weatherType: 'mist',
       subTitles: ['合淝城外', '八百敢死營', '藏舟渡河', '甘寧百騎', '【先鋒】先登猛將・樂進', '小師橋斷', '虎步江南', '陷陣重戟', '江東驚魂', '【鎮關魔將】威震逍遙・張遼'],
-      midBoss: { name: '先登猛將・樂進', color: '#69f0ae', bootColor: '#1b5e20', bodyKey: 'body_shield', wpnKey: 'rig_spear' },
-      finalBoss: { name: '威震逍遙・張遼', color: '#00e676', bootColor: '#004d40', bodyKey: 'body_xiahoudun', wpnKey: 'rig_fangtian' }
+      midBoss: {
+        name: '先登猛將・樂進', color: '#69f0ae', bootColor: '#1b5e20',
+        portraitKey: 'hero_xiahoudun', bodyKey: 'body_shield', wpnKey: 'rig_spear',
+        ultName: '先登陷陣・八門破甲連矢', ultType: 'yuejin_barrage',
+        ultQuote: '「每戰先登，無堅不摧！看我八門破甲槍陣！」'
+      },
+      finalBoss: {
+        name: '威震逍遙・張遼', color: '#00e676', bootColor: '#004d40',
+        portraitKey: 'hero_xiahoudun', bodyKey: 'body_xiahoudun', wpnKey: 'rig_fangtian',
+        ultName: '八百破十萬・逍遙津雷霆斬', ultType: 'zhangliao_terror',
+        ultQuote: '「張文遠八百死士衝陣，江東小兒聞風喪膽！」'
+      }
     },
     {
       chap: 8,
@@ -2133,8 +2280,18 @@
       weatherColor: 'rgba(255, 112, 67, 0.72)',
       weatherType: 'leaves',
       subTitles: ['葭萌關口', '瓦口隘爭奪', '天蕩山燒糧', '漢水背水陣', '【先鋒】巧變名將・張郃', '定軍山麓', '鹿角重圍', '法正奇謀', '黃忠老當益壯', '【鎮關魔將】疾行虎步・夏侯淵'],
-      midBoss: { name: '巧變名將・張郃', color: '#ffd740', bootColor: '#ff6f00', bodyKey: 'body_zhouyu', wpnKey: 'rig_twinswords' },
-      finalBoss: { name: '疾行虎步・夏侯淵', color: '#ffc400', bootColor: '#e65100', bodyKey: 'body_xiahoudun', wpnKey: 'rig_bow' }
+      midBoss: {
+        name: '巧變名將・張郃', color: '#ffd740', bootColor: '#ff6f00',
+        portraitKey: 'hero_zhouyu', bodyKey: 'body_zhouyu', wpnKey: 'rig_twinswords',
+        ultName: '巧變奇陣・移形幻影劍殺', ultType: 'zhanghe_mirage',
+        ultQuote: '「兵無常勢，巧變無雙！四象幻影劍網收網！」'
+      },
+      finalBoss: {
+        name: '疾行虎步・夏侯淵', color: '#ffc400', bootColor: '#e65100',
+        portraitKey: 'hero_xiahoudun', bodyKey: 'body_xiahoudun', wpnKey: 'rig_bow',
+        ultName: '三日千里・定軍流星箭嵐', ultType: 'xiahouyuan_meteor',
+        ultQuote: '「典軍校尉夏侯妙才，萬道金箭如流星墜地！」'
+      }
     },
     {
       chap: 9,
@@ -2147,8 +2304,18 @@
       weatherColor: 'rgba(118, 255, 3, 0.68)',
       weatherType: 'spores',
       subTitles: ['瀘水毒瘴', '三洞蠻兵', '金環三結', '朵思毒泉', '【先鋒】火神後裔・祝融夫人', '木鹿狂象營', '烏戈藤甲兵', '盤蛇谷火攻', '南中歸心', '【鎮關魔將】南蠻獸王・孟獲'],
-      midBoss: { name: '火神後裔・祝融夫人', color: '#ff4081', bootColor: '#880e4f', bodyKey: 'body_sunshangxiang', wpnKey: 'rig_needles' },
-      finalBoss: { name: '南蠻獸王・孟獲', color: '#76ff03', bootColor: '#33691e', bodyKey: 'body_zhangfei', wpnKey: 'rig_serpent' }
+      midBoss: {
+        name: '火神後裔・祝融夫人', color: '#ff4081', bootColor: '#880e4f',
+        portraitKey: 'hero_sunshangxiang', bodyKey: 'body_sunshangxiang', wpnKey: 'rig_needles',
+        ultName: '南中火神・赤焰飛刀亂舞', ultType: 'zhurong_fireblades',
+        ultQuote: '「火神祝融氏後裔在此，漫天赤焰飛刀焚盡敵軍！」'
+      },
+      finalBoss: {
+        name: '南蠻獸王・孟獲', color: '#76ff03', bootColor: '#33691e',
+        portraitKey: 'hero_zhangfei', bodyKey: 'body_zhangfei', wpnKey: 'rig_serpent',
+        ultName: '七擒不服・南蠻狂象大地震', ultType: 'menghuo_stampede',
+        ultQuote: '「南中獸王孟獲號令百獸！狂象奔騰，震裂大地！」'
+      }
     },
     {
       chap: 10,
@@ -2161,8 +2328,18 @@
       weatherColor: 'rgba(234, 128, 252, 0.78)',
       weatherType: 'starlight',
       subTitles: ['祁山六出', '上方谷火雨', '木牛流馬', '七星續命燈', '【先鋒】狂骨魔將・魏延', '八門金鎖破', '九天修羅陣', '百陣無雙劫', '煉獄虎牢再現', '【終極魔神】九天無雙魔神・呂奉先'],
-      midBoss: { name: '狂骨魔將・魏延', color: '#ff5252', bootColor: '#b71c1c', bodyKey: 'body_guanyu', wpnKey: 'rig_halberd' },
-      finalBoss: { name: '九天無雙魔神・呂奉先', color: '#ff1744', bootColor: '#d50000', bodyKey: 'body_lubu', wpnKey: 'rig_fangtian' }
+      midBoss: {
+        name: '狂骨魔將・魏延', color: '#ff5252', bootColor: '#b71c1c',
+        portraitKey: 'hero_guanyu', bodyKey: 'body_guanyu', wpnKey: 'rig_halberd',
+        ultName: '子午谷奇謀・反骨血月狂斬', ultType: 'weiyan_bloodmoon',
+        ultQuote: '「誰敢殺我！！反骨魔刀噬血狂斬！」'
+      },
+      finalBoss: {
+        name: '九天無雙魔神・呂奉先', color: '#ff1744', bootColor: '#d50000',
+        portraitKey: 'boss_lubu', bodyKey: 'body_lubu', wpnKey: 'rig_fangtian',
+        ultName: '九天魔神・無雙方天滅世劫', ultType: 'demon_lubu_apocalypse',
+        ultQuote: '「九天修羅降世！神擋殺神，佛擋殺佛！！」'
+      }
     }
   ];
 
@@ -2296,15 +2473,23 @@
     enemies: [],
     projectiles: [],
     enemyProjectiles: [],
-    groundZones: [], // Fire zones, Bagua arrays, Bomber telegraphs, Cavalry charge lanes
+    groundZones: [], // Fire zones, Bagua arrays, Bomber telegraphs, Cavalry charge lanes, Boss hazards
     props: [],       // Explosive barrels, Huatuo meat, Magnet seals, Forging anvils
     slashes: [],
     lightnings: [],
+    impactRings: [],
     gems: [],
     floatTexts: [],
     particles: [],
     weatherParticles: [],
     boss: null,
+
+    cutIn: null,
+    bossVictoryCutIn: null,
+    screenFlash: null,
+    musouDomainTimer: 0,
+    bossDomainTimer: 0,
+    killBanner: null,
 
     shakeTime: 0,
     shakeMag: 0
@@ -2593,10 +2778,16 @@
     state.props = [];
     state.slashes = [];
     state.lightnings = [];
+    state.impactRings = [];
     state.gems = [];
     state.floatTexts = [];
     state.particles = [];
     state.boss = null;
+    state.cutIn = null;
+    state.bossVictoryCutIn = null;
+    state.screenFlash = null;
+    state.musouDomainTimer = 0;
+    state.bossDomainTimer = 0;
 
     sfx.setBgmMode(w.boss ? 'boss' : 'battle', w.chapIdx);
 
@@ -2980,11 +3171,15 @@
       isBoss: true,
       isMajorBoss: isMajor,
       type: 'boss',
+      portraitKey: spec.portraitKey || 'boss_lubu',
       bodyKey: spec.bodyKey || 'body_lubu',
       wpnKey: spec.wpnKey || 'rig_halberd',
       bootColor: spec.bootColor || '#d50000',
       capeColor: spec.color || '#d50000',
       name: spec.name,
+      ultName: spec.ultName || '無雙魔神・破軍滅世斬',
+      ultQuote: spec.ultQuote || '「螻蟻之輩，受死吧！」',
+      ultType: spec.ultType || 'lubu_halberd',
       x: bx,
       y: by,
       radius: isMajor ? 92 : 68,
@@ -3004,7 +3199,7 @@
       enraged: false,
       windupTimer: 0,
       chargeAng: toHeroAng,
-      skillTimer: 1.8,
+      skillTimer: 2.2,
       skillCount: 0,
       dashTime: 0.36,
       dashVx: Math.cos(toHeroAng) * 540,
@@ -3017,19 +3212,29 @@
 
     sfx.playWarDrum();
     triggerShake(0.45, 14);
+    state.impactRings.push({
+      x: bx, y: by,
+      radius: 30, maxRadius: 320,
+      color: boss.color, lineWidth: 6,
+      life: 0.55, maxLife: 0.55
+    });
     state.floatTexts.push({
       x: state.x,
       y: state.y - 110,
-      text: `⚠️ 巨型BOSS霸體突襲：${isMajor ? '【鎮關魔將】' : '【鎮陣先鋒】'}${boss.name}！`,
+      text: `⚠️ 巨型BOSS突襲：${boss.name}｜專屬奧義【${boss.ultName}】`,
       color: '#ff5252',
-      size: 22,
-      life: 2.2,
-      maxLife: 2.2
+      size: 21,
+      life: 2.4,
+      maxLife: 2.4
     });
 
+    const avatarEl = document.getElementById('bossAvatarImg');
+    if (avatarEl && ASSET_URLS[boss.portraitKey]) {
+      avatarEl.src = ASSET_URLS[boss.portraitKey];
+    }
     const titleEl = document.getElementById('bossNameTitle');
     if (titleEl) {
-      titleEl.textContent = `${isMajor ? '👑【巨型鎮關魔將】' : '⚔️【巨型鎮陣先鋒】'}${boss.name}`;
+      titleEl.textContent = `${isMajor ? '👑【鎮關魔將】' : '⚔️【鎮陣先鋒】'}${boss.name}（奧義：${boss.ultName}）`;
     }
   }
 
@@ -3091,6 +3296,23 @@
     enemy.x += (dx / len) * knockback * kbFactor;
     enemy.y += (dy / len) * knockback * kbFactor;
 
+    if (isCrit && !reduceMotion && state.particles.length < 110) {
+      for (let s = 0; s < 4; s++) {
+        const sa = Math.random() * Math.PI * 2;
+        const spd = 160 + Math.random() * 220;
+        state.particles.push({
+          x: enemy.x,
+          y: enemy.y - enemy.radius * 0.3,
+          vx: Math.cos(sa) * spd,
+          vy: Math.sin(sa) * spd,
+          color: '#ffd740',
+          radius: 3.2,
+          life: 0.22,
+          isSpark: true
+        });
+      }
+    }
+
     if (state.floatTexts.length < 48) {
       state.floatTexts.push({
         x: enemy.x + (Math.random() - 0.5) * 16,
@@ -3110,7 +3332,7 @@
 
   function triggerExplosion(x, y, radius, dmg, isFriendly = true, color = '#ff6e40') {
     sfx.playFireBurst();
-    triggerShake(0.24, 9);
+    triggerShake(0.26, 11);
     state.slashes.push({
       x, y,
       ang: 0,
@@ -3120,16 +3342,26 @@
       life: 0.30,
       maxLife: 0.30
     });
-    for (let i = 0; i < (reduceMotion ? 5 : 14); i++) {
+    state.impactRings.push({
+      x, y,
+      radius: radius * 0.2,
+      maxRadius: radius * 1.25,
+      color,
+      lineWidth: 5,
+      life: 0.34,
+      maxLife: 0.34
+    });
+    for (let i = 0; i < (reduceMotion ? 5 : 16); i++) {
       const a = Math.random() * Math.PI * 2;
-      const spd = 70 + Math.random() * 190;
+      const spd = 80 + Math.random() * 220;
       state.particles.push({
         x, y,
         vx: Math.cos(a) * spd,
         vy: Math.sin(a) * spd,
         color,
         radius: 3.5 + Math.random() * 3.5,
-        life: 0.38
+        life: 0.38,
+        isSpark: i % 2 === 0
       });
     }
     for (let i = state.enemies.length - 1; i >= 0; i--) {
@@ -3153,6 +3385,29 @@
     state.enemies.splice(idx, 1);
     state.kills++;
     state.musouGauge = Math.min(100, state.musouGauge + (enemy.isBoss ? 50 : (enemy.isElite ? 18 : 3.2)));
+
+    // Musou Kill-Streak Callout Stamp (30, 60, 100, 150, 200, 300, 400, 500...)
+    if (state.kills === 30 || state.kills === 60 || (state.kills >= 100 && state.kills % 50 === 0)) {
+      state.musouGauge = Math.min(100, state.musouGauge + 18);
+      const titles = {
+        30: '一騎當千',
+        60: '銳不可當',
+        100: '百人斬達成',
+        150: '萬夫莫敵',
+        200: '二百人斬・鬼神演武',
+        300: '三百人斬・威震華夏',
+        500: '五百人斬・天下無雙',
+        1000: '千人斬達成・古今無雙'
+      };
+      state.killBanner = {
+        count: state.kills,
+        title: titles[state.kills] || `${state.kills}人斬・無雙破陣`,
+        sub: '無雙怒氣 +18%｜氣勢如虹',
+        color: state.hero.color || '#ffd740',
+        timer: 2.1,
+        maxTimer: 2.1
+      };
+    }
 
     // Zhang Fei passive: heal every 25 kills
     if (state.hero.id === 'zhangfei' && state.kills % 25 === 0) {
@@ -3207,23 +3462,117 @@
     }
 
     if (enemy.isBoss) {
-      state.boss = null;
-      document.getElementById('bossBanner').classList.remove('visible');
-      triggerShake(0.45, 14);
-      sfx.playMergeClang(true);
-      state.floatTexts.push({
-        x: enemy.x,
-        y: enemy.y - 30,
-        text: `擊破【${enemy.name}】！`,
-        color: '#f7d779',
-        size: 21,
-        life: 1.2,
-        maxLife: 1.2
-      });
-      if (enemy.isMajorBoss) {
-        endWave(true);
+      triggerBossDefeatedCutIn(enemy);
+    }
+  }
+
+  function triggerBossDefeatedCutIn(enemy) {
+    state.boss = null;
+    state.cutIn = null;
+    state.bossDomainTimer = 0;
+    state.musouDomainTimer = 3.5;
+    pointer.active = false;
+    document.getElementById('bossBanner').classList.remove('visible');
+
+    // Clear all remaining enemy hazards & projectiles so the player is 100% safe
+    state.enemyProjectiles = [];
+    state.groundZones = [];
+
+    // Detonate remaining minions on the field into golden victory sparks & jade loot
+    for (let i = state.enemies.length - 1; i >= 0; i--) {
+      const m = state.enemies[i];
+      if (m !== enemy) {
+        state.kills++;
+        state.gems.push({ x: m.x, y: m.y, value: m.jadeValue || 2, radius: 10, magnetized: true });
+        for (let k = 0; k < (reduceMotion ? 2 : 5); k++) {
+          const a = Math.random() * Math.PI * 2;
+          const spd = 80 + Math.random() * 180;
+          state.particles.push({
+            x: m.x, y: m.y,
+            vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
+            color: '#ffd740', radius: 3.5, life: 0.45, isSpark: true
+          });
+        }
       }
     }
+    state.enemies = [];
+
+    // Auto-claim any field anvils or Huatuo meat dropped on the battlefield
+    for (const pr of state.props) {
+      if (pr.kind === 'anvil') {
+        upgradeRandomWeaponInField();
+      } else if (pr.kind === 'meat') {
+        state.hp = Math.min(state.maxHp, state.hp + Math.round(state.maxHp * 0.35));
+      }
+    }
+    state.props = [];
+
+    sfx.playBossSlainFanfare();
+    triggerShake(0.65, 22);
+    state.screenFlash = { color: '#ffd740', life: 0.45, maxLife: 0.45 };
+
+    state.impactRings.push({
+      x: enemy.x, y: enemy.y,
+      radius: 40, maxRadius: 560,
+      color: '#ffd740', lineWidth: 9,
+      life: 0.75, maxLife: 0.75
+    });
+    state.impactRings.push({
+      x: enemy.x, y: enemy.y,
+      radius: 20, maxRadius: 420,
+      color: state.hero.color || '#ff5252', lineWidth: 5,
+      life: 0.55, maxLife: 0.55
+    });
+
+    for (let s = 0; s < (reduceMotion ? 10 : 32); s++) {
+      const a = Math.random() * Math.PI * 2;
+      const spd = 140 + Math.random() * 340;
+      state.particles.push({
+        x: enemy.x, y: enemy.y,
+        vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
+        color: s % 2 === 0 ? '#ffd740' : (state.hero.color || '#ffffff'),
+        radius: 4 + Math.random() * 3.5,
+        life: 0.75,
+        isSpark: true
+      });
+    }
+
+    const h = state.hero;
+    const primaryWpnId = (state.weapons[0] && state.weapons[0].id) || h.startWeapon || 'spear';
+    const wpnSpec = WEAPON_CATALOG[primaryWpnId] || WEAPON_CATALOG.spear;
+    const waveClearJade = 24 + state.waveIdx * 8 + state.waveBonusJade;
+    const gemLoot = state.gems.reduce((acc, g) => acc + (g.value || 0), 0);
+
+    state.bossVictoryCutIn = {
+      elapsed: 0,
+      heroName: h.name,
+      heroTitle: h.title,
+      heroBadge: h.badge,
+      heroPortraitKey: h.portraitKey || ('hero_' + h.id),
+      heroBodyKey: h.bodyKey,
+      heroWpnKey: wpnSpec.rigKey || 'rig_spear',
+      heroColor: h.color || '#ffd740',
+      victoryQuote: h.victoryQuote || '「敵將首級已取！全軍隨我入營受賞！」',
+      bossName: enemy.name,
+      bossRole: enemy.isMajorBoss ? '👑 鎮關魔將' : '⚔️ 鎮陣先鋒',
+      bossPortraitKey: enemy.portraitKey || 'boss_lubu',
+      bossBodyKey: enemy.bodyKey || 'body_lubu',
+      bossWpnKey: enemy.wpnKey || 'rig_halberd',
+      bossColor: enemy.color || '#ff1744',
+      isMajorBoss: !!enemy.isMajorBoss,
+      jadeReward: gemLoot + waveClearJade,
+      isFinalWave: state.waveIdx >= WAVES.length - 1
+    };
+
+    updateHud();
+  }
+
+  function confirmBossVictoryCutIn() {
+    if (!state.bossVictoryCutIn || state.bossVictoryCutIn.elapsed < 0.38) return;
+    state.bossVictoryCutIn = null;
+    pointer.active = false;
+    sfx.playWarDrum();
+    endWave(true);
   }
 
   function getWeaponMountPosition(slotIndex, totalSlots) {
@@ -3600,89 +3949,230 @@
     return false;
   }
 
+  function startCutIn(opts) {
+    sfx.playCutInFanfare(!!opts.isBoss);
+    triggerShake(0.38, 12);
+    state.cutIn = {
+      isBoss: !!opts.isBoss,
+      actorName: opts.actorName || '無雙名將',
+      actorTitle: opts.actorTitle || '【無雙奧義】',
+      skillName: opts.skillName || '破軍無雙亂舞',
+      quote: opts.quote || '「千軍萬馬，看我一擊破之！」',
+      color: opts.color || '#ffd740',
+      portraitKey: opts.portraitKey || 'hero_zhaoyun',
+      bodyKey: opts.bodyKey || 'body_zhaoyun',
+      wpnKey: opts.wpnKey || 'rig_spear',
+      timer: opts.duration || 1.05,
+      duration: opts.duration || 1.05,
+      onComplete: opts.onComplete || null
+    };
+  }
+
   function triggerMusou() {
-    if (state.phase !== 'WAVE' || state.musouGauge < 100) return;
+    if (state.phase !== 'WAVE' || state.musouGauge < 100 || state.cutIn) return;
     state.musouGauge = 0;
-    sfx.playMusouCast();
-    triggerShake(0.50, 18);
-
     const h = state.hero;
-    const musouBase = 195 * Math.pow(1.07, state.waveIdx);
+    const wpnSpec = WEAPON_CATALOG[h.startWeapon] || WEAPON_CATALOG.spear;
+    state.invulnTimer = Math.max(state.invulnTimer, 4.2);
+    updateHud();
 
-    // Hero-specific Musou Ultimate Effects!
-    state.invulnTimer = Math.max(state.invulnTimer, 3.0);
-    if (h.id === 'xiahoudun') {
-      state.hp = Math.min(state.maxHp, Math.round(state.hp + state.maxHp * 0.38));
-    }
+    // First play the full-screen Hero Musou Cut-In ("刷幕"), THEN unleash the Musou skill!
+    startCutIn({
+      isBoss: false,
+      actorName: h.name,
+      actorTitle: `${h.badge}・${h.title}`,
+      skillName: h.musouName || '無雙奧義・破軍亂舞',
+      quote: h.musouQuote || '「天下風雲出我輩，一擊橫掃千軍！」',
+      color: h.color || '#ffd740',
+      portraitKey: h.portraitKey || ('hero_' + h.id),
+      bodyKey: h.bodyKey,
+      wpnKey: wpnSpec.rigKey || 'rig_spear',
+      duration: 1.06,
+      onComplete: () => executeHeroMusou(h)
+    });
+  }
+
+  function executeHeroMusou(h) {
+    sfx.playMusouCast();
+    triggerShake(0.60, 22);
+    state.musouDomainTimer = 3.6;
+    state.screenFlash = { color: h.color || '#ffd740', life: 0.36, maxLife: 0.36 };
+
+    const musouBase = 215 * Math.pow(1.07, state.waveIdx);
+    state.invulnTimer = Math.max(state.invulnTimer, 3.6);
+
+    // Double shockwave impact rings
+    state.impactRings.push({
+      x: state.x, y: state.y,
+      radius: 30, maxRadius: 620,
+      color: h.color || '#ffd740', lineWidth: 8,
+      life: 0.58, maxLife: 0.58
+    });
+    state.impactRings.push({
+      x: state.x, y: state.y,
+      radius: 10, maxRadius: 460,
+      color: '#ffffff', lineWidth: 4,
+      life: 0.42, maxLife: 0.42
+    });
 
     state.slashes.push({
       x: state.x,
       y: state.y,
       ang: 0,
-      radius: 520,
+      radius: 540,
       isFullCircle: true,
       color: h.color || '#f4d06f',
-      life: 0.55,
-      maxLife: 0.55
+      life: 0.58,
+      maxLife: 0.58
     });
 
-    // Spawn 16 radial ultimate projectiles matching the hero's theme
-    for (let i = 0; i < 16; i++) {
-      const a = (i * Math.PI * 2) / 16;
-      state.projectiles.push({
-        x: state.x,
-        y: state.y,
-        vx: Math.cos(a) * 680,
-        vy: Math.sin(a) * 680,
-        radius: 18,
-        dmg: musouBase * 0.75,
-        pierce: 99,
-        hitSet: new Set(),
-        color: h.color || '#ffd740',
-        life: 0.95,
-        shape: 'spear',
-        ang: a
+    // Hero-specific Ultimate Spectacles
+    if (h.id === 'zhaoyun') {
+      // 七進七出・蒼龍破：24 支銀龍寒槍雙層螺旋貫穿全場
+      for (let i = 0; i < 24; i++) {
+        const a = (i * Math.PI * 2) / 24;
+        state.projectiles.push({
+          x: state.x, y: state.y,
+          vx: Math.cos(a) * 780, vy: Math.sin(a) * 780,
+          radius: 20, dmg: musouBase * 0.85, pierce: 99, hitSet: new Set(),
+          color: i % 2 === 0 ? '#4fc3f7' : '#ffffff',
+          life: 1.05, shape: 'spear', ang: a, explodeOnHit: true, explodeRadius: 85
+        });
+      }
+    } else if (h.id === 'guanyu') {
+      // 水淹七軍・青龍斬：四道超巨型青龍偃月刀罡 + 16 道怒濤月牙斬
+      for (let k = 0; k < 4; k++) {
+        const a = (k * Math.PI) / 2;
+        state.slashes.push({
+          x: state.x + Math.cos(a) * 140, y: state.y + Math.sin(a) * 140,
+          ang: a, radius: 320, isFullCircle: true, color: '#00e676', life: 0.50, maxLife: 0.50
+        });
+      }
+      for (let i = 0; i < 16; i++) {
+        const a = (i * Math.PI * 2) / 16;
+        state.projectiles.push({
+          x: state.x, y: state.y,
+          vx: Math.cos(a) * 620, vy: Math.sin(a) * 620,
+          radius: 24, dmg: musouBase * 0.90, pierce: 99, hitSet: new Set(),
+          color: '#5ce6a0', life: 1.0, shape: 'crescent', ang: a
+        });
+      }
+    } else if (h.id === 'zhugeliang') {
+      // 奇門遁甲・八陣天雷：鋪設 5 座黃金奇門八卦大陣 + 全屏紫金落雷
+      state.groundZones.push({
+        kind: 'bagua', x: state.x, y: state.y,
+        radius: 240, dmg: musouBase * 0.48, tickTimer: 0.1, life: 4.5, maxLife: 4.5, color: '#ffd740'
       });
-    }
-
-    // If Zhou Yu or Zhuge Liang or Lu Bu, also spawn elemental ground zones / lightning storms!
-    if (h.id === 'zhouyu' || h.id === 'lubu') {
-      for (let k = 0; k < 5; k++) {
-        const a = (k * Math.PI * 2) / 5;
+      for (let k = 0; k < 4; k++) {
+        const a = (k * Math.PI) / 2 + Math.PI / 4;
+        state.groundZones.push({
+          kind: 'bagua', x: state.x + Math.cos(a) * 220, y: state.y + Math.sin(a) * 220,
+          radius: 135, dmg: musouBase * 0.38, tickTimer: 0.12, life: 4.0, maxLife: 4.0, color: '#b388ff'
+        });
+      }
+    } else if (h.id === 'zhangfei') {
+      // 長坂咆哮・萬軍辟易：八荒黑炎地裂連環爆破 + 大幅回血
+      state.hp = Math.min(state.maxHp, Math.round(state.hp + state.maxHp * 0.25));
+      for (let l = 0; l < 8; l++) {
+        const a = (l * Math.PI * 2) / 8;
+        for (let step = 1; step <= 4; step++) {
+          const sx = state.x + Math.cos(a) * (step * 95);
+          const sy = state.y + Math.sin(a) * (step * 95);
+          triggerExplosion(sx, sy, 110, musouBase * 0.45, true, '#ffab40');
+        }
+      }
+    } else if (h.id === 'caocao') {
+      // 短歌行・萬劍歸宗：20 把迴旋帝王雙劍構成漫天劍網
+      for (let i = 0; i < 20; i++) {
+        const a = (i * Math.PI * 2) / 20;
+        state.projectiles.push({
+          x: state.x, y: state.y,
+          vx: Math.cos(a) * 600, vy: Math.sin(a) * 600,
+          returnToHero: true, age: 0,
+          radius: 20, dmg: musouBase * 0.80, pierce: 99, hitSet: new Set(),
+          color: i % 2 === 0 ? '#b388ff' : '#ffd740',
+          life: 1.55, shape: 'boomerang', ang: a
+        });
+      }
+    } else if (h.id === 'xiahoudun') {
+      // 拔矢啖睛・血狼狂嵐：立即回復 42% 氣血 + 20 道蒼狼噬血旋刃爆破
+      state.hp = Math.min(state.maxHp, Math.round(state.hp + state.maxHp * 0.42));
+      for (let i = 0; i < 20; i++) {
+        const a = (i * Math.PI * 2) / 20;
+        state.projectiles.push({
+          x: state.x, y: state.y,
+          vx: Math.cos(a) * 640, vy: Math.sin(a) * 640,
+          returnToHero: true, age: 0,
+          radius: 22, dmg: musouBase * 0.82, pierce: 99, hitSet: new Set(),
+          color: i % 2 === 0 ? '#8c9eff' : '#ff1744',
+          life: 1.45, shape: 'crescent', ang: a
+        });
+      }
+    } else if (h.id === 'zhouyu') {
+      // 赤壁業火・燒連環：8 顆赤壁業火巨砲流星 + 6 處赤壁火海
+      for (let k = 0; k < 6; k++) {
+        const a = (k * Math.PI * 2) / 6;
+        const fx = state.x + Math.cos(a) * 190;
+        const fy = state.y + Math.sin(a) * 190;
+        triggerExplosion(fx, fy, 135, musouBase * 0.55, true, '#ff6e40');
+        state.groundZones.push({
+          kind: 'fire_sea', x: fx, y: fy,
+          radius: 135, dmg: musouBase * 0.40, tickTimer: 0.1, life: 4.5, maxLife: 4.5, color: '#ff6e40'
+        });
+      }
+    } else if (h.id === 'sunshangxiang') {
+      // 紅妝梟姬・鳳凰箭嵐：36 支穿透爆裂紅蓮火箭 360° 齊發
+      for (let i = 0; i < 36; i++) {
+        const a = (i * Math.PI * 2) / 36;
+        state.projectiles.push({
+          x: state.x, y: state.y,
+          vx: Math.cos(a) * 740, vy: Math.sin(a) * 740,
+          radius: 10, dmg: musouBase * 0.72, pierce: 6, hitSet: new Set(),
+          color: i % 2 === 0 ? '#ff4081' : '#ffd740',
+          life: 1.0, shape: 'arrow', ang: a, explodeOnHit: true, explodeRadius: 90
+        });
+      }
+    } else {
+      // 呂布・鬼神無雙・方天滅世：米字八方裂天畫戟 + 業火煉獄
+      for (let i = 0; i < 16; i++) {
+        const a = (i * Math.PI * 2) / 16;
+        state.projectiles.push({
+          x: state.x, y: state.y,
+          vx: Math.cos(a) * 690, vy: Math.sin(a) * 690,
+          radius: 24, dmg: musouBase * 1.15, pierce: 99, hitSet: new Set(),
+          color: '#ff1744', life: 1.0, shape: 'crescent', ang: a, explodeOnHit: true, explodeRadius: 95
+        });
+      }
+      for (let k = 0; k < 4; k++) {
+        const a = (k * Math.PI) / 2;
         state.groundZones.push({
           kind: 'fire_sea',
-          x: state.x + Math.cos(a) * 180,
-          y: state.y + Math.sin(a) * 180,
-          radius: 120,
-          dmg: musouBase * 0.35,
-          tickTimer: 0.1,
-          life: 4.0,
-          maxLife: 4.0,
-          color: h.color
+          x: state.x + Math.cos(a) * 185, y: state.y + Math.sin(a) * 185,
+          radius: 125, dmg: musouBase * 0.42, tickTimer: 0.1, life: 4.2, maxLife: 4.2, color: '#ff1744'
         });
       }
     }
 
     state.floatTexts.push({
       x: state.x,
-      y: state.y - 60,
-      text: `無雙奧義【${h.musouName || '破軍亂舞'}】！`,
+      y: state.y - 68,
+      text: `⚡無雙奧義【${h.musouName || '破軍亂舞'}】全屏轟殺！`,
       color: h.color || '#f4d06f',
       size: 24,
-      life: 1.3,
-      maxLife: 1.3
+      life: 1.5,
+      maxLife: 1.5
     });
 
     for (let i = state.enemies.length - 1; i >= 0; i--) {
       const e = state.enemies[i];
-      if (Math.hypot(e.x - state.x, e.y - state.y) <= 520) {
+      if (Math.hypot(e.x - state.x, e.y - state.y) <= 560) {
         state.lightnings.push({
           x1: state.x, y1: state.y,
           x2: e.x, y2: e.y,
           color: h.color || '#ffd740',
-          life: 0.32
+          life: 0.36
         });
-        dealDamage(e, musouBase * (h.id === 'lubu' ? 1.45 : 1.0), 85, 'thunder');
+        dealDamage(e, musouBase * (h.id === 'lubu' ? 1.45 : 1.05), 85, 'thunder');
       }
     }
 
@@ -3692,6 +4182,274 @@
       g.magnetized = true;
     }
     updateHud();
+  }
+
+  function spawnBossHazardZone(x, y, radius, delay, dmg, color, label) {
+    state.groundZones.push({
+      kind: 'boss_hazard',
+      x, y,
+      radius: radius || 105,
+      life: delay || 0.88,
+      maxLife: delay || 0.88,
+      dmg: dmg || 28,
+      color: color || '#ff1744',
+      label: label || '⚠️魔將大招'
+    });
+  }
+
+  function triggerBossUltimate(e) {
+    if (!e || e.hp <= 0 || state.cutIn) return;
+    startCutIn({
+      isBoss: true,
+      actorName: e.name,
+      actorTitle: e.isMajorBoss ? '👑【鎮關魔將・專屬必殺】' : '⚔️【鎮陣先鋒・專屬必殺】',
+      skillName: e.ultName || '魔神破軍斬',
+      quote: e.ultQuote || '「今日便是爾等葬身之地！」',
+      color: e.color || '#ff1744',
+      portraitKey: e.portraitKey || 'boss_lubu',
+      bodyKey: e.bodyKey || 'body_lubu',
+      wpnKey: e.wpnKey || 'rig_halberd',
+      duration: 1.02,
+      onComplete: () => executeBossUltimate(e)
+    });
+  }
+
+  function executeBossUltimate(e) {
+    if (!e || e.hp <= 0 || !state.enemies.includes(e)) return;
+    sfx.playMusouCast();
+    triggerShake(0.52, 18);
+    state.bossDomainTimer = 2.8;
+    state.screenFlash = { color: e.color || '#ff1744', life: 0.32, maxLife: 0.32 };
+
+    state.impactRings.push({
+      x: e.x, y: e.y,
+      radius: 36, maxRadius: 460,
+      color: e.color || '#ff1744', lineWidth: 7,
+      life: 0.55, maxLife: 0.55
+    });
+
+    const angToHero = Math.atan2(state.y - e.y, state.x - e.x);
+    const t = e.ultType || 'lubu_halberd';
+
+    state.floatTexts.push({
+      x: e.x,
+      y: e.y - e.drawSize * 0.65,
+      text: `☄️【${e.name}】釋放奧義「${e.ultName}」！`,
+      color: '#ffeb3b',
+      size: 21,
+      life: 1.8,
+      maxLife: 1.8
+    });
+
+    if (t === 'guanhai_cross') {
+      // 管亥：黃天裂地・狂牛十字斬（十字裂地爆破陣 + 八方碎岩彈）
+      for (let dir = 0; dir < 4; dir++) {
+        const a = angToHero + (dir * Math.PI) / 2;
+        for (let step = 1; step <= 3; step++) {
+          spawnBossHazardZone(e.x + Math.cos(a) * (step * 125), e.y + Math.sin(a) * (step * 125), 88, 0.72 + step * 0.08, e.dmg * 1.15, '#ffa726', '⚡黃天裂地');
+        }
+      }
+      for (let b = 0; b < 10; b++) {
+        const ba = angToHero + (b * Math.PI * 2) / 10;
+        state.enemyProjectiles.push({ x: e.x, y: e.y, vx: Math.cos(ba) * 285, vy: Math.sin(ba) * 285, radius: 11, dmg: e.dmg, color: '#ffa726', life: 3.0 });
+      }
+    } else if (t === 'zhangjiao_thunder') {
+      // 張角：蒼天已死・九天玄雷劫（7 座天公落雷法陣 + 妖術雷球）
+      spawnBossHazardZone(state.x, state.y, 110, 0.85, e.dmg * 1.25, '#ffd54f', '⚡天公落雷');
+      for (let k = 0; k < 6; k++) {
+        const a = (k * Math.PI * 2) / 6;
+        spawnBossHazardZone(state.x + Math.cos(a) * 195, state.y + Math.sin(a) * 195, 95, 0.92, e.dmg * 1.15, '#ffd54f', '⚡九天玄雷');
+      }
+      for (let b = 0; b < 12; b++) {
+        const ba = (b * Math.PI * 2) / 12;
+        state.enemyProjectiles.push({ x: e.x, y: e.y, vx: Math.cos(ba) * 260, vy: Math.sin(ba) * 260, radius: 10, dmg: e.dmg, color: '#ffd54f', life: 3.2 });
+      }
+    } else if (t === 'huaxiong_whirlwind') {
+      // 華雄：汜水血戰・狂風斬首刃（狂暴旋風突襲 + 14 道血刃）
+      e.chargeAng = angToHero;
+      e.dashVx = Math.cos(angToHero) * 680;
+      e.dashVy = Math.sin(angToHero) * 680;
+      e.dashTime = 0.52;
+      for (let b = 0; b < 14; b++) {
+        const ba = (b * Math.PI * 2) / 14;
+        state.enemyProjectiles.push({ x: e.x, y: e.y, vx: Math.cos(ba) * 320, vy: Math.sin(ba) * 320, radius: 11, dmg: e.dmg, color: '#ef5350', life: 3.0 });
+      }
+    } else if (t === 'yanliang_frost') {
+      // 顏良：白馬寒鋒・破軍三連斬（三波超寬扇形寒冰刀浪 + 冰封爆裂陣）
+      for (let wv = 0; wv < 3; wv++) {
+        for (let f = -3; f <= 3; f++) {
+          const fa = angToHero + f * 0.16;
+          const spd = 250 + wv * 70;
+          state.enemyProjectiles.push({ x: e.x, y: e.y, vx: Math.cos(fa) * spd, vy: Math.sin(fa) * spd, radius: 10, dmg: e.dmg, color: '#29b6f6', life: 3.2 });
+        }
+      }
+      spawnBossHazardZone(state.x, state.y, 115, 0.85, e.dmg * 1.15, '#29b6f6', '❄️白馬寒鋒');
+    } else if (t === 'wenchou_spears') {
+      // 文醜：延津狂瀾・冰魄蛇矛陣（雙層共 18 支冰魄蛇矛 + 寒冰突刺）
+      for (let b = 0; b < 18; b++) {
+        const ba = angToHero + (b * Math.PI * 2) / 18;
+        const spd = b % 2 === 0 ? 350 : 240;
+        state.enemyProjectiles.push({ x: e.x, y: e.y, vx: Math.cos(ba) * spd, vy: Math.sin(ba) * spd, radius: 11, dmg: e.dmg, color: '#00e5ff', life: 3.2 });
+      }
+      e.dashVx = Math.cos(angToHero) * 660;
+      e.dashVy = Math.sin(angToHero) * 660;
+      e.dashTime = 0.45;
+    } else if (t === 'xiahouen_swords') {
+      // 夏侯恩：青釭出鞘・絕影迴旋劍獄（16 道青釭飛劍 + 4 座落劍陣）
+      for (let b = 0; b < 16; b++) {
+        const ba = (b * Math.PI * 2) / 16;
+        state.enemyProjectiles.push({ x: e.x, y: e.y, vx: Math.cos(ba) * 310, vy: Math.sin(ba) * 310, radius: 10, dmg: e.dmg, color: '#64b5f6', life: 3.2 });
+      }
+      for (let k = 0; k < 4; k++) {
+        const a = angToHero + (k * Math.PI) / 2;
+        spawnBossHazardZone(state.x + Math.cos(a) * 140, state.y + Math.sin(a) * 140, 95, 0.82, e.dmg * 1.1, '#64b5f6', '🗡️青釭劍獄');
+      }
+    } else if (t === 'caochun_cavalry') {
+      // 曹純：天下驍銳・虎豹鐵騎踏陣（號令鐵騎奔襲 + 本體霸王衝鋒）
+      spawnCavalryFormation();
+      e.dashVx = Math.cos(angToHero) * 700;
+      e.dashVy = Math.sin(angToHero) * 700;
+      e.dashTime = 0.48;
+      for (let b = 0; b < 10; b++) {
+        const ba = (b * Math.PI * 2) / 10;
+        state.enemyProjectiles.push({ x: e.x, y: e.y, vx: Math.cos(ba) * 290, vy: Math.sin(ba) * 290, radius: 10, dmg: e.dmg, color: '#42a5f5', life: 3.0 });
+      }
+    } else if (t === 'caimao_firearrows') {
+      // 蔡瑁：連環水師・漫天赤焰火雨（扇形火箭齊射 + 5 座赤焰火海爆破）
+      for (let f = -5; f <= 5; f++) {
+        const fa = angToHero + f * 0.14;
+        state.enemyProjectiles.push({ x: e.x, y: e.y, vx: Math.cos(fa) * 340, vy: Math.sin(fa) * 340, radius: 10, dmg: e.dmg, color: '#ff7043', life: 3.0 });
+      }
+      for (let k = 0; k < 5; k++) {
+        const a = (k * Math.PI * 2) / 5;
+        spawnBossHazardZone(state.x + Math.cos(a) * 155, state.y + Math.sin(a) * 155, 100, 0.85, e.dmg * 1.15, '#ff7043', '🔥赤壁火雨');
+      }
+    } else if (t === 'caocao_imperial') {
+      // 曹操：短歌行・霸王萬劍歸宗（6 座帝劍天罰陣 + 20 道倚天紫金劍氣）
+      for (let k = 0; k < 6; k++) {
+        const a = (k * Math.PI * 2) / 6;
+        spawnBossHazardZone(state.x + Math.cos(a) * 165, state.y + Math.sin(a) * 165, 105, 0.84, e.dmg * 1.25, '#b388ff', '🗡️萬劍歸宗');
+      }
+      for (let b = 0; b < 20; b++) {
+        const ba = (b * Math.PI * 2) / 20;
+        state.enemyProjectiles.push({ x: e.x, y: e.y, vx: Math.cos(ba) * 310, vy: Math.sin(ba) * 310, radius: 10, dmg: e.dmg, color: b % 2 === 0 ? '#ffd740' : '#ff5722', life: 3.2 });
+      }
+    } else if (t === 'pangde_sandstorm') {
+      // 龐德：抬櫬死戰・狂砂碎岳斬（死戰裂地突襲 + 16 道狂沙刀波）
+      e.dashVx = Math.cos(angToHero) * 720;
+      e.dashVy = Math.sin(angToHero) * 720;
+      e.dashTime = 0.50;
+      for (let b = 0; b < 16; b++) {
+        const ba = (b * Math.PI * 2) / 16;
+        state.enemyProjectiles.push({ x: e.x, y: e.y, vx: Math.cos(ba) * 300, vy: Math.sin(ba) * 300, radius: 11, dmg: e.dmg, color: '#b388ff', life: 3.0 });
+      }
+      spawnBossHazardZone(state.x, state.y, 120, 0.85, e.dmg * 1.2, '#b388ff', '🏜️狂砂碎岳');
+    } else if (t === 'machao_lightning') {
+      // 馬超：西涼錦馬超・銀槍萬道閃（極速雷電槍突刺 + 16 道紫電銀槍 + 雷陣）
+      e.dashVx = Math.cos(angToHero) * 780;
+      e.dashVy = Math.sin(angToHero) * 780;
+      e.dashTime = 0.46;
+      for (let b = 0; b < 16; b++) {
+        const ba = angToHero + (b * Math.PI * 2) / 16;
+        state.enemyProjectiles.push({ x: e.x, y: e.y, vx: Math.cos(ba) * 370, vy: Math.sin(ba) * 370, radius: 11, dmg: e.dmg, color: '#e040fb', life: 3.0 });
+      }
+      for (let k = -1; k <= 1; k++) {
+        const a = angToHero + k * 0.45;
+        spawnBossHazardZone(state.x + Math.cos(a) * 110, state.y + Math.sin(a) * 110, 95, 0.78, e.dmg * 1.2, '#e040fb', '⚡西涼雷槍');
+      }
+    } else if (t === 'yuejin_barrage') {
+      // 樂進：先登陷陣・八門破甲連矢（雙層交錯共 20 發高速破甲彈幕）
+      for (let b = 0; b < 20; b++) {
+        const ba = angToHero + (b * Math.PI * 2) / 20;
+        const spd = b % 2 === 0 ? 350 : 255;
+        state.enemyProjectiles.push({ x: e.x, y: e.y, vx: Math.cos(ba) * spd, vy: Math.sin(ba) * spd, radius: 10, dmg: e.dmg, color: '#69f0ae', life: 3.2 });
+      }
+      spawnBossHazardZone(state.x, state.y, 110, 0.82, e.dmg * 1.15, '#69f0ae', '⚔️先登破甲');
+    } else if (t === 'zhangliao_terror') {
+      // 張遼：八百破十萬・逍遙津雷霆斬（逍遙津雷獄 + 疾風衝鋒 + 十字刀芒）
+      e.dashVx = Math.cos(angToHero) * 760;
+      e.dashVy = Math.sin(angToHero) * 760;
+      e.dashTime = 0.48;
+      for (let k = 0; k < 5; k++) {
+        const a = (k * Math.PI * 2) / 5;
+        spawnBossHazardZone(state.x + Math.cos(a) * 150, state.y + Math.sin(a) * 150, 105, 0.82, e.dmg * 1.25, '#00e676', '⚡逍遙雷霆');
+      }
+      for (let b = 0; b < 16; b++) {
+        const ba = (b * Math.PI * 2) / 16;
+        state.enemyProjectiles.push({ x: e.x, y: e.y, vx: Math.cos(ba) * 330, vy: Math.sin(ba) * 330, radius: 11, dmg: e.dmg, color: '#00e676', life: 3.1 });
+      }
+    } else if (t === 'zhanghe_mirage') {
+      // 張郃：巧變奇陣・移形幻影劍殺（瞬移切入斜側 + 四象幻影劍陣）
+      const sideAng = angToHero + (Math.random() < 0.5 ? 1.2 : -1.2);
+      e.x = state.x + Math.cos(sideAng) * 240;
+      e.y = state.y + Math.sin(sideAng) * 240;
+      for (let k = 0; k < 4; k++) {
+        const a = (k * Math.PI) / 2;
+        spawnBossHazardZone(state.x + Math.cos(a) * 130, state.y + Math.sin(a) * 130, 95, 0.80, e.dmg * 1.15, '#ffd740', '✨巧變奇陣');
+      }
+      for (let b = 0; b < 14; b++) {
+        const ba = (b * Math.PI * 2) / 14;
+        state.enemyProjectiles.push({ x: e.x, y: e.y, vx: Math.cos(ba) * 315, vy: Math.sin(ba) * 315, radius: 10, dmg: e.dmg, color: '#ffd740', life: 3.0 });
+      }
+    } else if (t === 'xiahouyuan_meteor') {
+      // 夏侯淵：三日千里・定軍流星箭嵐（6 座流星箭雨轟炸陣 + 22 支黃金神箭）
+      for (let k = 0; k < 6; k++) {
+        const a = (k * Math.PI * 2) / 6;
+        spawnBossHazardZone(state.x + Math.cos(a) * 160, state.y + Math.sin(a) * 160, 105, 0.82, e.dmg * 1.25, '#ffc400', '🏹流星箭嵐');
+      }
+      for (let b = 0; b < 22; b++) {
+        const ba = angToHero + (b * Math.PI * 2) / 22;
+        state.enemyProjectiles.push({ x: e.x, y: e.y, vx: Math.cos(ba) * 365, vy: Math.sin(ba) * 365, radius: 10, dmg: e.dmg, color: '#ffc400', life: 3.2 });
+      }
+    } else if (t === 'zhurong_fireblades') {
+      // 祝融夫人：南中火神・赤焰飛刀亂舞（18 把赤焰飛刀 + 南中火神爆裂陣）
+      for (let b = 0; b < 18; b++) {
+        const ba = (b * Math.PI * 2) / 18;
+        state.enemyProjectiles.push({ x: e.x, y: e.y, vx: Math.cos(ba) * 335, vy: Math.sin(ba) * 335, radius: 10, dmg: e.dmg, color: '#ff4081', life: 3.1 });
+      }
+      for (let k = 0; k < 4; k++) {
+        const a = angToHero + (k * Math.PI) / 2 + Math.PI / 4;
+        spawnBossHazardZone(state.x + Math.cos(a) * 145, state.y + Math.sin(a) * 145, 100, 0.84, e.dmg * 1.2, '#ff4081', '🔥火神飛刀');
+      }
+    } else if (t === 'menghuo_stampede') {
+      // 孟獲：七擒不服・南蠻狂象大地震（召喚狂象衝陣 + 6 座南蠻劇毒地震圈）
+      spawnCavalryFormation();
+      e.dashVx = Math.cos(angToHero) * 700;
+      e.dashVy = Math.sin(angToHero) * 700;
+      e.dashTime = 0.50;
+      for (let k = 0; k < 6; k++) {
+        const a = (k * Math.PI * 2) / 6;
+        spawnBossHazardZone(state.x + Math.cos(a) * 170, state.y + Math.sin(a) * 170, 110, 0.86, e.dmg * 1.25, '#76ff03', '🐘狂象震地');
+      }
+    } else if (t === 'weiyan_bloodmoon') {
+      // 魏延：子午谷奇謀・反骨血月狂斬（噬血回復 + 18 道反骨血月斬 + 衝鋒）
+      e.hp = Math.min(e.maxHp, Math.round(e.hp + e.maxHp * 0.06));
+      e.dashVx = Math.cos(angToHero) * 740;
+      e.dashVy = Math.sin(angToHero) * 740;
+      e.dashTime = 0.48;
+      for (let b = 0; b < 18; b++) {
+        const ba = (b * Math.PI * 2) / 18;
+        state.enemyProjectiles.push({ x: e.x, y: e.y, vx: Math.cos(ba) * 340, vy: Math.sin(ba) * 340, radius: 11, dmg: e.dmg, color: '#ff5252', life: 3.1 });
+      }
+      spawnBossHazardZone(state.x, state.y, 115, 0.82, e.dmg * 1.2, '#ff5252', '🩸反骨血月');
+    } else {
+      // 呂布 & 九天無雙魔神・呂奉先：方天畫戟滅世 / 九天魔神滅世劫
+      const isFinalDemon = (t === 'demon_lubu_apocalypse');
+      e.dashVx = Math.cos(angToHero) * (isFinalDemon ? 820 : 740);
+      e.dashVy = Math.sin(angToHero) * (isFinalDemon ? 820 : 740);
+      e.dashTime = 0.50;
+      const projCount = isFinalDemon ? 24 : 18;
+      for (let b = 0; b < projCount; b++) {
+        const ba = (b * Math.PI * 2) / projCount;
+        const spd = b % 2 === 0 ? 370 : 265;
+        state.enemyProjectiles.push({ x: e.x, y: e.y, vx: Math.cos(ba) * spd, vy: Math.sin(ba) * spd, radius: 12, dmg: e.dmg, color: '#ff1744', life: 3.4 });
+      }
+      const hazardCount = isFinalDemon ? 7 : 5;
+      for (let k = 0; k < hazardCount; k++) {
+        const a = (k * Math.PI * 2) / hazardCount;
+        spawnBossHazardZone(state.x + Math.cos(a) * 165, state.y + Math.sin(a) * 165, 110, 0.85, e.dmg * 1.3, '#ff1744', '☄️方天滅世');
+      }
+    }
   }
 
   function triggerShake(duration, magnitude) {
@@ -3999,11 +4757,61 @@
   function update(dt) {
     if (state.phase !== 'WAVE') return;
 
-    const w = WAVES[state.waveIdx];
-    state.waveTimer -= dt;
-    if (state.waveTimer <= 0) {
-      endWave(true);
+    if (state.shakeTime > 0) state.shakeTime -= dt;
+    if (state.screenFlash) {
+      state.screenFlash.life -= dt;
+      if (state.screenFlash.life <= 0) state.screenFlash = null;
+    }
+    if (state.musouDomainTimer > 0) state.musouDomainTimer -= dt;
+    if (state.bossDomainTimer > 0) state.bossDomainTimer -= dt;
+    if (state.killBanner) {
+      state.killBanner.timer -= dt;
+      if (state.killBanner.timer <= 0) state.killBanner = null;
+    }
+
+    // Freeze battlefield action during Hero Slays Boss Victory Cut-In ("擊破BOSS刷幕") until player clicks!
+    if (state.bossVictoryCutIn) {
+      state.bossVictoryCutIn.elapsed += dt;
+      state.bladeAngle += dt * 1.8;
+      for (let i = state.impactRings.length - 1; i >= 0; i--) {
+        const ir = state.impactRings[i];
+        ir.life -= dt;
+        const p = 1 - Math.max(0, ir.life / ir.maxLife);
+        ir.currRadius = ir.radius + (ir.maxRadius - ir.radius) * (1 - Math.pow(1 - p, 2));
+        if (ir.life <= 0) state.impactRings.splice(i, 1);
+      }
+      for (let i = state.particles.length - 1; i >= 0; i--) {
+        const pt = state.particles[i];
+        pt.x += pt.vx * dt;
+        pt.y += pt.vy * dt;
+        pt.life -= dt;
+        if (pt.life <= 0) state.particles.splice(i, 1);
+      }
       return;
+    }
+
+    // Freeze battlefield action during Hero Musou / Boss Ultimate Cut-In ("刷幕")!
+    if (state.cutIn) {
+      state.cutIn.timer -= dt;
+      state.bladeAngle += dt * 1.4;
+      if (state.cutIn.timer <= 0) {
+        const cb = state.cutIn.onComplete;
+        state.cutIn = null;
+        if (cb) cb();
+      }
+      return;
+    }
+
+    const w = WAVES[state.waveIdx];
+    // Boss Waves ONLY clear when the Boss is defeated! Regular waves clear when countdown reaches 0.
+    if (!w.boss) {
+      state.waveTimer -= dt;
+      if (state.waveTimer <= 0) {
+        endWave(true);
+        return;
+      }
+    } else {
+      state.waveTimer = Math.max(0, state.waveTimer - dt);
     }
 
     let mx = 0;
@@ -4024,7 +4832,7 @@
       my /= len;
     }
 
-    const spd = state.baseSpeed * state.speedMul;
+    const spd = state.baseSpeed * state.speedMul * (state.musouDomainTimer > 0 ? 1.16 : 1.0);
     state.x += mx * spd * dt;
     state.y += my * spd * dt;
 
@@ -4051,7 +4859,6 @@
     }
 
     if (state.invulnTimer > 0) state.invulnTimer -= dt;
-    if (state.shakeTime > 0) state.shakeTime -= dt;
     state.bladeAngle += dt * 5.8;
 
     // Regular Enemy Spawning
@@ -4084,7 +4891,7 @@
       spawnBattlefieldProp();
     }
 
-    // Update Ground Zones (Fire Sea, Bagua Array, Bomb Telegraph, Cavalry Lane)
+    // Update Ground Zones (Fire Sea, Bagua Array, Bomb Telegraph, Boss Hazard, Cavalry Lane)
     for (let i = state.groundZones.length - 1; i >= 0; i--) {
       const gz = state.groundZones[i];
       gz.life -= dt;
@@ -4101,8 +4908,16 @@
         }
       }
       if (gz.life <= 0) {
-        if (gz.kind === 'bomb_telegraph') {
-          triggerExplosion(gz.x, gz.y, gz.radius, gz.dmg, false, '#ff5252');
+        if (gz.kind === 'bomb_telegraph' || gz.kind === 'boss_hazard') {
+          if (gz.kind === 'boss_hazard') {
+            state.lightnings.push({
+              x1: gz.x, y1: gz.y - 280,
+              x2: gz.x, y2: gz.y,
+              color: gz.color || '#ffd740',
+              life: 0.34
+            });
+          }
+          triggerExplosion(gz.x, gz.y, gz.radius, gz.dmg, false, gz.color || '#ff5252');
         } else if (gz.kind === 'cavalry_lane' && gz.onExpire) {
           gz.onExpire();
         }
@@ -4267,35 +5082,19 @@
           e.multiHitCount = 0;
         }
 
-        // Phase 2 Enrage at <= 52% HP!
+        // Phase 2 Enrage at <= 52% HP: immediately trigger Boss Signature Ultimate Cut-In!
         if (!e.enraged && e.hp <= e.maxHp * 0.52) {
           e.enraged = true;
-          e.spawnShieldTimer = 1.1;
+          e.spawnShieldTimer = 1.2;
           e.speed *= 1.38;
           e.dmg = Math.round(e.dmg * 1.25);
-          sfx.playMusouCast();
-          triggerShake(0.45, 15);
-          state.slashes.push({
-            x: e.x, y: e.y, ang: 0, radius: 220, isFullCircle: true,
-            color: '#ff1744', life: 0.36, maxLife: 0.36
-          });
-          for (let b = 0; b < 14; b++) {
-            const ba = (b * Math.PI * 2) / 14;
-            state.enemyProjectiles.push({
-              x: e.x, y: e.y,
-              vx: Math.cos(ba) * 320,
-              vy: Math.sin(ba) * 320,
-              radius: 10,
-              dmg: Math.round(e.dmg * 0.85),
-              color: '#ff1744',
-              life: 3.2
-            });
-          }
           state.floatTexts.push({
             x: e.x, y: e.y - e.drawSize * 0.65,
-            text: `🔥【${e.name}・魔神狂暴化】攻速移速暴增！`,
+            text: `🔥【${e.name}・魔神狂暴化】專屬必殺發動！`,
             color: '#ffeb3b', size: 22, life: 2.2, maxLife: 2.2
           });
+          triggerBossUltimate(e);
+          return;
         }
 
         // Anti-Kiting Gap-Closer: if player runs too far (> 560px), Boss immediately charges in!
@@ -4319,6 +5118,12 @@
               x: e.x, y: e.y, ang: 0, radius: e.isMajorBoss ? 175 : 140, isFullCircle: true,
               color: e.color || '#ff1744', life: 0.28, maxLife: 0.28
             });
+            state.impactRings.push({
+              x: e.x, y: e.y,
+              radius: 25, maxRadius: e.isMajorBoss ? 210 : 165,
+              color: e.color || '#ff1744', lineWidth: 5,
+              life: 0.35, maxLife: 0.35
+            });
             if (Math.hypot(state.x - e.x, state.y - e.y) <= (e.isMajorBoss ? 175 : 140) && state.invulnTimer <= 0) {
               state.hp = Math.max(0, state.hp - e.dmg);
               state.invulnTimer = 0.6;
@@ -4337,15 +5142,19 @@
             sfx.playWarDrum();
           }
         } else {
-          e.skillTimer -= dt * (e.enraged ? 1.45 : 1.0);
+          e.skillTimer -= dt * (e.enraged ? 1.42 : 1.0);
           if (e.skillTimer <= 0) {
-            e.skillTimer = Math.max(1.65, 2.85 - state.waveIdx * 0.012);
+            e.skillTimer = Math.max(2.1, 3.1 - state.waveIdx * 0.012);
             e.skillCount = (e.skillCount || 0) + 1;
             const ang = Math.atan2(state.y - e.y, state.x - e.x);
             const moveType = e.skillCount % 3;
 
             if (moveType === 1) {
-              // Skill 1: Lock-on Red Corridor Telegraph -> High-Speed Charge + Ground Slam
+              // Signature Boss Ultimate with Full-Screen Cut-In ("刷幕")!
+              triggerBossUltimate(e);
+              return;
+            } else if (moveType === 2) {
+              // Skill 2: Lock-on Red Corridor Telegraph -> High-Speed Charge + Ground Slam
               e.chargeAng = ang;
               e.windupTimer = e.enraged ? 0.42 : 0.55;
               sfx.playWarDrum();
@@ -4354,8 +5163,8 @@
                 text: `⚡【${e.name}】破軍突襲預備！`,
                 color: '#ff5252', size: 17, life: 0.75, maxLife: 0.75
               });
-            } else if (moveType === 2) {
-              // Skill 2: 5-Way Aimed Crescent Fan + 360° Ring Barrage
+            } else {
+              // Skill 3: 5-Way Aimed Crescent Fan + 360° Ring Barrage
               sfx.playThunder();
               const fanCount = e.isMajorBoss ? 7 : 5;
               for (let f = 0; f < fanCount; f++) {
@@ -4383,29 +5192,6 @@
                   life: 3.2
                 });
               }
-            } else {
-              // Skill 3: Vanguard Guard Summon + Flame/Bomb Hazard Around Player
-              sfx.playHeavyImpact();
-              spawnEnemy('charger');
-              if (e.isMajorBoss) spawnEnemy('bomber');
-              for (let z = 0; z < (e.isMajorBoss ? 3 : 2); z++) {
-                const za = Math.random() * Math.PI * 2;
-                const zd = 60 + Math.random() * 140;
-                state.groundZones.push({
-                  kind: 'bomb_telegraph',
-                  x: state.x + Math.cos(za) * zd,
-                  y: state.y + Math.sin(za) * zd,
-                  radius: 95,
-                  life: 0.85,
-                  maxLife: 0.85,
-                  dmg: e.dmg * 1.15
-                });
-              }
-              state.floatTexts.push({
-                x: e.x, y: e.y - e.drawSize * 0.55,
-                text: `🔥【${e.name}】號令親衛・煉獄轟炸！`,
-                color: '#ff9100', size: 17, life: 0.9, maxLife: 0.9
-              });
             }
           } else {
             const ang = Math.atan2(state.y - e.y, state.x - e.x);
@@ -4543,6 +5329,13 @@
     for (let i = state.lightnings.length - 1; i >= 0; i--) {
       state.lightnings[i].life -= dt;
       if (state.lightnings[i].life <= 0) state.lightnings.splice(i, 1);
+    }
+    for (let i = state.impactRings.length - 1; i >= 0; i--) {
+      const ir = state.impactRings[i];
+      ir.life -= dt;
+      const p = 1 - Math.max(0, ir.life / ir.maxLife);
+      ir.currRadius = ir.radius + (ir.maxRadius - ir.radius) * (1 - Math.pow(1 - p, 2));
+      if (ir.life <= 0) state.impactRings.splice(i, 1);
     }
     for (let i = state.floatTexts.length - 1; i >= 0; i--) {
       const ft = state.floatTexts[i];
@@ -4747,25 +5540,34 @@
         ctx.lineWidth = 3;
         ctx.fillRect(-gz.length / 2, -gz.width / 2, gz.length, gz.width);
         ctx.strokeRect(-gz.length / 2, -gz.width / 2, gz.length, gz.width);
-      } else if (gz.kind === 'bomb_telegraph') {
-        const prog = 1 - gz.life / gz.maxLife;
-        ctx.fillStyle = 'rgba(255, 23, 68, 0.22)';
-        ctx.strokeStyle = '#ff1744';
-        ctx.lineWidth = 3;
-        ctx.setLineDash([8, 6]);
+      } else if (gz.kind === 'bomb_telegraph' || gz.kind === 'boss_hazard') {
+        const prog = 1 - Math.max(0, gz.life / gz.maxLife);
+        const hColor = gz.color || '#ff1744';
+        ctx.fillStyle = gz.kind === 'boss_hazard' ? 'rgba(255, 23, 68, 0.26)' : 'rgba(255, 23, 68, 0.22)';
+        ctx.strokeStyle = hColor;
+        ctx.lineWidth = gz.kind === 'boss_hazard' ? 3.5 : 3;
+        ctx.setLineDash([10, 6]);
         ctx.beginPath();
         ctx.arc(0, 0, gz.radius, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
         ctx.setLineDash([]);
-        ctx.fillStyle = 'rgba(255, 23, 68, 0.48)';
+
+        ctx.globalAlpha = 0.45;
+        ctx.fillStyle = hColor;
         ctx.beginPath();
         ctx.arc(0, 0, gz.radius * prog, 0, Math.PI * 2);
         ctx.fill();
-        ctx.font = '800 12px "Noto Sans TC"';
+        ctx.globalAlpha = 1;
+
+        ctx.font = '900 13px "Noto Sans TC"';
+        ctx.strokeStyle = 'rgba(0,0,0,0.9)';
+        ctx.lineWidth = 3;
+        const label = gz.label || '⚠️敵方自爆';
+        ctx.strokeText(label, 0, 4);
         ctx.fillStyle = '#ffeb3b';
         ctx.textAlign = 'center';
-        ctx.fillText('⚠️敵方自爆', 0, 4);
+        ctx.fillText(label, 0, 4);
       } else if (gz.kind === 'bagua') {
         const fade = Math.min(1, gz.life / 0.5);
         ctx.globalAlpha = fade;
@@ -4885,12 +5687,37 @@
       ctx.restore();
     }
 
-    // 5. Draw Particles
+    // 5. Draw Particles & Directional Slash Sparks
     for (const pt of state.particles) {
-      ctx.fillStyle = pt.color;
+      if (pt.isSpark) {
+        ctx.save();
+        ctx.strokeStyle = pt.color;
+        ctx.lineWidth = 2.6;
+        ctx.beginPath();
+        ctx.moveTo(pt.x, pt.y);
+        ctx.lineTo(pt.x - pt.vx * 0.045, pt.y - pt.vy * 0.045);
+        ctx.stroke();
+        ctx.restore();
+      } else {
+        ctx.fillStyle = pt.color;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // 5B. Draw Expanding Shockwave Impact Rings
+    for (const ir of state.impactRings) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, ir.life / ir.maxLife);
+      ctx.strokeStyle = ir.color || '#ffd740';
+      ctx.shadowColor = ir.color || '#ffd740';
+      ctx.shadowBlur = 14;
+      ctx.lineWidth = ir.lineWidth || 5;
       ctx.beginPath();
-      ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.arc(ir.x, ir.y, ir.currRadius || ir.radius, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
     }
 
     // 6. Draw Slashes
@@ -4973,6 +5800,18 @@
         ctx.beginPath();
         ctx.arc(0, 0, state.pickupRadius, 0, Math.PI * 2);
         ctx.stroke();
+
+        // Hero Musou Active Domain Ground Ring
+        if (state.musouDomainTimer > 0) {
+          ctx.rotate(performance.now() * 0.004);
+          ctx.strokeStyle = state.hero.color || '#ffd740';
+          ctx.lineWidth = 3.5;
+          ctx.setLineDash([16, 10]);
+          ctx.beginPath();
+          ctx.arc(0, 0, 96, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
         ctx.restore();
 
         drawSurvivorCharacter({
@@ -5056,8 +5895,10 @@
     for (const ep of state.enemyProjectiles) {
       ctx.save();
       ctx.translate(ep.x, ep.y);
-      ctx.fillStyle = '#ff1744';
+      ctx.fillStyle = ep.color || '#ff1744';
       ctx.strokeStyle = '#ffffff';
+      ctx.shadowColor = ep.color || '#ff1744';
+      ctx.shadowBlur = 8;
       ctx.lineWidth = 1.8;
       ctx.beginPath();
       ctx.arc(0, 0, ep.radius, 0, Math.PI * 2);
@@ -5071,11 +5912,11 @@
       ctx.save();
       ctx.strokeStyle = l.color || '#e1bee7';
       ctx.shadowColor = l.color || '#b388ff';
-      ctx.shadowBlur = 12;
-      ctx.lineWidth = 3.5;
+      ctx.shadowBlur = 14;
+      ctx.lineWidth = 4;
       ctx.beginPath();
       ctx.moveTo(l.x1, l.y1);
-      ctx.lineTo((l.x1 + l.x2) / 2 + (Math.random() - 0.5) * 20, (l.y1 + l.y2) / 2 + (Math.random() - 0.5) * 20);
+      ctx.lineTo((l.x1 + l.x2) / 2 + (Math.random() - 0.5) * 24, (l.y1 + l.y2) / 2 + (Math.random() - 0.5) * 24);
       ctx.lineTo(l.x2, l.y2);
       ctx.stroke();
       ctx.restore();
@@ -5107,8 +5948,21 @@
 
     ctx.restore();
 
+    // 14. Screen-Space Tension Overlays (Domain Speed Lines, Boss Menace, Kill-Streak Stamp)
+    drawScreenTensionEffects();
+
+    // 15. Full-Screen Hero Musou & Boss Ultimate Cut-In Banner ("無雙與BOSS大招刷幕")
+    if (state.cutIn) {
+      drawCutInBanner(state.cutIn);
+    }
+
+    // 16. Interactive Hero Slays Boss Victory Cut-In ("英雄打敗BOSS凱旋刷幕 — 點擊畫面進補給")
+    if (state.bossVictoryCutIn) {
+      drawBossVictoryCutIn(state.bossVictoryCutIn);
+    }
+
     // Virtual One-Finger Joystick
-    if (pointer.active && state.phase === 'WAVE') {
+    if (pointer.active && state.phase === 'WAVE' && !state.cutIn && !state.bossVictoryCutIn) {
       ctx.save();
       ctx.strokeStyle = 'rgba(247, 215, 121, 0.5)';
       ctx.lineWidth = 2;
@@ -5126,6 +5980,718 @@
       ctx.fill();
       ctx.restore();
     }
+  }
+
+  function drawScreenTensionEffects() {
+    const cw = canvas.width;
+    const ch = canvas.height;
+    const cx = cw / 2;
+    const cy = ch / 2;
+
+    // 1. Boss Menace / Hero Musou / Low HP Edge Vignette
+    const hasBoss = !!state.boss;
+    const isLowHp = state.phase === 'WAVE' && state.hp > 0 && state.hp / state.maxHp < 0.35;
+    if (state.musouDomainTimer > 0 || state.bossDomainTimer > 0 || hasBoss || isLowHp) {
+      ctx.save();
+      const outerR = Math.hypot(cw, ch) * 0.58;
+      const innerR = Math.min(cw, ch) * 0.30;
+      const vGrad = ctx.createRadialGradient(cx, cy, innerR, cx, cy, outerR);
+      vGrad.addColorStop(0, 'rgba(0,0,0,0)');
+
+      if (state.musouDomainTimer > 0) {
+        vGrad.addColorStop(1, (state.hero.color || '#ffd740') + '44');
+      } else if (state.bossDomainTimer > 0) {
+        vGrad.addColorStop(1, 'rgba(255, 23, 68, 0.42)');
+      } else if (isLowHp) {
+        const pulse = 0.22 + Math.abs(Math.sin(performance.now() * 0.008)) * 0.25;
+        vGrad.addColorStop(1, `rgba(213, 0, 0, ${pulse})`);
+      } else {
+        vGrad.addColorStop(1, 'rgba(140, 12, 24, 0.22)');
+      }
+
+      ctx.fillStyle = vGrad;
+      ctx.fillRect(0, 0, cw, ch);
+
+      // Anime Perimeter Speed Lines during Hero Musou Domain or Boss Ultimate Domain!
+      if (!reduceMotion && (state.musouDomainTimer > 0 || state.bossDomainTimer > 0)) {
+        const isHeroDom = state.musouDomainTimer > 0;
+        ctx.strokeStyle = isHeroDom ? (state.hero.color || '#ffd740') : '#ff1744';
+        ctx.globalAlpha = 0.36;
+        ctx.lineWidth = 2.2;
+        const t = Math.floor(performance.now() / 45);
+        for (let i = 0; i < 28; i++) {
+          const a = (i * Math.PI * 2) / 28 + ((t + i * 7) % 5) * 0.02;
+          const r1 = outerR * (0.68 + ((t + i * 3) % 4) * 0.04);
+          const r2 = outerR * 1.05;
+          ctx.beginPath();
+          ctx.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
+          ctx.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2);
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+
+    // 2. Impact Screen Flash
+    if (state.screenFlash && !reduceMotion) {
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, (state.screenFlash.life / state.screenFlash.maxLife) * 0.42);
+      ctx.fillStyle = state.screenFlash.color || '#ffffff';
+      ctx.fillRect(0, 0, cw, ch);
+      ctx.restore();
+    }
+
+    // 3. Musou Kill-Streak Callout Stamp (百人斬 / 千人斬 戰報)
+    if (state.killBanner && state.phase === 'WAVE') {
+      const kb = state.killBanner;
+      const elapsed = kb.maxTimer - kb.timer;
+      const slideIn = Math.min(1, elapsed / 0.18);
+      const fadeOut = Math.min(1, kb.timer / 0.30);
+      const bannerW = Math.min(280, cw * 0.65);
+      const bannerH = 66;
+      const bx = cw - bannerW - 18 + (1 - slideIn) * 140;
+      const by = Math.max(84, ch * 0.20);
+
+      ctx.save();
+      ctx.globalAlpha = fadeOut;
+      ctx.translate(bx, by);
+      ctx.transform(1, 0, -0.18, 1, 0, 0);
+
+      const bg = ctx.createLinearGradient(0, 0, bannerW, 0);
+      bg.addColorStop(0, 'rgba(20, 12, 8, 0.92)');
+      bg.addColorStop(0.65, 'rgba(95, 22, 16, 0.92)');
+      bg.addColorStop(1, 'rgba(212, 168, 79, 0.88)');
+      ctx.fillStyle = bg;
+      ctx.strokeStyle = '#ffd740';
+      ctx.lineWidth = 2.5;
+      ctx.fillRect(0, 0, bannerW, bannerH);
+      ctx.strokeRect(0, 0, bannerW, bannerH);
+
+      ctx.transform(1, 0, 0.18, 1, 0, 0);
+      ctx.font = '900 22px "Noto Serif TC", serif';
+      ctx.fillStyle = '#ffd740';
+      ctx.shadowColor = '#ff3d00';
+      ctx.shadowBlur = 10;
+      ctx.fillText(`🔥 ${kb.count} 人斬！`, 16, 28);
+      ctx.shadowBlur = 0;
+
+      ctx.font = '800 13px "Noto Sans TC", sans-serif';
+      ctx.fillStyle = '#fff8e1';
+      ctx.fillText(`${kb.title}｜${kb.sub}`, 16, 50);
+      ctx.restore();
+    }
+  }
+
+  function drawCutInBanner(ci) {
+    const cw = canvas.width;
+    const ch = canvas.height;
+    const cx = cw / 2;
+    const cy = ch / 2;
+    const elapsed = ci.duration - ci.timer;
+    const enterProg = Math.min(1, elapsed / 0.16);
+    const exitProg = Math.min(1, ci.timer / 0.14);
+    const easeEnter = 1 - Math.pow(1 - enterProg, 3);
+    const isBoss = !!ci.isBoss;
+    const mainColor = ci.color || (isBoss ? '#ff1744' : '#ffd740');
+
+    ctx.save();
+    ctx.globalAlpha = exitProg;
+
+    // 1. Full-Screen Dark Ink Backdrop
+    ctx.fillStyle = isBoss ? 'rgba(14, 3, 6, 0.80)' : 'rgba(6, 8, 16, 0.78)';
+    ctx.fillRect(0, 0, cw, ch);
+
+    // 2. Full-Screen High-Speed Action Lines (集中線與閃電刀光)
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.strokeStyle = mainColor;
+    ctx.lineWidth = 2.5;
+    const tick = Math.floor(performance.now() / 35);
+    for (let i = 0; i < 36; i++) {
+      const a = (i * Math.PI * 2) / 36 + ((tick + i * 5) % 7) * 0.015;
+      const rIn = Math.min(cw, ch) * (0.16 + ((tick + i * 3) % 5) * 0.05);
+      const rOut = Math.hypot(cw, ch) * 0.65;
+      ctx.globalAlpha = exitProg * (i % 2 === 0 ? 0.42 : 0.20);
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * rIn, Math.sin(a) * rIn);
+      ctx.lineTo(Math.cos(a) * rOut, Math.sin(a) * rOut);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // 3. Giant Slanted Slash Banner ("無雙與魔將大招刷幕")
+    const bandH = Math.max(210, Math.min(310, ch * 0.40));
+    const tilt = isBoss ? 0.11 : -0.11;
+    const slideDir = isBoss ? 1 : -1;
+    const slideOffset = (1 - easeEnter) * cw * 0.85 * slideDir;
+
+    ctx.save();
+    ctx.translate(cx + slideOffset, cy);
+    ctx.rotate(tilt);
+
+    const bandW = cw * 1.35;
+    const bandGrad = ctx.createLinearGradient(-bandW / 2, 0, bandW / 2, 0);
+    if (isBoss) {
+      bandGrad.addColorStop(0, 'rgba(18, 4, 8, 0.96)');
+      bandGrad.addColorStop(0.35, 'rgba(95, 10, 22, 0.96)');
+      bandGrad.addColorStop(0.72, mainColor + 'dd');
+      bandGrad.addColorStop(1, 'rgba(20, 4, 8, 0.96)');
+    } else {
+      bandGrad.addColorStop(0, 'rgba(10, 14, 24, 0.96)');
+      bandGrad.addColorStop(0.28, mainColor + 'cc');
+      bandGrad.addColorStop(0.68, 'rgba(32, 22, 12, 0.96)');
+      bandGrad.addColorStop(1, 'rgba(10, 8, 6, 0.96)');
+    }
+
+    ctx.fillStyle = bandGrad;
+    ctx.fillRect(-bandW / 2, -bandH / 2, bandW, bandH);
+
+    // Top & Bottom Glowing Gold / Crimson Slash Rails
+    ctx.strokeStyle = isBoss ? '#ffeb3b' : '#ffd740';
+    ctx.shadowColor = mainColor;
+    ctx.shadowBlur = 22;
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(-bandW / 2, -bandH / 2);
+    ctx.lineTo(bandW / 2, -bandH / 2);
+    ctx.moveTo(-bandW / 2, bandH / 2);
+    ctx.lineTo(bandW / 2, bandH / 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-bandW / 2, -bandH / 2 + 8);
+    ctx.lineTo(bandW / 2, -bandH / 2 + 8);
+    ctx.moveTo(-bandW / 2, bandH / 2 - 8);
+    ctx.lineTo(bandW / 2, bandH / 2 - 8);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Giant Watermark Kanji inside the Slash Band
+    ctx.font = `900 ${Math.round(bandH * 0.78)}px "Noto Serif TC", serif`;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(isBoss ? '魔將天罰・必殺奧義' : '天下無雙・神兵覺醒', 0, 0);
+
+    // Speed streaks inside the Slash Band
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+    ctx.lineWidth = 3;
+    for (let s = 0; s < 10; s++) {
+      const sy = -bandH * 0.42 + (s * bandH * 0.84) / 9;
+      const sx = ((tick * 65 + s * 170) % (bandW * 0.8)) - bandW * 0.4;
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(sx + 180, sy);
+      ctx.stroke();
+    }
+
+    // 4. Huge Character Artwork (Portrait Crest + Giant 2.5D Rig + Wielded Weapon)
+    const isNarrow = cw < 640;
+    const artX = isBoss
+      ? (isNarrow ? cw * 0.24 : cw * 0.26)
+      : (isNarrow ? -cw * 0.24 : -cw * 0.26);
+    const artScale = isNarrow ? 0.82 : 1.0;
+
+    ctx.save();
+    ctx.translate(artX, 0);
+    ctx.rotate(-tilt * 0.65);
+
+    // Glowing Aura Halo behind Character
+    const haloR = bandH * 0.66 * artScale;
+    const haloGrad = ctx.createRadialGradient(0, 0, haloR * 0.1, 0, 0, haloR);
+    haloGrad.addColorStop(0, '#ffffff');
+    haloGrad.addColorStop(0.35, mainColor);
+    haloGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = haloGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, haloR, 0, Math.PI * 2);
+    ctx.fill();
+
+    // High-Resolution Portrait Medallion (Huge Hero / Boss Image!)
+    const pImg = IMAGES[ci.portraitKey];
+    const portSize = bandH * 0.96 * artScale;
+    if (pImg && pImg.complete && pImg.naturalWidth > 0) {
+      ctx.save();
+      const portOffsetX = isBoss ? portSize * 0.22 : -portSize * 0.22;
+      ctx.translate(portOffsetX, -bandH * 0.04);
+      ctx.beginPath();
+      ctx.arc(0, 0, portSize * 0.50, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.drawImage(pImg, -portSize * 0.50, -portSize * 0.50, portSize, portSize);
+      ctx.restore();
+
+      ctx.save();
+      ctx.translate(isBoss ? portSize * 0.22 : -portSize * 0.22, -bandH * 0.04);
+      ctx.strokeStyle = isBoss ? '#ffeb3b' : '#ffd740';
+      ctx.lineWidth = 4.5;
+      ctx.beginPath();
+      ctx.arc(0, 0, portSize * 0.50, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Giant 2.5D Cutout Character Rig & Signature Weapon Bursting Out of the Banner!
+    const bodyRig = CUTOUT_RIGS[ci.bodyKey];
+    if (bodyRig && bodyRig.normal) {
+      ctx.save();
+      const rigOffsetX = isBoss ? -portSize * 0.16 : portSize * 0.16;
+      ctx.translate(rigOffsetX, bandH * 0.36 * artScale);
+      ctx.scale(isBoss ? -1 : 1, 1);
+      ctx.shadowColor = mainColor;
+      ctx.shadowBlur = 26;
+      const rigH = bandH * 1.12 * artScale;
+      const rigW = rigH * (bodyRig.aspect || 1);
+      ctx.drawImage(bodyRig.normal, -rigW / 2, -rigH, rigW, rigH);
+
+      const wRig = CUTOUT_RIGS[ci.wpnKey];
+      if (wRig && wRig.normal) {
+        ctx.save();
+        ctx.translate(rigH * 0.22, -rigH * 0.42);
+        ctx.rotate(-0.38);
+        ctx.shadowColor = '#ffd740';
+        ctx.shadowBlur = 20;
+        const wLen = rigH * 0.88;
+        const wH = wLen / Math.max(0.55, wRig.aspect || 1.6);
+        ctx.drawImage(wRig.normal, -wLen * 0.28, -wH / 2, wLen, wH);
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+    ctx.restore();
+
+    // 5. Colossal Calligraphic Skill Name & Actor Banner Text
+    const textX = isBoss
+      ? (isNarrow ? -cw * 0.10 : -cw * 0.14)
+      : (isNarrow ? cw * 0.10 : cw * 0.14);
+    const slamProg = Math.min(1, elapsed / 0.22);
+    const textScale = 1 + (1 - slamProg) * 1.15;
+
+    ctx.save();
+    ctx.translate(textX, 0);
+    ctx.scale(textScale, textScale);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Actor Title & Name Pill
+    const badgeFont = isNarrow ? 13 : 16;
+    ctx.font = `900 ${badgeFont}px "Noto Sans TC", sans-serif`;
+    const headerText = `${ci.actorTitle}｜${ci.actorName}`;
+    const headerW = ctx.measureText(headerText).width + 32;
+    ctx.fillStyle = isBoss ? 'rgba(183, 28, 28, 0.92)' : 'rgba(20, 16, 10, 0.90)';
+    ctx.strokeStyle = '#ffd740';
+    ctx.lineWidth = 2;
+    ctx.fillRect(-headerW / 2, -bandH * 0.31 - 15, headerW, 30);
+    ctx.strokeRect(-headerW / 2, -bandH * 0.31 - 15, headerW, 30);
+
+    ctx.fillStyle = '#ffd740';
+    ctx.fillText(headerText, 0, -bandH * 0.31);
+
+    // Main Ultimate Skill Name (Giant Calligraphic Brush Typography)
+    const skillFontSize = isNarrow ? 30 : Math.min(56, Math.max(36, Math.round(cw * 0.042)));
+    ctx.font = `900 ${skillFontSize}px "Noto Serif TC", serif`;
+    const skillText = `「${ci.skillName}」`;
+
+    ctx.shadowColor = mainColor;
+    ctx.shadowBlur = 24;
+    ctx.strokeStyle = '#080506';
+    ctx.lineWidth = isNarrow ? 7 : 10;
+    ctx.strokeText(skillText, 0, 2);
+
+    const textGrad = ctx.createLinearGradient(0, -skillFontSize * 0.6, 0, skillFontSize * 0.6);
+    textGrad.addColorStop(0, '#ffffff');
+    textGrad.addColorStop(0.45, '#ffe082');
+    textGrad.addColorStop(1, isBoss ? '#ff8a65' : '#ffd54f');
+    ctx.fillStyle = textGrad;
+    ctx.fillText(skillText, 0, 2);
+    ctx.shadowBlur = 0;
+
+    // Battle Cry Quote Strip
+    if (ci.quote) {
+      const quoteFont = isNarrow ? 12 : 15;
+      ctx.font = `800 ${quoteFont}px "Noto Sans TC", sans-serif`;
+      ctx.strokeStyle = 'rgba(0,0,0,0.92)';
+      ctx.lineWidth = 4;
+      ctx.strokeText(ci.quote, 0, bandH * 0.28);
+      ctx.fillStyle = '#fff8e1';
+      ctx.fillText(ci.quote, 0, bandH * 0.28);
+    }
+
+    ctx.restore();
+    ctx.restore();
+    ctx.restore();
+  }
+
+  function drawBossVictoryCutIn(vc) {
+    const cw = canvas.width;
+    const ch = canvas.height;
+    const cx = cw / 2;
+    const cy = ch / 2;
+    const elapsed = vc.elapsed || 0;
+    const enterProg = Math.min(1, elapsed / 0.18);
+    const easeEnter = 1 - Math.pow(1 - enterProg, 3);
+    const isNarrow = cw < 680;
+    const heroColor = vc.heroColor || '#ffd740';
+
+    ctx.save();
+
+    // 1. Deep Cinematic Ink & Golden Crimson Backdrop
+    ctx.fillStyle = 'rgba(6, 5, 10, 0.85)';
+    ctx.fillRect(0, 0, cw, ch);
+
+    // 2. 40-Ray High-Speed Radial Action Lines (全屏無雙集中線)
+    ctx.save();
+    ctx.translate(cx, cy);
+    const tick = Math.floor(performance.now() / 35);
+    for (let i = 0; i < 40; i++) {
+      const a = (i * Math.PI * 2) / 40 + ((tick + i * 5) % 7) * 0.014;
+      const rIn = Math.min(cw, ch) * (0.14 + ((tick + i * 3) % 5) * 0.045);
+      const rOut = Math.hypot(cw, ch) * 0.68;
+      ctx.strokeStyle = i % 2 === 0 ? '#ffd740' : heroColor;
+      ctx.lineWidth = i % 3 === 0 ? 3.2 : 1.8;
+      ctx.globalAlpha = i % 2 === 0 ? 0.42 : 0.22;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * rIn, Math.sin(a) * rIn);
+      ctx.lineTo(Math.cos(a) * rOut, Math.sin(a) * rOut);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // 3. Giant Slanted Clash & Execution Banner ("英雄斬殺BOSS刷幕")
+    const bandH = Math.max(220, Math.min(335, ch * 0.43));
+    const tilt = -0.085;
+    const slideOffset = (1 - easeEnter) * cw * 0.85;
+
+    ctx.save();
+    ctx.translate(cx - slideOffset, cy - ch * 0.03);
+    ctx.rotate(tilt);
+
+    const bandW = cw * 1.38;
+    const bandGrad = ctx.createLinearGradient(-bandW / 2, 0, bandW / 2, 0);
+    bandGrad.addColorStop(0, 'rgba(12, 16, 28, 0.97)');
+    bandGrad.addColorStop(0.28, heroColor + 'cc');
+    bandGrad.addColorStop(0.55, 'rgba(28, 16, 10, 0.97)');
+    bandGrad.addColorStop(0.82, 'rgba(110, 12, 20, 0.95)');
+    bandGrad.addColorStop(1, 'rgba(14, 4, 6, 0.97)');
+
+    ctx.fillStyle = bandGrad;
+    ctx.fillRect(-bandW / 2, -bandH / 2, bandW, bandH);
+
+    // Double Glowing Golden Dragon Rails
+    ctx.strokeStyle = '#ffd740';
+    ctx.shadowColor = '#ffd740';
+    ctx.shadowBlur = 24;
+    ctx.lineWidth = 6.5;
+    ctx.beginPath();
+    ctx.moveTo(-bandW / 2, -bandH / 2);
+    ctx.lineTo(bandW / 2, -bandH / 2);
+    ctx.moveTo(-bandW / 2, bandH / 2);
+    ctx.lineTo(bandW / 2, bandH / 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-bandW / 2, -bandH / 2 + 8);
+    ctx.lineTo(bandW / 2, -bandH / 2 + 8);
+    ctx.moveTo(-bandW / 2, bandH / 2 - 8);
+    ctx.lineTo(bandW / 2, bandH / 2 - 8);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Giant Watermark Kanji inside the Banner
+    ctx.font = `900 ${Math.round(bandH * 0.72)}px "Noto Serif TC", serif`;
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.07)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('一騎討伐・斬將奪旗', 0, 0);
+
+    // Horizontal Speed Streaks
+    ctx.strokeStyle = 'rgba(255, 235, 130, 0.24)';
+    ctx.lineWidth = 3;
+    for (let s = 0; s < 10; s++) {
+      const sy = -bandH * 0.42 + (s * bandH * 0.84) / 9;
+      const sx = ((tick * 70 + s * 165) % (bandW * 0.8)) - bandW * 0.4;
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(sx + 200, sy);
+      ctx.stroke();
+    }
+
+    const artScale = isNarrow ? 0.76 : 1.0;
+
+    // 4. LEFT SIDE: Triumphant Hero Portrait Medallion + Giant 2.5D Hero Rig + Wielded Weapon
+    const heroX = isNarrow ? -cw * 0.28 : -cw * 0.30;
+    ctx.save();
+    ctx.translate(heroX, 0);
+    ctx.rotate(-tilt * 0.65);
+
+    const haloR = bandH * 0.68 * artScale;
+    const haloGrad = ctx.createRadialGradient(0, 0, haloR * 0.1, 0, 0, haloR);
+    haloGrad.addColorStop(0, '#ffffff');
+    haloGrad.addColorStop(0.38, heroColor);
+    haloGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = haloGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, haloR, 0, Math.PI * 2);
+    ctx.fill();
+
+    const hImg = IMAGES[vc.heroPortraitKey];
+    const portSize = bandH * 0.96 * artScale;
+    if (hImg && hImg.complete && hImg.naturalWidth > 0) {
+      ctx.save();
+      ctx.translate(-portSize * 0.20, -bandH * 0.04);
+      ctx.beginPath();
+      ctx.arc(0, 0, portSize * 0.50, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.drawImage(hImg, -portSize * 0.50, -portSize * 0.50, portSize, portSize);
+      ctx.restore();
+
+      ctx.save();
+      ctx.translate(-portSize * 0.20, -bandH * 0.04);
+      ctx.strokeStyle = '#ffd740';
+      ctx.lineWidth = 4.5;
+      ctx.beginPath();
+      ctx.arc(0, 0, portSize * 0.50, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    const hBodyRig = CUTOUT_RIGS[vc.heroBodyKey];
+    if (hBodyRig && hBodyRig.normal) {
+      ctx.save();
+      ctx.translate(portSize * 0.18, bandH * 0.38 * artScale);
+      ctx.shadowColor = '#ffd740';
+      ctx.shadowBlur = 28;
+      const rigH = bandH * 1.14 * artScale;
+      const rigW = rigH * (hBodyRig.aspect || 1);
+      ctx.drawImage(hBodyRig.normal, -rigW / 2, -rigH, rigW, rigH);
+
+      const hWpnRig = CUTOUT_RIGS[vc.heroWpnKey];
+      if (hWpnRig && hWpnRig.normal) {
+        ctx.save();
+        ctx.translate(rigH * 0.24, -rigH * 0.44);
+        ctx.rotate(-0.48);
+        ctx.shadowColor = '#ffd740';
+        ctx.shadowBlur = 22;
+        const wLen = rigH * 0.92;
+        const wH = wLen / Math.max(0.55, hWpnRig.aspect || 1.6);
+        ctx.drawImage(hWpnRig.normal, -wLen * 0.25, -wH / 2, wLen, wH);
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+    ctx.restore();
+
+    // 5. RIGHT SIDE: Slain Boss Split in Two ("一刀兩斷錯位斬裂") + Vermilion Seal Stamp ("【討伐大捷・斬】")
+    const bossX = isNarrow ? cw * 0.28 : cw * 0.30;
+    const splitShift = Math.min(18, Math.max(0, (elapsed - 0.12) * 55));
+    ctx.save();
+    ctx.translate(bossX, 0);
+    ctx.rotate(-tilt * 0.65);
+
+    const drawBossFigure = () => {
+      const bImg = IMAGES[vc.bossPortraitKey];
+      const bPortSize = bandH * 0.86 * artScale;
+      if (bImg && bImg.complete && bImg.naturalWidth > 0) {
+        ctx.save();
+        ctx.translate(bPortSize * 0.16, -bandH * 0.05);
+        ctx.beginPath();
+        ctx.arc(0, 0, bPortSize * 0.48, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(bImg, -bPortSize * 0.48, -bPortSize * 0.48, bPortSize, bPortSize);
+        ctx.fillStyle = 'rgba(180, 14, 24, 0.28)';
+        ctx.fillRect(-bPortSize * 0.5, -bPortSize * 0.5, bPortSize, bPortSize);
+        ctx.restore();
+      }
+      const bBodyRig = CUTOUT_RIGS[vc.bossBodyKey];
+      if (bBodyRig && bBodyRig.normal) {
+        ctx.save();
+        ctx.translate(-bPortSize * 0.12, bandH * 0.35 * artScale);
+        ctx.scale(-1, 1);
+        const rigH = bandH * 1.02 * artScale;
+        const rigW = rigH * (bBodyRig.aspect || 1);
+        ctx.drawImage(bBodyRig.normal, -rigW / 2, -rigH, rigW, rigH);
+        ctx.restore();
+      }
+    };
+
+    // Upper-left half of slain Boss
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(-300, -300);
+    ctx.lineTo(300, -300);
+    ctx.lineTo(-220, 300);
+    ctx.closePath();
+    ctx.clip();
+    ctx.translate(-splitShift * 0.7, -splitShift * 0.45);
+    drawBossFigure();
+    ctx.restore();
+
+    // Lower-right half of slain Boss
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(300, -300);
+    ctx.lineTo(300, 300);
+    ctx.lineTo(-220, 300);
+    ctx.closePath();
+    ctx.clip();
+    ctx.translate(splitShift * 0.7, splitShift * 0.45);
+    drawBossFigure();
+    ctx.restore();
+
+    // Blazing Lethal Diagonal Sword Slash Line cutting across the Boss!
+    const slashLen = bandH * 1.15 * artScale;
+    ctx.save();
+    ctx.rotate(-0.68);
+    ctx.strokeStyle = '#ff1744';
+    ctx.shadowColor = '#ffd740';
+    ctx.shadowBlur = 24;
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.moveTo(-slashLen, 0);
+    ctx.lineTo(slashLen, 0);
+    ctx.stroke();
+
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 3.5;
+    ctx.beginPath();
+    ctx.moveTo(-slashLen * 1.08, 0);
+    ctx.lineTo(slashLen * 1.08, 0);
+    ctx.stroke();
+    ctx.restore();
+
+    // Vermilion Victory Stamp ("【斬】") slammed over the defeated Boss
+    const stampProg = Math.min(1, Math.max(0, (elapsed - 0.15) / 0.16));
+    if (stampProg > 0) {
+      const stampScale = 1 + (1 - stampProg) * 1.3;
+      ctx.save();
+      ctx.translate(0, bandH * 0.06);
+      ctx.rotate(0.18);
+      ctx.scale(stampScale, stampScale);
+      ctx.fillStyle = 'rgba(183, 28, 28, 0.92)';
+      ctx.strokeStyle = '#ffd740';
+      ctx.lineWidth = 3;
+      const sw = 88 * artScale;
+      const sh = 42 * artScale;
+      ctx.fillRect(-sw / 2, -sh / 2, sw, sh);
+      ctx.strokeRect(-sw / 2, -sh / 2, sw, sh);
+      ctx.font = `900 ${Math.round(24 * artScale)}px "Noto Serif TC", serif`;
+      ctx.fillStyle = '#ffd740';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('討伐・斬', 0, 1);
+      ctx.restore();
+    }
+    ctx.restore();
+
+    // 6. CENTER FOREGROUND: Calligraphic Brush Victory Title & Spoils
+    const slamProg = Math.min(1, elapsed / 0.22);
+    const textScale = 1 + (1 - slamProg) * 1.15;
+
+    ctx.save();
+    ctx.scale(textScale, textScale);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Top Hero Title Badge
+    const badgeFont = isNarrow ? 12 : 15;
+    ctx.font = `900 ${badgeFont}px "Noto Sans TC", sans-serif`;
+    const headerText = `👑 ${vc.heroBadge}・${vc.heroName} ｜ 擊破${vc.bossRole}`;
+    const headerW = ctx.measureText(headerText).width + 32;
+    ctx.fillStyle = 'rgba(20, 14, 8, 0.94)';
+    ctx.strokeStyle = '#ffd740';
+    ctx.lineWidth = 2.2;
+    ctx.fillRect(-headerW / 2, -bandH * 0.33 - 15, headerW, 30);
+    ctx.strokeRect(-headerW / 2, -bandH * 0.33 - 15, headerW, 30);
+    ctx.fillStyle = '#ffd740';
+    ctx.fillText(headerText, 0, -bandH * 0.33);
+
+    // Main Boss Slain Calligraphic Brush Headline
+    const mainFontSize = isNarrow ? 26 : Math.min(50, Math.max(32, Math.round(cw * 0.038)));
+    ctx.font = `900 ${mainFontSize}px "Noto Serif TC", serif`;
+    const mainText = `「陣前斬將・${vc.bossName} 討取！」`;
+
+    ctx.shadowColor = '#ff3d00';
+    ctx.shadowBlur = 26;
+    ctx.strokeStyle = '#080506';
+    ctx.lineWidth = isNarrow ? 7 : 10;
+    ctx.strokeText(mainText, 0, -4);
+
+    const textGrad = ctx.createLinearGradient(0, -mainFontSize * 0.6, 0, mainFontSize * 0.6);
+    textGrad.addColorStop(0, '#ffffff');
+    textGrad.addColorStop(0.45, '#ffe082');
+    textGrad.addColorStop(1, '#ffb300');
+    ctx.fillStyle = textGrad;
+    ctx.fillText(mainText, 0, -4);
+    ctx.shadowBlur = 0;
+
+    // Hero Victory Quote
+    const quoteFont = isNarrow ? 12 : 15;
+    ctx.font = `800 ${quoteFont}px "Noto Sans TC", sans-serif`;
+    ctx.strokeStyle = 'rgba(0,0,0,0.94)';
+    ctx.lineWidth = 4;
+    ctx.strokeText(vc.victoryQuote, 0, bandH * 0.19);
+    ctx.fillStyle = '#fff8e1';
+    ctx.fillText(vc.victoryQuote, 0, bandH * 0.19);
+
+    // Spoils & Camp Recovery Strip
+    const spoilFont = isNarrow ? 11.5 : 13.5;
+    ctx.font = `800 ${spoilFont}px "Noto Sans TC", sans-serif`;
+    const spoilText = `✨ 斬將賞賜 +${vc.jadeReward} 戰功翠玉 ｜ 營帳休整回復 35% 氣血`;
+    ctx.strokeStyle = 'rgba(0,0,0,0.92)';
+    ctx.lineWidth = 3.5;
+    ctx.strokeText(spoilText, 0, bandH * 0.36);
+    ctx.fillStyle = '#69f0ae';
+    ctx.fillText(spoilText, 0, bandH * 0.36);
+
+    ctx.restore();
+    ctx.restore();
+
+    // 7. Interactive Click-to-Advance Prompt Banner at Bottom ("玩家點畫面後，才會跳到補給那邊去")
+    const ready = elapsed >= 0.38;
+    const pulse = 1 + Math.sin(performance.now() * 0.008) * 0.04;
+    const promptY = Math.min(ch - 54, cy + bandH * 0.66);
+    const promptW = Math.min(cw * 0.90, isNarrow ? 340 : 480);
+    const promptH = isNarrow ? 44 : 50;
+
+    ctx.save();
+    ctx.translate(cx, promptY);
+    if (ready) ctx.scale(pulse, pulse);
+
+    const btnGrad = ctx.createLinearGradient(0, -promptH / 2, 0, promptH / 2);
+    if (ready) {
+      btnGrad.addColorStop(0, '#f5ce6e');
+      btnGrad.addColorStop(1, '#b8821e');
+    } else {
+      btnGrad.addColorStop(0, 'rgba(40, 32, 24, 0.92)');
+      btnGrad.addColorStop(1, 'rgba(22, 18, 14, 0.92)');
+    }
+    ctx.fillStyle = btnGrad;
+    ctx.strokeStyle = '#fff8e1';
+    ctx.shadowColor = 'rgba(255, 215, 64, 0.65)';
+    ctx.shadowBlur = ready ? 20 : 6;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.roundRect(-promptW / 2, -promptH / 2, promptW, promptH, 12);
+    ctx.fill();
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    ctx.font = `900 ${isNarrow ? 14 : 17}px "Noto Serif TC", serif`;
+    ctx.fillStyle = ready ? '#17110a' : '#ffd740';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const promptLabel = !ready
+      ? '⚔️ 敵將討伐大捷！戰功結算中...'
+      : (vc.isFinalWave
+          ? '👑 點擊畫面任意處 ／ 按空白鍵 迎接一統天下大捷 👑'
+          : '👉 點擊畫面任意處 ／ 按空白鍵 前往中軍補給營帳 👈');
+    ctx.fillText(promptLabel, 0, 1);
+    ctx.restore();
+
+    ctx.restore();
   }
 
   function loop(now) {
@@ -5147,8 +6713,16 @@
     document.getElementById('jadeCount').textContent = state.jade;
 
     const timerEl = document.getElementById('waveTimer');
-    timerEl.textContent = Math.max(0, state.waveTimer).toFixed(1);
-    timerEl.classList.toggle('danger', state.waveTimer <= 5.0);
+    const currentWave = WAVES[state.waveIdx];
+    if (currentWave && currentWave.boss) {
+      timerEl.style.fontSize = '15px';
+      timerEl.textContent = state.bossVictoryCutIn ? '🏆 討伐大捷' : '⚔️ 擊破BOSS過關';
+      timerEl.classList.add('danger');
+    } else {
+      timerEl.style.fontSize = '';
+      timerEl.textContent = Math.max(0, state.waveTimer).toFixed(1);
+      timerEl.classList.toggle('danger', state.waveTimer <= 5.0);
+    }
 
     if (state.boss) {
       const bPct = Math.max(0, (state.boss.hp / state.boss.maxHp) * 100);
@@ -5516,6 +7090,13 @@
   // =========================================================================
   window.addEventListener('keydown', (e) => {
     keys[e.code] = true;
+    if (state.phase === 'WAVE' && state.bossVictoryCutIn) {
+      if (e.code === 'Space' || e.code === 'Enter') {
+        e.preventDefault();
+        confirmBossVictoryCutIn();
+      }
+      return;
+    }
     if (e.code === 'Space' && state.phase === 'WAVE') {
       e.preventDefault();
       triggerMusou();
@@ -5526,9 +7107,18 @@
     keys[e.code] = false;
   });
 
+  // Global click/tap handler when Boss Victory Cut-In is waiting for player confirmation
+  window.addEventListener('pointerdown', (e) => {
+    if (state.phase === 'WAVE' && state.bossVictoryCutIn && state.bossVictoryCutIn.elapsed >= 0.38) {
+      e.preventDefault();
+      e.stopPropagation();
+      confirmBossVictoryCutIn();
+    }
+  }, true);
+
   canvas.addEventListener('pointerdown', (e) => {
     sfx.init();
-    if (state.phase !== 'WAVE') return;
+    if (state.phase !== 'WAVE' || state.bossVictoryCutIn) return;
     if (pointer.active && pointer.id !== null && pointer.id !== e.pointerId) return;
     pointer.active = true;
     pointer.id = e.pointerId;
