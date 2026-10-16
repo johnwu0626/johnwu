@@ -501,6 +501,7 @@
       max-height: 92vh;
       max-height: 92dvh;
       overflow-y: auto;
+      overflow-x: hidden;
       touch-action: pan-y;
       -webkit-overflow-scrolling: touch;
       background: linear-gradient(180deg, #211c18 0%, #120f0d 100%);
@@ -764,6 +765,8 @@
       border-radius: 12px;
       padding: 10px 14px;
       margin-top: 10px;
+      max-width: 100%;
+      box-sizing: border-box;
     }
 
     .campaign-select-input {
@@ -776,6 +779,9 @@
       font-size: 13px;
       font-weight: 700;
       cursor: pointer;
+      max-width: 100%;
+      box-sizing: border-box;
+      text-overflow: ellipsis;
     }
 
     .btn-continue {
@@ -784,13 +790,18 @@
       font-family: 'Noto Serif TC', serif;
       font-weight: 900;
       font-size: 16px;
-      padding: 11px 24px;
+      padding: 11px 22px;
       border-radius: 10px;
       border: 1px solid #9ef7c9;
       cursor: pointer;
-      letter-spacing: 1.2px;
+      letter-spacing: 1px;
       box-shadow: 0 6px 22px rgba(60, 163, 112, 0.45);
       transition: all 0.15s;
+      max-width: 100%;
+      box-sizing: border-box;
+      white-space: normal;
+      line-height: 1.35;
+      text-align: center;
     }
 
     .btn-continue:hover {
@@ -922,6 +933,11 @@
       letter-spacing: 1.5px;
       box-shadow: 0 6px 22px rgba(212, 168, 79, 0.4);
       transition: all 0.15s;
+      max-width: 100%;
+      box-sizing: border-box;
+      white-space: normal;
+      line-height: 1.35;
+      text-align: center;
     }
 
     .btn-primary:hover {
@@ -938,6 +954,11 @@
       padding: 8px 14px;
       border-radius: 8px;
       cursor: pointer;
+      max-width: 100%;
+      box-sizing: border-box;
+      white-space: normal;
+      line-height: 1.35;
+      text-align: center;
     }
 
     .btn-buy {
@@ -1006,6 +1027,78 @@
       font-size: 13px;
       text-align: center;
       box-shadow: 0 0 18px rgba(255, 215, 64, 0.4);
+    }
+
+    /* Mobile Portrait & Narrow Viewport RWD */
+    @media (max-width: 720px) {
+      .overlay {
+        padding: 8px;
+      }
+      .panel {
+        width: 96vw;
+        max-height: 94vh;
+        max-height: 94dvh;
+        padding: 12px 13px;
+        border-radius: 15px;
+      }
+      #titleOverlay .title-kv-wrap {
+        height: 102px !important;
+        margin-bottom: 8px;
+      }
+      .title-kv-overlay {
+        padding: 10px 12px;
+      }
+      .title-main {
+        font-size: clamp(21px, 5.5vw, 28px);
+        letter-spacing: 2px;
+      }
+      .title-sub {
+        font-size: 11.5px;
+        line-height: 1.3;
+      }
+      #savedRunCard {
+        padding: 10px 12px !important;
+        margin: 6px 0 8px !important;
+      }
+      #btnContinueTop {
+        width: 100% !important;
+        flex: 1 1 100% !important;
+        font-size: 14.5px !important;
+        padding: 10px 12px !important;
+      }
+      .controls-hint {
+        gap: 6px;
+        margin: 4px 0;
+        font-size: 11px;
+      }
+      .controls-hint span {
+        padding: 3px 8px;
+      }
+      .camp-section-title {
+        font-size: 13.5px;
+        margin: 6px 0;
+      }
+      .hero-grid {
+        max-height: none;
+        overflow-y: visible;
+        grid-template-columns: 1fr;
+        padding-right: 0;
+        gap: 8px;
+        margin: 8px 0;
+      }
+      .campaign-selector-bar {
+        padding: 9px 11px;
+      }
+      #chapterSelect {
+        width: 100%;
+        max-width: 100%;
+        font-size: 12px;
+      }
+      .btn-primary, .btn-continue {
+        width: 100%;
+        padding: 11px 14px;
+        font-size: 15px;
+      }
     }
   </style>
 </head>
@@ -1081,20 +1174,20 @@
       </div>
 
       <!-- Prominent Auto-Save Resume Banner at the very top of Title Screen -->
-      <div id="savedRunCard" style="display:none;background:linear-gradient(135deg, rgba(22, 56, 38, 0.95) 0%, rgba(18, 28, 22, 0.96) 100%);border:2px solid var(--jade-bright);border-radius:14px;padding:12px 16px;margin:8px 0 12px;box-shadow:0 8px 26px rgba(67, 198, 135, 0.28);">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-          <div style="display:flex;align-items:center;gap:12px;">
-            <img id="savedHeroAvatar" src="assets/hero_zhaoyun.webp" alt="Saved Hero" style="width:54px;height:54px;border-radius:50%;object-fit:cover;border:2.5px solid var(--gold-bright);box-shadow:0 4px 12px rgba(0,0,0,0.6);" />
-            <div>
+      <div id="savedRunCard" style="display:none;background:linear-gradient(135deg, rgba(22, 56, 38, 0.95) 0%, rgba(18, 28, 22, 0.96) 100%);border:2px solid var(--jade-bright);border-radius:14px;padding:12px 16px;margin:8px 0 12px;box-shadow:0 8px 26px rgba(67, 198, 135, 0.28);max-width:100%;box-sizing:border-box;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;width:100%;">
+          <div style="display:flex;align-items:center;gap:12px;flex:1 1 220px;min-width:0;">
+            <img id="savedHeroAvatar" src="assets/hero_zhaoyun.webp" alt="Saved Hero" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2.5px solid var(--gold-bright);box-shadow:0 4px 12px rgba(0,0,0,0.6);flex-shrink:0;" />
+            <div style="min-width:0;flex:1;">
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                 <span style="background:rgba(92,230,160,0.22);color:var(--jade-bright);border:1px solid var(--jade-bright);font-size:11px;font-weight:900;padding:2px 8px;border-radius:6px;">💾 自動存檔紀錄</span>
-                <span id="savedWaveTitle" style="font-family:'Noto Serif TC',serif;font-weight:900;font-size:16px;color:var(--gold-bright);">第 1 / 100 陣</span>
+                <span id="savedWaveTitle" style="font-family:'Noto Serif TC',serif;font-weight:900;font-size:15.5px;color:var(--gold-bright);">第 1 / 100 陣</span>
               </div>
-              <div id="savedStatsSummary" style="font-size:12px;color:#e8dfd1;margin-top:4px;"></div>
-              <div id="savedWeaponsSummary" style="font-size:11.5px;color:var(--jade-bright);margin-top:3px;font-weight:700;"></div>
+              <div id="savedStatsSummary" style="font-size:12px;color:#e8dfd1;margin-top:4px;word-break:break-word;"></div>
+              <div id="savedWeaponsSummary" style="font-size:11.5px;color:var(--jade-bright);margin-top:3px;font-weight:700;word-break:break-word;"></div>
             </div>
           </div>
-          <button class="btn-continue" id="btnContinueTop" type="button" style="font-size:16px;padding:12px 22px;white-space:nowrap;">▶ 繼續上次遠征</button>
+          <button class="btn-continue" id="btnContinueTop" type="button" style="font-size:15px;padding:11px 18px;flex:1 1 220px;max-width:100%;box-sizing:border-box;">▶ 繼續上次遠征</button>
         </div>
       </div>
 
@@ -1114,7 +1207,7 @@
       <div class="hero-grid" id="heroSelectGrid"></div>
 
       <div class="campaign-selector-bar">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-width:100%;">
           <span style="font-weight:800;font-size:13px;color:var(--gold-bright);">新開局章節 / 起始陣數：</span>
           <select id="chapterSelect" class="campaign-select-input">
             <option value="1">第 1 陣｜第一章：黃巾起義・符陣祭壇（1～10 陣）</option>
