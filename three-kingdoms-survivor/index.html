@@ -1533,8 +1533,18 @@
       }
     }
 
+    _throttle(key, minGap = 0.045) {
+      if (!this.ctx) return false;
+      if (!this._sfxTimestamps) this._sfxTimestamps = {};
+      const now = this.ctx.currentTime;
+      const prev = this._sfxTimestamps[key] || 0;
+      if (now - prev < minGap) return false;
+      this._sfxTimestamps[key] = now;
+      return true;
+    }
+
     playSlash() {
-      if (!this.enabled || !this.ctx) return;
+      if (!this.enabled || !this.ctx || !this._throttle('slash', 0.045)) return;
       const now = this.ctx.currentTime;
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
@@ -1550,13 +1560,13 @@
     }
 
     playHeavyImpact() {
-      if (!this.enabled || !this.ctx) return;
+      if (!this.enabled || !this.ctx || !this._throttle('heavy', 0.055)) return;
       this._playTaiko(155, 0.24, 0.30);
       this._playPercNoise(0.11, 0.14, 500);
     }
 
     playArrow() {
-      if (!this.enabled || !this.ctx) return;
+      if (!this.enabled || !this.ctx || !this._throttle('arrow', 0.045)) return;
       const now = this.ctx.currentTime;
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
@@ -1572,7 +1582,7 @@
     }
 
     playThunder() {
-      if (!this.enabled || !this.ctx) return;
+      if (!this.enabled || !this.ctx || !this._throttle('thunder', 0.055)) return;
       const now = this.ctx.currentTime;
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
@@ -1588,7 +1598,7 @@
     }
 
     playFireBurst() {
-      if (!this.enabled || !this.ctx) return;
+      if (!this.enabled || !this.ctx || !this._throttle('fire', 0.055)) return;
       this._playTaiko(120, 0.22, 0.24);
       this._playPercNoise(0.18, 0.16, 420);
     }
@@ -3451,39 +3461,47 @@
   function triggerExplosion(x, y, radius, dmg, isFriendly = true, color = '#ff6e40') {
     sfx.playFireBurst();
     triggerShake(0.26, 11);
-    state.slashes.push({
-      x, y,
-      ang: 0,
-      radius,
-      isFullCircle: true,
-      color,
-      life: 0.30,
-      maxLife: 0.30
-    });
-    state.impactRings.push({
-      x, y,
-      radius: radius * 0.2,
-      maxRadius: radius * 1.25,
-      color,
-      lineWidth: 5,
-      life: 0.34,
-      maxLife: 0.34
-    });
-    for (let i = 0; i < (reduceMotion ? 5 : 16); i++) {
-      const a = Math.random() * Math.PI * 2;
-      const spd = 80 + Math.random() * 220;
-      state.particles.push({
+    if (state.slashes.length < 24) {
+      state.slashes.push({
         x, y,
-        vx: Math.cos(a) * spd,
-        vy: Math.sin(a) * spd,
+        ang: 0,
+        radius,
+        isFullCircle: true,
         color,
-        radius: 3.5 + Math.random() * 3.5,
-        life: 0.38,
-        isSpark: i % 2 === 0
+        life: 0.28,
+        maxLife: 0.28
       });
+    }
+    if (state.impactRings.length < 10) {
+      state.impactRings.push({
+        x, y,
+        radius: radius * 0.2,
+        maxRadius: radius * 1.25,
+        color,
+        lineWidth: 5,
+        life: 0.32,
+        maxLife: 0.32
+      });
+    }
+    if (state.particles.length < 110) {
+      const pCount = reduceMotion ? 3 : (state.particles.length > 60 ? 5 : 10);
+      for (let i = 0; i < pCount; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const spd = 80 + Math.random() * 220;
+        state.particles.push({
+          x, y,
+          vx: Math.cos(a) * spd,
+          vy: Math.sin(a) * spd,
+          color,
+          radius: 3.5 + Math.random() * 3.0,
+          life: 0.34,
+          isSpark: i % 2 === 0
+        });
+      }
     }
     for (let i = state.enemies.length - 1; i >= 0; i--) {
       const e = state.enemies[i];
+      if (!e) continue;
       if (Math.hypot(e.x - x, e.y - y) <= radius + e.radius) {
         dealDamage(e, dmg, 42, 'fire');
       }
@@ -3533,7 +3551,7 @@
     }
 
     // Suicide bomber leaves a delayed explosion hazard circle on death!
-    if (enemy.type === 'bomber') {
+    if (enemy.type === 'bomber' && state.groundZones.length < 18) {
       state.groundZones.push({
         kind: 'bomb_telegraph',
         x: enemy.x,
@@ -3546,7 +3564,7 @@
     }
 
     // Elite captains & Mid-Bosses drop Forging Anvils (⚒️) or Huatuo Meat (🍖)!
-    if (enemy.isElite || (enemy.isBoss && !enemy.isMajorBoss)) {
+    if ((enemy.isElite || (enemy.isBoss && !enemy.isMajorBoss)) && state.props.length < 12) {
       state.props.push({
         kind: Math.random() < 0.72 ? 'anvil' : 'meat',
         x: enemy.x,
@@ -3556,27 +3574,36 @@
       });
     }
 
-    state.gems.push({
-      x: enemy.x,
-      y: enemy.y,
-      value: enemy.jadeValue,
-      radius: enemy.jadeValue >= 8 ? 13 : 10,
-      magnetized: false
-    });
-
-    const pCount = reduceMotion ? 4 : 9;
-    for (let i = 0; i < pCount; i++) {
-      const ang = Math.random() * Math.PI * 2;
-      const spd = 50 + Math.random() * 140;
-      state.particles.push({
+    if (state.gems.length < 75) {
+      state.gems.push({
         x: enemy.x,
         y: enemy.y,
-        vx: Math.cos(ang) * spd,
-        vy: Math.sin(ang) * spd,
-        color: enemy.color,
-        radius: 3 + Math.random() * 3,
-        life: 0.35
+        value: enemy.jadeValue,
+        radius: enemy.jadeValue >= 8 ? 13 : 10,
+        magnetized: false
       });
+    } else {
+      // Consolidate excess gems into the last dropped gem so mass kills never lag mobile rendering
+      const lastGem = state.gems[state.gems.length - 1];
+      lastGem.value += enemy.jadeValue;
+      lastGem.radius = 13;
+    }
+
+    if (state.particles.length < 110) {
+      const pCount = reduceMotion ? 2 : (state.particles.length > 65 ? 3 : 6);
+      for (let i = 0; i < pCount; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const spd = 50 + Math.random() * 140;
+        state.particles.push({
+          x: enemy.x,
+          y: enemy.y,
+          vx: Math.cos(ang) * spd,
+          vy: Math.sin(ang) * spd,
+          color: enemy.color,
+          radius: 3 + Math.random() * 3,
+          life: 0.32
+        });
+      }
     }
 
     if (enemy.isBoss) {
@@ -3599,17 +3626,23 @@
     // Detonate remaining minions on the field into golden victory sparks & jade loot
     for (let i = state.enemies.length - 1; i >= 0; i--) {
       const m = state.enemies[i];
-      if (m !== enemy) {
+      if (m && m !== enemy) {
         state.kills++;
-        state.gems.push({ x: m.x, y: m.y, value: m.jadeValue || 2, radius: 10, magnetized: true });
-        for (let k = 0; k < (reduceMotion ? 2 : 5); k++) {
-          const a = Math.random() * Math.PI * 2;
-          const spd = 80 + Math.random() * 180;
-          state.particles.push({
-            x: m.x, y: m.y,
-            vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
-            color: '#ffd740', radius: 3.5, life: 0.45, isSpark: true
-          });
+        if (state.gems.length < 75) {
+          state.gems.push({ x: m.x, y: m.y, value: m.jadeValue || 2, radius: 10, magnetized: true });
+        } else if (state.gems.length > 0) {
+          state.gems[state.gems.length - 1].value += (m.jadeValue || 2);
+        }
+        if (state.particles.length < 100) {
+          for (let k = 0; k < (reduceMotion ? 1 : 3); k++) {
+            const a = Math.random() * Math.PI * 2;
+            const spd = 80 + Math.random() * 180;
+            state.particles.push({
+              x: m.x, y: m.y,
+              vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
+              color: '#ffd740', radius: 3.5, life: 0.45, isSpark: true
+            });
+          }
         }
       }
     }
@@ -3642,7 +3675,7 @@
       life: 0.55, maxLife: 0.55
     });
 
-    for (let s = 0; s < (reduceMotion ? 10 : 32); s++) {
+    for (let s = 0; s < (reduceMotion ? 8 : 20); s++) {
       const a = Math.random() * Math.PI * 2;
       const spd = 140 + Math.random() * 340;
       state.particles.push({
@@ -3756,19 +3789,22 @@
       wSlot.swingPhase = 1.0;
       const reach = 135 + Math.min(185, wSlot.tier * 20);
       const fullCircle = isGuishen;
-      state.slashes.push({
-        x: wx,
-        y: wy,
-        ang,
-        radius: reach,
-        isFullCircle: fullCircle,
-        color: isMythic ? '#ffd740' : '#5ce6a0',
-        life: 0.26,
-        maxLife: 0.26
-      });
+      if (state.slashes.length < 24) {
+        state.slashes.push({
+          x: wx,
+          y: wy,
+          ang,
+          radius: reach,
+          isFullCircle: fullCircle,
+          color: isMythic ? '#ffd740' : '#5ce6a0',
+          life: 0.26,
+          maxLife: 0.26
+        });
+      }
 
       for (let i = state.enemies.length - 1; i >= 0; i--) {
         const e = state.enemies[i];
+        if (!e) continue;
         const dx = e.x - wx;
         const dy = e.y - wy;
         const dist = Math.hypot(dx, dy);
@@ -3825,12 +3861,14 @@
 
       for (let b = 0; b < bounces && curr; b++) {
         visited.add(curr);
-        state.lightnings.push({
-          x1: prevX, y1: prevY,
-          x2: curr.x, y2: curr.y,
-          color: isMythic ? '#ffd740' : '#b388ff',
-          life: 0.26
-        });
+        if (state.lightnings.length < 22) {
+          state.lightnings.push({
+            x1: prevX, y1: prevY,
+            x2: curr.x, y2: curr.y,
+            color: isMythic ? '#ffd740' : '#b388ff',
+            life: 0.26
+          });
+        }
         prevX = curr.x;
         prevY = curr.y;
         dealDamage(curr, dmg, 12, 'thunder');
@@ -3838,7 +3876,7 @@
         let next = null;
         let bestD = 280 * 280;
         for (const cand of state.enemies) {
-          if (visited.has(cand)) continue;
+          if (!cand || visited.has(cand)) continue;
           const d2 = (cand.x - prevX) ** 2 + (cand.y - prevY) ** 2;
           if (d2 < bestD) {
             bestD = d2;
@@ -3862,6 +3900,7 @@
           const by = state.y + Math.sin(a) * orbitR;
           for (let i = state.enemies.length - 1; i >= 0; i--) {
             const e = state.enemies[i];
+            if (!e) continue;
             if (Math.hypot(e.x - bx, e.y - by) <= e.radius + 24) {
               dealDamage(e, dmg, 16, 'fire');
               hitAny = true;
@@ -3881,14 +3920,16 @@
       const axes = isMythic ? 4 : (isGuishen ? 2 : 1);
       for (let k = 0; k < axes; k++) {
         const a = ang + (k * Math.PI) / axes;
-        state.slashes.push({
-          x: wx, y: wy,
-          ang: a,
-          radius: reach,
-          color: '#ff1744',
-          life: 0.28,
-          maxLife: 0.28
-        });
+        if (state.slashes.length < 24) {
+          state.slashes.push({
+            x: wx, y: wy,
+            ang: a,
+            radius: reach,
+            color: '#ff1744',
+            life: 0.28,
+            maxLife: 0.28
+          });
+        }
         state.projectiles.push({
           x: wx + Math.cos(a) * 24,
           y: wy + Math.sin(a) * 24,
@@ -3906,6 +3947,7 @@
       }
       for (let i = state.enemies.length - 1; i >= 0; i--) {
         const e = state.enemies[i];
+        if (!e) continue;
         if (Math.hypot(e.x - wx, e.y - wy) <= reach + e.radius) {
           dealDamage(e, dmg, 45);
         }
@@ -3925,17 +3967,20 @@
         for (let step = 1; step <= 4; step++) {
           const sx = wx + Math.cos(a) * (step * 72);
           const sy = wy + Math.sin(a) * (step * 72);
-          state.slashes.push({
-            x: sx, y: sy,
-            ang: a,
-            radius: 52 + wSlot.tier * 3,
-            isFullCircle: true,
-            color: '#ffab40',
-            life: 0.26,
-            maxLife: 0.26
-          });
+          if (state.slashes.length < 24) {
+            state.slashes.push({
+              x: sx, y: sy,
+              ang: a,
+              radius: 52 + wSlot.tier * 3,
+              isFullCircle: true,
+              color: '#ffab40',
+              life: 0.26,
+              maxLife: 0.26
+            });
+          }
           for (let i = state.enemies.length - 1; i >= 0; i--) {
             const e = state.enemies[i];
+            if (!e) continue;
             if (Math.hypot(e.x - sx, e.y - sy) <= 56 + e.radius) {
               dealDamage(e, dmg * 0.85, 52);
             }
@@ -4152,9 +4197,9 @@
         state.projectiles.push({
           x: state.x, y: state.y,
           vx: Math.cos(a) * 780, vy: Math.sin(a) * 780,
-          radius: 20, dmg: musouBase * 0.85, pierce: 99, hitSet: new Set(),
+          radius: 22, dmg: musouBase * 1.15, pierce: 99, hitSet: new Set(),
           color: i % 2 === 0 ? '#4fc3f7' : '#ffffff',
-          life: 1.05, shape: 'spear', ang: a, explodeOnHit: true, explodeRadius: 85
+          life: 1.05, shape: 'spear', ang: a
         });
       }
     } else if (h.id === 'guanyu') {
@@ -4193,11 +4238,9 @@
       state.hp = Math.min(state.maxHp, Math.round(state.hp + state.maxHp * 0.25));
       for (let l = 0; l < 8; l++) {
         const a = (l * Math.PI * 2) / 8;
-        for (let step = 1; step <= 4; step++) {
-          const sx = state.x + Math.cos(a) * (step * 95);
-          const sy = state.y + Math.sin(a) * (step * 95);
-          triggerExplosion(sx, sy, 110, musouBase * 0.45, true, '#ffab40');
-        }
+        const sx = state.x + Math.cos(a) * 210;
+        const sy = state.y + Math.sin(a) * 210;
+        triggerExplosion(sx, sy, 145, musouBase * 0.85, true, '#ffab40');
       }
     } else if (h.id === 'caocao') {
       // 短歌行・萬劍歸宗：20 把迴旋帝王雙劍構成漫天劍網
@@ -4239,15 +4282,15 @@
         });
       }
     } else if (h.id === 'sunshangxiang') {
-      // 紅妝梟姬・鳳凰箭嵐：36 支穿透爆裂紅蓮火箭 360° 齊發
-      for (let i = 0; i < 36; i++) {
-        const a = (i * Math.PI * 2) / 36;
+      // 紅妝梟姬・鳳凰箭嵐：24 支穿透紅蓮火箭 360° 齊發
+      for (let i = 0; i < 24; i++) {
+        const a = (i * Math.PI * 2) / 24;
         state.projectiles.push({
           x: state.x, y: state.y,
           vx: Math.cos(a) * 740, vy: Math.sin(a) * 740,
-          radius: 10, dmg: musouBase * 0.72, pierce: 6, hitSet: new Set(),
+          radius: 12, dmg: musouBase * 0.95, pierce: 8, hitSet: new Set(),
           color: i % 2 === 0 ? '#ff4081' : '#ffd740',
-          life: 1.0, shape: 'arrow', ang: a, explodeOnHit: true, explodeRadius: 90
+          life: 1.0, shape: 'arrow', ang: a
         });
       }
     } else {
@@ -4257,8 +4300,8 @@
         state.projectiles.push({
           x: state.x, y: state.y,
           vx: Math.cos(a) * 690, vy: Math.sin(a) * 690,
-          radius: 24, dmg: musouBase * 1.15, pierce: 99, hitSet: new Set(),
-          color: '#ff1744', life: 1.0, shape: 'crescent', ang: a, explodeOnHit: true, explodeRadius: 95
+          radius: 26, dmg: musouBase * 1.35, pierce: 99, hitSet: new Set(),
+          color: '#ff1744', life: 1.0, shape: 'crescent', ang: a
         });
       }
       for (let k = 0; k < 4; k++) {
@@ -4283,13 +4326,16 @@
 
     for (let i = state.enemies.length - 1; i >= 0; i--) {
       const e = state.enemies[i];
+      if (!e) continue;
       if (Math.hypot(e.x - state.x, e.y - state.y) <= 560) {
-        state.lightnings.push({
-          x1: state.x, y1: state.y,
-          x2: e.x, y2: e.y,
-          color: h.color || '#ffd740',
-          life: 0.36
-        });
+        if (state.lightnings.length < 20) {
+          state.lightnings.push({
+            x1: state.x, y1: state.y,
+            x2: e.x, y2: e.y,
+            color: h.color || '#ffd740',
+            life: 0.36
+          });
+        }
         dealDamage(e, musouBase * (h.id === 'lubu' ? 1.45 : 1.05), 85, 'thunder');
       }
     }
@@ -5020,6 +5066,7 @@
     // Update Ground Zones (Fire Sea, Bagua Array, Bomb Telegraph, Boss Hazard, Cavalry Lane)
     for (let i = state.groundZones.length - 1; i >= 0; i--) {
       const gz = state.groundZones[i];
+      if (!gz) continue;
       gz.life -= dt;
       if (gz.kind === 'fire_sea' || gz.kind === 'bagua') {
         gz.tickTimer -= dt;
@@ -5027,6 +5074,7 @@
           gz.tickTimer = 0.25;
           for (let j = state.enemies.length - 1; j >= 0; j--) {
             const e = state.enemies[j];
+            if (!e) continue;
             if (Math.hypot(e.x - gz.x, e.y - gz.y) <= gz.radius + e.radius) {
               dealDamage(e, gz.dmg, gz.kind === 'bagua' ? -12 : 4, 'fire');
             }
@@ -5035,7 +5083,7 @@
       }
       if (gz.life <= 0) {
         if (gz.kind === 'bomb_telegraph' || gz.kind === 'boss_hazard') {
-          if (gz.kind === 'boss_hazard') {
+          if (gz.kind === 'boss_hazard' && state.lightnings.length < 22) {
             state.lightnings.push({
               x1: gz.x, y1: gz.y - 280,
               x2: gz.x, y2: gz.y,
@@ -5054,6 +5102,7 @@
     // Update Interactive Battlefield Props
     for (let i = state.props.length - 1; i >= 0; i--) {
       const pr = state.props[i];
+      if (!pr) continue;
       const dist = Math.hypot(state.x - pr.x, state.y - pr.y);
       if (pr.kind !== 'barrel' && dist <= state.radius + pr.radius + 10) {
         if (pr.kind === 'meat') {
@@ -5092,6 +5141,7 @@
     // Update Player Projectiles
     for (let i = state.projectiles.length - 1; i >= 0; i--) {
       const p = state.projectiles[i];
+      if (!p) continue;
       if (p.returnToHero) {
         p.age = (p.age || 0) + dt;
         if (p.age > 0.45) {
@@ -5108,7 +5158,7 @@
       // Check hits against Explosive Barrels!
       for (let b = state.props.length - 1; b >= 0; b--) {
         const pr = state.props[b];
-        if (pr.kind === 'barrel' && Math.hypot(pr.x - p.x, pr.y - p.y) <= pr.radius + p.radius) {
+        if (pr && pr.kind === 'barrel' && Math.hypot(pr.x - p.x, pr.y - p.y) <= pr.radius + p.radius) {
           const bx = pr.x, by = pr.y;
           state.props.splice(b, 1);
           triggerExplosion(bx, by, 170, 95 * Math.pow(1.12, state.waveIdx), true, '#ff9100');
@@ -5119,11 +5169,12 @@
 
       for (let j = state.enemies.length - 1; j >= 0; j--) {
         const e = state.enemies[j];
-        if (p.hitSet.has(e)) continue;
+        if (!e || p.hitSet.has(e)) continue;
         if (Math.hypot(e.x - p.x, e.y - p.y) <= e.radius + p.radius) {
           p.hitSet.add(e);
           dealDamage(e, p.dmg, 18, p.elem || 'physical');
-          if (p.explodeOnHit) {
+          if (p.explodeOnHit && !p.hasExploded) {
+            p.hasExploded = true;
             triggerExplosion(p.x, p.y, p.explodeRadius || 85, p.dmg * 0.65, true, p.color);
           }
           p.pierce--;
@@ -5140,6 +5191,7 @@
     // Update Enemy Bullet-Hell Projectiles
     for (let i = state.enemyProjectiles.length - 1; i >= 0; i--) {
       const ep = state.enemyProjectiles[i];
+      if (!ep) continue;
       ep.x += ep.vx * dt;
       ep.y += ep.vy * dt;
       ep.life -= dt;
@@ -5163,6 +5215,7 @@
     // Update Enemies
     for (let i = state.enemies.length - 1; i >= 0; i--) {
       const e = state.enemies[i];
+      if (!e) continue;
       if (e.hitFlash > 0) e.hitFlash -= dt;
 
       if (e.poisonTimer > 0) {
@@ -5384,8 +5437,9 @@
         e.walkPhase += dt * e.strideFreq;
       }
 
-      for (let k = i - 1; k >= 0; k--) {
+      for (let k = Math.min(i - 1, state.enemies.length - 1); k >= 0; k--) {
         const other = state.enemies[k];
+        if (!other) continue;
         const dx = e.x - other.x;
         const dy = e.y - other.y;
         const dist = Math.hypot(dx, dy);
@@ -5636,6 +5690,9 @@
   }
 
   function render() {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     const zoom = getCameraZoom();
@@ -5833,15 +5890,18 @@
     }
 
     // 5B. Draw Expanding Shockwave Impact Rings
+    const useHeavyGlow = !reduceMotion && canvas.width >= 768;
     for (const ir of state.impactRings) {
       ctx.save();
       ctx.globalAlpha = Math.max(0, ir.life / ir.maxLife);
       ctx.strokeStyle = ir.color || '#ffd740';
-      ctx.shadowColor = ir.color || '#ffd740';
-      ctx.shadowBlur = 14;
+      if (useHeavyGlow) {
+        ctx.shadowColor = ir.color || '#ffd740';
+        ctx.shadowBlur = 12;
+      }
       ctx.lineWidth = ir.lineWidth || 5;
       ctx.beginPath();
-      ctx.arc(ir.x, ir.y, ir.currRadius || ir.radius, 0, Math.PI * 2);
+      ctx.arc(ir.x, ir.y, Math.max(1, ir.currRadius || ir.radius || 10), 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
     }
@@ -5856,10 +5916,10 @@
       ctx.lineWidth = 4;
       ctx.beginPath();
       if (s.isFullCircle) {
-        ctx.arc(0, 0, s.radius, 0, Math.PI * 2);
+        ctx.arc(0, 0, Math.max(1, s.radius), 0, Math.PI * 2);
       } else {
         ctx.moveTo(0, 0);
-        ctx.arc(0, 0, s.radius, s.ang - 1.15, s.ang + 1.15);
+        ctx.arc(0, 0, Math.max(1, s.radius), s.ang - 1.15, s.ang + 1.15);
         ctx.closePath();
       }
       ctx.fill();
@@ -5869,13 +5929,14 @@
 
     // 7. Y-Sort Entities (Hero + Enemies)
     const renderList = [
-      ...state.enemies.map(e => ({ kind: 'enemy', y: e.y, entity: e })),
+      ...state.enemies.filter(Boolean).map(e => ({ kind: 'enemy', y: e.y, entity: e })),
       { kind: 'hero', y: state.y }
     ].sort((a, b) => a.y - b.y);
 
     for (const item of renderList) {
       if (item.kind === 'enemy') {
         const e = item.entity;
+        if (!e) continue;
         // Draw charger / Boss charge telegraph corridor if winding up!
         if (e.windupTimer > 0) {
           ctx.save();
@@ -5990,28 +6051,32 @@
       ctx.translate(p.x, p.y);
       ctx.rotate(p.ang || 0);
       if (p.shape === 'spear' && spearRig && spearRig.normal) {
-        ctx.shadowColor = p.color || '#4fc3f7';
-        ctx.shadowBlur = 12;
+        if (useHeavyGlow) {
+          ctx.shadowColor = p.color || '#4fc3f7';
+          ctx.shadowBlur = 10;
+        }
         ctx.drawImage(spearRig.normal, -24, -10, 48, 20);
       } else if (p.shape === 'cannonball') {
         ctx.fillStyle = p.color;
-        ctx.shadowColor = '#ff3d00';
-        ctx.shadowBlur = 12;
+        if (useHeavyGlow) {
+          ctx.shadowColor = '#ff3d00';
+          ctx.shadowBlur = 10;
+        }
         ctx.beginPath();
         ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
         ctx.fill();
       } else if (p.shape === 'crescent' || p.shape === 'boomerang') {
         ctx.strokeStyle = p.color;
         ctx.lineWidth = 5;
-        ctx.shadowColor = p.color;
-        ctx.shadowBlur = 10;
+        if (useHeavyGlow) {
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 8;
+        }
         ctx.beginPath();
         ctx.arc(0, 0, p.radius, -1.1, 1.1);
         ctx.stroke();
       } else {
         ctx.fillStyle = p.color;
-        ctx.shadowColor = p.color;
-        ctx.shadowBlur = 6;
         ctx.fillRect(-11, -3, 22, 6);
       }
       ctx.restore();
@@ -6023,8 +6088,6 @@
       ctx.translate(ep.x, ep.y);
       ctx.fillStyle = ep.color || '#ff1744';
       ctx.strokeStyle = '#ffffff';
-      ctx.shadowColor = ep.color || '#ff1744';
-      ctx.shadowBlur = 8;
       ctx.lineWidth = 1.8;
       ctx.beginPath();
       ctx.arc(0, 0, ep.radius, 0, Math.PI * 2);
@@ -6037,8 +6100,10 @@
     for (const l of state.lightnings) {
       ctx.save();
       ctx.strokeStyle = l.color || '#e1bee7';
-      ctx.shadowColor = l.color || '#b388ff';
-      ctx.shadowBlur = 14;
+      if (useHeavyGlow) {
+        ctx.shadowColor = l.color || '#b388ff';
+        ctx.shadowBlur = 12;
+      }
       ctx.lineWidth = 4;
       ctx.beginPath();
       ctx.moveTo(l.x1, l.y1);
@@ -6821,11 +6886,19 @@
   }
 
   function loop(now) {
-    const dt = Math.min(0.05, (now - lastTime) / 1000);
-    lastTime = now;
-    update(dt);
-    render();
     requestAnimationFrame(loop);
+    const dt = Math.min(0.05, Math.max(0.001, (now - lastTime) / 1000));
+    lastTime = now;
+    try {
+      update(dt);
+    } catch (err) {
+      console.error('Update error recovered:', err);
+    }
+    try {
+      render();
+    } catch (err) {
+      console.error('Render error recovered:', err);
+    }
   }
   requestAnimationFrame(loop);
 
