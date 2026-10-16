@@ -1192,8 +1192,8 @@
       </div>
 
       <div class="controls-hint">
-        <span><strong>單指拖曳 / WASD</strong>：八向走位閃避紅圈與箭雨</span>
-        <span><strong>12 種神兵合成</strong>：V 階【鬼神覺醒】、X 階【神話超武】質變</span>
+        <span><strong>每 5 關一張全新地圖</strong>：20 座三國古戰場地貌（黃土、祭壇、甕城、血城、冰河、雪原、竹林、當陽橋、連環船、焦土等）</span>
+        <span><strong>20 大 BOSS 專屬兵團</strong>：小兵外觀、手持神兵與戰鬥特性隨鎮關 BOSS 全面變化且逐關強化</span>
         <span><strong>全程自動存檔</strong>：每陣開戰、營帳合成與戰敗皆自動保存進度</span>
       </div>
 
@@ -1208,26 +1208,35 @@
 
       <div class="campaign-selector-bar">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-width:100%;">
-          <span style="font-weight:800;font-size:13px;color:var(--gold-bright);">新開局章節 / 起始陣數：</span>
+          <span style="font-weight:800;font-size:13px;color:var(--gold-bright);">五關一圖｜選擇戰區地圖 / 起始陣數：</span>
           <select id="chapterSelect" class="campaign-select-input">
-            <option value="1">第 1 陣｜第一章：黃巾起義・符陣祭壇（1～10 陣）</option>
-            <option value="11">第 11 陣｜第二章：虎牢關血戰・修羅血城（11～20 陣）</option>
-            <option value="21">第 21 陣｜第三章：官渡爭霸・冰封雪原（21～30 陣）</option>
-            <option value="31">第 31 陣｜第四章：長坂坡突圍・幽翠竹林（31～40 陣）</option>
-            <option value="41">第 41 陣｜第五章：赤壁火海・連環戰艦（41～50 陣）</option>
-            <option value="51">第 51 陣｜第六章：潼關鐵騎・黃沙戈壁（51～60 陣）</option>
-            <option value="61">第 61 陣｜第七章：合淝逍遙津・江南水寨（61～70 陣）</option>
-            <option value="71">第 71 陣｜第八章：定軍山斬將・秋楓棧道（71～80 陣）</option>
-            <option value="81">第 81 陣｜第九章：南蠻七擒・毒沼藤林（81～90 陣）</option>
-            <option value="91">第 91 陣｜第十章：五丈原決戰・星隕七星陣（91～100 陣）</option>
-            <option value="100">第 100 陣｜終極死鬥：九天無雙魔神・呂奉先</option>
+            <option value="1">第 1～5 陣｜地圖01：穎川黃土荒原（管亥・黃天力士軍團）</option>
+            <option value="6">第 6～10 陣｜地圖02：廣宗八卦祭壇（張角・太平妖道軍團）</option>
+            <option value="11">第 11～15 陣｜地圖03：汜水關黑曜甕城（華雄・西涼斬馬軍團）</option>
+            <option value="16">第 16～20 陣｜地圖04：虎牢關修羅熔岩（呂布・無雙陷陣軍團）</option>
+            <option value="21">第 21～25 陣｜地圖05：白馬津冰封河渡（顏良・河北寒鋒軍團）</option>
+            <option value="26">第 26～30 陣｜地圖06：官渡烏巢凍雪原（文醜・延津蛇矛軍團）</option>
+            <option value="31">第 31～35 陣｜地圖07：當陽幽翠竹林道（夏侯恩・青釭劍衛軍團）</option>
+            <option value="36">第 36～40 陣｜地圖08：長坂坡當陽斷橋（曹純・天下驍銳虎豹騎）</option>
+            <option value="41">第 41～45 陣｜地圖09：赤壁連環巨艦甲板（蔡瑁・荊襄火箭水師）</option>
+            <option value="46">第 46～50 陣｜地圖10：烏林華容道焦土（曹操・許昌倚天禁衛）</option>
+            <option value="51">第 51～55 陣｜地圖11：潼關黃沙風蝕戈壁（龐德・抬櫬死戰軍團）</option>
+            <option value="56">第 56～60 陣｜地圖12：渭水冰城鐵騎營（馬超・西涼銀鎧神騎）</option>
+            <option value="61">第 61～65 陣｜地圖13：合淝護城青石渠（樂進・八百先登敢死營）</option>
+            <option value="66">第 66～70 陣｜地圖14：逍遙津江南水寨橋（張遼・威震逍遙鐵戟軍）</option>
+            <option value="71">第 71～75 陣｜地圖15：葭萌關秋楓懸崖道（張郃・巧變幻影奇兵）</option>
+            <option value="76">第 76～80 陣｜地圖16：定軍山斬將烽火台（夏侯淵・三日千里神射營）</option>
+            <option value="81">第 81～85 陣｜地圖17：瀘水赤焰火神叢林（祝融・南中赤焰飛刀蠻）</option>
+            <option value="86">第 86～90 陣｜地圖18：盤蛇谷劇毒冒泡沼（孟獲・烏戈藤甲巨象軍）</option>
+            <option value="91">第 91～95 陣｜地圖19：子午谷奇門八門陣（魏延・反骨噬血狂軍）</option>
+            <option value="96">第 96～100 陣｜地圖20：五丈原星隕七星壇（魔神呂布・九天修羅魔軍）</option>
           </select>
           <label style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px;">
             自訂陣數 (1-100)：
             <input id="customWaveInput" type="number" min="1" max="100" value="1" class="campaign-select-input" style="width:72px;text-align:center;" />
           </label>
         </div>
-        <span style="font-size:11.5px;color:var(--text-muted);">※ 選擇中後段陣數開局時，將自動配發對應進度的神兵階級與戰力加成</span>
+        <span style="font-size:11.5px;color:var(--text-muted);">※ 每 5 關自動切換全新戰場地圖與駐守 BOSS 兵團；選擇中後段開局將自動配發對應階級神兵與戰力</span>
       </div>
 
       <div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:12px;">
@@ -2468,34 +2477,309 @@
     }
   ];
 
+  // =========================================================================
+  // 2C. 20 Five-Wave Battlefield Maps & Boss-Specific Enemy Legions ("五關一張地圖 × 20大BOSS專屬兵團")
+  // =========================================================================
+  const STAGE_LEGIONS = [
+    {
+      stageIdx: 0, waves: '1～5', mapStyle: 'ochre_steppe', mapName: '地圖01：穎川黃土荒原',
+      legionName: '【管亥麾下】黃天力士軍', bossLeader: '黃巾猛將・管亥',
+      bgPrimary: '#2c2114', bgSecondary: '#3b2c1a', roadColor: '#4a3721', accentColor: '#f5b041',
+      weatherColor: 'rgba(245, 176, 65, 0.55)', weatherType: 'talisman',
+      trait: 'bull_rush', traitDesc: '狂牛突進（步騎移速+10%）',
+      grunt:  { name: '管亥黃巾步卒', bodyKey: 'body_grunt',    wpnKey: 'rig_blade',   capeColor: '#f39c12', bootColor: '#5d4037' },
+      shield: { name: '黃天巨盾力士', bodyKey: 'body_shield',   wpnKey: 'rig_halberd', capeColor: '#d68910', bootColor: '#4e342e' },
+      charger:{ name: '穎川狂牛衝騎', bodyKey: 'body_zhangfei', wpnKey: 'rig_halberd', capeColor: '#e67e22', bootColor: '#3e2723' },
+      archer: { name: '黃巾竹弓手',   bodyKey: 'body_grunt',    wpnKey: 'rig_bow',     capeColor: '#f1c40f', bootColor: '#5d4037' },
+      shaman: { name: '管亥陣前祭酒', bodyKey: 'body_zhugeliang',wpnKey:'rig_thunder', capeColor: '#f5b041', bootColor: '#6e2c00' },
+      elite:  { name: '★管亥親衛渠帥', bodyKey: 'body_zhangfei', wpnKey: 'rig_halberd', capeColor: '#ff9800', bootColor: '#e65100' }
+    },
+    {
+      stageIdx: 1, waves: '6～10', mapStyle: 'bagua_altar', mapName: '地圖02：廣宗八卦祭壇',
+      legionName: '【張角麾下】太平妖道軍', bossLeader: '天公妖師・張角',
+      bgPrimary: '#1e192b', bgSecondary: '#2c2240', roadColor: '#3d2e5c', accentColor: '#ffd54f',
+      weatherColor: 'rgba(255, 213, 79, 0.72)', weatherType: 'talisman',
+      trait: 'thunder_cult', traitDesc: '太平雷咒（遠程妖術彈幕強化）',
+      grunt:  { name: '張角符水鬼卒', bodyKey: 'body_grunt',    wpnKey: 'rig_thunder', capeColor: '#ffd54f', bootColor: '#4a148c' },
+      shield: { name: '黃天玄甲護法', bodyKey: 'body_shield',   wpnKey: 'rig_blade',   capeColor: '#ab47bc', bootColor: '#311b92' },
+      charger:{ name: '神上使雷電騎', bodyKey: 'body_charger',  wpnKey: 'rig_spear',   capeColor: '#ffca28', bootColor: '#4a148c' },
+      archer: { name: '廣宗符箭手',   bodyKey: 'body_zhugeliang',wpnKey:'rig_bow',     capeColor: '#ce93d8', bootColor: '#4a148c' },
+      shaman: { name: '太平天公妖師', bodyKey: 'body_zhugeliang',wpnKey:'rig_thunder', capeColor: '#ffd740', bootColor: '#6a1b9a' },
+      elite:  { name: '★張角貼身大賢良師', bodyKey: 'body_zhugeliang', wpnKey: 'rig_thunder', capeColor: '#ffd740', bootColor: '#aa00ff' }
+    },
+    {
+      stageIdx: 2, waves: '11～15', mapStyle: 'obsidian_fort', mapName: '地圖03：汜水關黑曜甕城',
+      legionName: '【華雄麾下】西涼斬馬軍', bossLeader: '西涼猛將・華雄',
+      bgPrimary: '#1b1d24', bgSecondary: '#262933', roadColor: '#343846', accentColor: '#ef5350',
+      weatherColor: 'rgba(239, 83, 80, 0.60)', weatherType: 'ember',
+      trait: 'whirlwind_step', traitDesc: '西涼狂刃（近戰移速與傷害+12%）',
+      grunt:  { name: '華雄斬馬步卒', bodyKey: 'body_grunt',    wpnKey: 'rig_blade',   capeColor: '#e53935', bootColor: '#263238' },
+      shield: { name: '汜水黑鐵重盾', bodyKey: 'body_shield',   wpnKey: 'rig_halberd', capeColor: '#b71c1c', bootColor: '#1c262b' },
+      charger:{ name: '西涼鐵甲狼騎', bodyKey: 'body_xiahoudun',wpnKey: 'rig_halberd', capeColor: '#ff5252', bootColor: '#8e0000' },
+      archer: { name: '甕城強弩手',   bodyKey: 'body_grunt',    wpnKey: 'rig_bow',     capeColor: '#ef9a9a', bootColor: '#37474f' },
+      shaman: { name: '董卓軍毒火師', bodyKey: 'body_zhouyu',   wpnKey: 'rig_firefan', capeColor: '#ff7043', bootColor: '#3e2723' },
+      elite:  { name: '★華雄麾下驍騎校尉', bodyKey: 'body_xiahoudun', wpnKey: 'rig_halberd', capeColor: '#ff1744', bootColor: '#212121' }
+    },
+    {
+      stageIdx: 3, waves: '16～20', mapStyle: 'lava_hell', mapName: '地圖04：虎牢關修羅熔岩',
+      legionName: '【呂布麾下】無雙陷陣營', bossLeader: '虎牢鬼神・呂奉先',
+      bgPrimary: '#2b0d0d', bgSecondary: '#421212', roadColor: '#5c1919', accentColor: '#ff3d00',
+      weatherColor: 'rgba(255, 61, 0, 0.78)', weatherType: 'ember',
+      trait: 'unstoppable', traitDesc: '陷陣霸體（擊退抗性+50%・血量+15%）',
+      grunt:  { name: '呂布并州狼卒', bodyKey: 'body_lubu',     wpnKey: 'rig_fangtian',capeColor: '#d50000', bootColor: '#1a0505' },
+      shield: { name: '高順陷陣重鎧', bodyKey: 'body_shield',   wpnKey: 'rig_fangtian',capeColor: '#ff1744', bootColor: '#210b0b' },
+      charger:{ name: '赤兔飛將親騎', bodyKey: 'body_lubu',     wpnKey: 'rig_fangtian',capeColor: '#ff3d00', bootColor: '#b71c1c' },
+      archer: { name: '虎牢血月神射', bodyKey: 'body_sunshangxiang',wpnKey:'rig_bow',  capeColor: '#ff5252', bootColor: '#3e0a0a' },
+      shaman: { name: '郿塢修羅祭司', bodyKey: 'body_caocao',   wpnKey: 'rig_firefan', capeColor: '#ff6e40', bootColor: '#4e0d0d' },
+      elite:  { name: '★呂布八健將・陷陣統領', bodyKey: 'body_lubu', wpnKey: 'rig_fangtian', capeColor: '#ffd740', bootColor: '#d50000' }
+    },
+    {
+      stageIdx: 4, waves: '21～25', mapStyle: 'frozen_river', mapName: '地圖05：白馬津冰封河渡',
+      legionName: '【顏良麾下】白馬寒鋒軍', bossLeader: '河北上將・顏良',
+      bgPrimary: '#0f293d', bgSecondary: '#163b56', roadColor: '#1f5073', accentColor: '#29b6f6',
+      weatherColor: 'rgba(225, 245, 254, 0.82)', weatherType: 'snow',
+      trait: 'frost_arrow', traitDesc: '白馬寒鋒（冰封河渡高速斬擊）',
+      grunt:  { name: '顏良白馬刀兵', bodyKey: 'body_guanyu',   wpnKey: 'rig_halberd', capeColor: '#29b6f6', bootColor: '#01579b' },
+      shield: { name: '河北玄冰盾衛', bodyKey: 'body_shield',   wpnKey: 'rig_blade',   capeColor: '#0288d1', bootColor: '#002f6c' },
+      charger:{ name: '白馬津踏冰騎', bodyKey: 'body_charger',  wpnKey: 'rig_halberd', capeColor: '#4fc3f7', bootColor: '#01579b' },
+      archer: { name: '袁軍高櫓冰弩', bodyKey: 'body_grunt',    wpnKey: 'rig_bow',     capeColor: '#81d4fa', bootColor: '#0277bd' },
+      shaman: { name: '河北祈雪方士', bodyKey: 'body_zhugeliang',wpnKey:'rig_thunder', capeColor: '#00e5ff', bootColor: '#006064' },
+      elite:  { name: '★顏良親衛・白馬先鋒', bodyKey: 'body_guanyu', wpnKey: 'rig_halberd', capeColor: '#00e5ff', bootColor: '#01579b' }
+    },
+    {
+      stageIdx: 5, waves: '26～30', mapStyle: 'snow_depot', mapName: '地圖06：官渡烏巢凍雪原',
+      legionName: '【文醜麾下】延津大戟軍', bossLeader: '河北雙雄・文醜',
+      bgPrimary: '#1a2636', bgSecondary: '#24354a', roadColor: '#314763', accentColor: '#00e5ff',
+      weatherColor: 'rgba(207, 216, 220, 0.85)', weatherType: 'snow',
+      trait: 'serpent_thrust', traitDesc: '延津蛇矛（長兵突刺與重甲列陣）',
+      grunt:  { name: '文醜延津戟兵', bodyKey: 'body_zhangfei', wpnKey: 'rig_serpent', capeColor: '#00bcd4', bootColor: '#004d40' },
+      shield: { name: '烏巢重鎧大戟士',bodyKey: 'body_shield',  wpnKey: 'rig_serpent', capeColor: '#0097a7', bootColor: '#263238' },
+      charger:{ name: '河北雙雄雪狼騎',bodyKey: 'body_zhangfei',wpnKey: 'rig_serpent', capeColor: '#00e5ff', bootColor: '#006064' },
+      archer: { name: '延津連珠獵手', bodyKey: 'body_grunt',    wpnKey: 'rig_bow',     capeColor: '#4dd0e1', bootColor: '#00838f' },
+      shaman: { name: '袁紹隨軍謀士', bodyKey: 'body_caocao',   wpnKey: 'rig_thunder', capeColor: '#80deea', bootColor: '#004d40' },
+      elite:  { name: '★文醜親衛・大戟統領', bodyKey: 'body_zhangfei', wpnKey: 'rig_serpent', capeColor: '#18ffff', bootColor: '#006064' }
+    },
+    {
+      stageIdx: 6, waves: '31～35', mapStyle: 'bamboo_grove', mapName: '地圖07：當陽幽翠竹林道',
+      legionName: '【夏侯恩麾下】青釭背劍營', bossLeader: '背劍將軍・夏侯恩',
+      bgPrimary: '#11291b', bgSecondary: '#193b27', roadColor: '#245237', accentColor: '#69f0ae',
+      weatherColor: 'rgba(129, 199, 132, 0.72)', weatherType: 'leaves',
+      trait: 'sword_dash', traitDesc: '青釭疾影（雙劍刺客高速突襲）',
+      grunt:  { name: '夏侯恩背劍侍', bodyKey: 'body_caocao',   wpnKey: 'rig_twinswords',capeColor:'#42a5f5', bootColor: '#0d47a1' },
+      shield: { name: '當陽竹林劍盾', bodyKey: 'body_shield',   wpnKey: 'rig_blade',   capeColor: '#26a69a', bootColor: '#004d40' },
+      charger:{ name: '青釭掠影刺客', bodyKey: 'body_zhaoyun',  wpnKey: 'rig_twinswords',capeColor:'#64b5f6', bootColor: '#1565c0' },
+      archer: { name: '竹林暗箭伏兵', bodyKey: 'body_sunshangxiang',wpnKey:'rig_needles',capeColor:'#66bb6a', bootColor: '#1b5e20' },
+      shaman: { name: '曹軍隨行劍師', bodyKey: 'body_caocao',   wpnKey: 'rig_twinswords',capeColor:'#80d8ff', bootColor: '#01579b' },
+      elite:  { name: '★夏侯恩親傳・御劍統領', bodyKey: 'body_caocao', wpnKey: 'rig_twinswords', capeColor: '#00e5ff', bootColor: '#0d47a1' }
+    },
+    {
+      stageIdx: 7, waves: '36～40', mapStyle: 'changban_bridge', mapName: '地圖08：長坂坡當陽斷橋',
+      legionName: '【曹純麾下】天下驍銳虎豹騎', bossLeader: '虎豹統領・曹純',
+      bgPrimary: '#182430', bgSecondary: '#223344', roadColor: '#5c4028', accentColor: '#42a5f5',
+      weatherColor: 'rgba(144, 202, 249, 0.68)', weatherType: 'leaves',
+      trait: 'tiger_cavalry', traitDesc: '虎豹奔襲（鐵騎衝鋒頻率大幅提升）',
+      grunt:  { name: '曹純虎豹步騎', bodyKey: 'body_xiahoudun',wpnKey: 'rig_spear',   capeColor: '#1e88e5', bootColor: '#0d47a1' },
+      shield: { name: '長坂鐵甲重衛', bodyKey: 'body_shield',   wpnKey: 'rig_fangtian',capeColor: '#1565c0', bootColor: '#0a3578' },
+      charger:{ name: '天下驍銳虎豹騎',bodyKey: 'body_xiahoudun',wpnKey: 'rig_fangtian',capeColor: '#42a5f5', bootColor: '#0d47a1' },
+      archer: { name: '當陽橋頭強弩', bodyKey: 'body_grunt',    wpnKey: 'rig_bow',     capeColor: '#64b5f6', bootColor: '#1565c0' },
+      shaman: { name: '魏武奇佐軍師', bodyKey: 'body_caocao',   wpnKey: 'rig_thunder', capeColor: '#82b1ff', bootColor: '#1a237e' },
+      elite:  { name: '★曹純親率・虎豹督軍', bodyKey: 'body_xiahoudun', wpnKey: 'rig_fangtian', capeColor: '#ffd740', bootColor: '#0d47a1' }
+    },
+    {
+      stageIdx: 8, waves: '41～45', mapStyle: 'chibi_warship', mapName: '地圖09：赤壁連環巨艦甲板',
+      legionName: '【蔡瑁麾下】荊襄連環水師', bossLeader: '水軍都督・蔡瑁',
+      bgPrimary: '#2e180d', bgSecondary: '#422313', roadColor: '#59301a', accentColor: '#ff7043',
+      weatherColor: 'rgba(255, 138, 101, 0.78)', weatherType: 'ember',
+      trait: 'fire_marine', traitDesc: '連環火箭（遠程赤焰火箭密集齊射）',
+      grunt:  { name: '蔡瑁荊州水兵', bodyKey: 'body_zhouyu',   wpnKey: 'rig_blade',   capeColor: '#ff7043', bootColor: '#3e2723' },
+      shield: { name: '連環鐵索重衛', bodyKey: 'body_shield',   wpnKey: 'rig_halberd', capeColor: '#d84315', bootColor: '#271815' },
+      charger:{ name: '蒙衝走舸突擊兵',bodyKey: 'body_charger', wpnKey: 'rig_spear',   capeColor: '#ff5722', bootColor: '#bf360c' },
+      archer: { name: '三江口火箭手', bodyKey: 'body_zhouyu',   wpnKey: 'rig_firefan', capeColor: '#ffab40', bootColor: '#4e342e' },
+      shaman: { name: '赤壁火攻祭酒', bodyKey: 'body_zhouyu',   wpnKey: 'rig_firefan', capeColor: '#ff3d00', bootColor: '#b71c1c' },
+      elite:  { name: '★蔡瑁親衛・水軍旗艦長', bodyKey: 'body_zhouyu', wpnKey: 'rig_firefan', capeColor: '#ffd740', bootColor: '#bf360c' }
+    },
+    {
+      stageIdx: 9, waves: '46～50', mapStyle: 'scorched_forest', mapName: '地圖10：烏林華容道焦土',
+      legionName: '【曹操麾下】許昌倚天禁衛', bossLeader: '亂世奸雄・曹孟德',
+      bgPrimary: '#241411', bgSecondary: '#361d18', roadColor: '#4d2922', accentColor: '#ff5722',
+      weatherColor: 'rgba(255, 112, 67, 0.80)', weatherType: 'ember',
+      trait: 'imperial_guard', traitDesc: '魏王死士（許昌禁衛攻防全面強化）',
+      grunt:  { name: '曹操許昌禁衛', bodyKey: 'body_caocao',   wpnKey: 'rig_twinswords',capeColor:'#ff5252', bootColor: '#1a237e' },
+      shield: { name: '華容道護駕重盾',bodyKey: 'body_shield',  wpnKey: 'rig_fangtian',capeColor: '#c62828', bootColor: '#0d47a1' },
+      charger:{ name: '絕影爪黃飛電騎',bodyKey: 'body_caocao',  wpnKey: 'rig_twinswords',capeColor:'#ffd740', bootColor: '#b71c1c' },
+      archer: { name: '烏林烈火神弩', bodyKey: 'body_sunshangxiang',wpnKey:'rig_bow',  capeColor: '#ff8a65', bootColor: '#3e2723' },
+      shaman: { name: '銅雀台奇門師', bodyKey: 'body_caocao',   wpnKey: 'rig_firefan', capeColor: '#ffab00', bootColor: '#283593' },
+      elite:  { name: '★曹操虎衛・倚天劍統領', bodyKey: 'body_caocao', wpnKey: 'rig_twinswords', capeColor: '#ffd740', bootColor: '#b71c1c' }
+    },
+    {
+      stageIdx: 10, waves: '51～55', mapStyle: 'desert_dunes', mapName: '地圖11：潼關黃沙風蝕戈壁',
+      legionName: '【龐德麾下】抬櫬白馬死戰營', bossLeader: '白馬將軍・龐德',
+      bgPrimary: '#362712', bgSecondary: '#4a3619', roadColor: '#614722', accentColor: '#b388ff',
+      weatherColor: 'rgba(255, 224, 130, 0.65)', weatherType: 'sandstorm',
+      trait: 'coffin_rage', traitDesc: '抬櫬死戰（半血以下狂暴加速+35%）',
+      grunt:  { name: '龐德抬櫬死士', bodyKey: 'body_zhangfei', wpnKey: 'rig_halberd', capeColor: '#b388ff', bootColor: '#4527a0' },
+      shield: { name: '潼關戈壁重鎧', bodyKey: 'body_shield',   wpnKey: 'rig_halberd', capeColor: '#9575cd', bootColor: '#311b92' },
+      charger:{ name: '白馬將軍突騎', bodyKey: 'body_charger',  wpnKey: 'rig_halberd', capeColor: '#d1c4e9', bootColor: '#4527a0' },
+      archer: { name: '西涼穿沙長標', bodyKey: 'body_grunt',    wpnKey: 'rig_spear',   capeColor: '#ffd54f', bootColor: '#5d4037' },
+      shaman: { name: '羌族呼風祭司', bodyKey: 'body_zhugeliang',wpnKey:'rig_thunder', capeColor: '#b388ff', bootColor: '#4a148c' },
+      elite:  { name: '★龐德親衛・斬將死士長', bodyKey: 'body_zhangfei', wpnKey: 'rig_halberd', capeColor: '#e040fb', bootColor: '#311b92' }
+    },
+    {
+      stageIdx: 11, waves: '56～60', mapStyle: 'ice_riverwall', mapName: '地圖12：渭水冰城鐵騎營',
+      legionName: '【馬超麾下】西涼銀鎧神騎', bossLeader: '神威天將軍・馬超',
+      bgPrimary: '#1f2633', bgSecondary: '#2d374a', roadColor: '#3d4b63', accentColor: '#e040fb',
+      weatherColor: 'rgba(234, 128, 252, 0.68)', weatherType: 'sandstorm',
+      trait: 'lightning_spear', traitDesc: '西涼錦騎（全員高速突進與紫電銀槍）',
+      grunt:  { name: '馬超銀鎧槍兵', bodyKey: 'body_zhaoyun',  wpnKey: 'rig_spear',   capeColor: '#e040fb', bootColor: '#4a148c' },
+      shield: { name: '渭水凝冰重衛', bodyKey: 'body_shield',   wpnKey: 'rig_spear',   capeColor: '#ab47bc', bootColor: '#311b92' },
+      charger:{ name: '西涼獅盔神騎', bodyKey: 'body_zhaoyun',  wpnKey: 'rig_spear',   capeColor: '#ea80fc', bootColor: '#6a1b9a' },
+      archer: { name: '羌胡飛電標槍', bodyKey: 'body_zhaoyun',  wpnKey: 'rig_spear',   capeColor: '#ce93d8', bootColor: '#4a148c' },
+      shaman: { name: '西涼紫電法師', bodyKey: 'body_zhugeliang',wpnKey:'rig_thunder', capeColor: '#e040fb', bootColor: '#4a148c' },
+      elite:  { name: '★馬超親衛・神威銀槍統領', bodyKey: 'body_zhaoyun', wpnKey: 'rig_spear', capeColor: '#ffd740', bootColor: '#6a1b9a' }
+    },
+    {
+      stageIdx: 12, waves: '61～65', mapStyle: 'hefei_canal', mapName: '地圖13：合淝護城青石渠',
+      legionName: '【樂進麾下】八百先登敢死營', bossLeader: '先登猛將・樂進',
+      bgPrimary: '#132a2e', bgSecondary: '#1c3d42', roadColor: '#275259', accentColor: '#69f0ae',
+      weatherColor: 'rgba(128, 222, 234, 0.65)', weatherType: 'mist',
+      trait: 'vanguard_burst', traitDesc: '每戰先登（破甲連矢與爆破死士倍增）',
+      grunt:  { name: '樂進先登死士', bodyKey: 'body_xiahoudun',wpnKey: 'rig_spear',   capeColor: '#69f0ae', bootColor: '#1b5e20' },
+      shield: { name: '合淝守城重盾', bodyKey: 'body_shield',   wpnKey: 'rig_blade',   capeColor: '#00e676', bootColor: '#004d40' },
+      charger:{ name: '八百敢死衝鋒卒',bodyKey: 'body_charger', wpnKey: 'rig_spear',   capeColor: '#b9f6ca', bootColor: '#1b5e20' },
+      archer: { name: '先登八門連弩', bodyKey: 'body_grunt',    wpnKey: 'rig_bow',     capeColor: '#69f0ae', bootColor: '#00695c' },
+      shaman: { name: '合淝轟天砲手', bodyKey: 'body_zhouyu',   wpnKey: 'rig_cannon',  capeColor: '#00e5ff', bootColor: '#004d40' },
+      elite:  { name: '★樂進親衛・先登陷陣督軍', bodyKey: 'body_xiahoudun', wpnKey: 'rig_spear', capeColor: '#ffd740', bootColor: '#1b5e20' }
+    },
+    {
+      stageIdx: 13, waves: '66～70', mapStyle: 'xiaoyao_waterfort', mapName: '地圖14：逍遙津江南水寨橋',
+      legionName: '【張遼麾下】威震逍遙鐵戟軍', bossLeader: '威震逍遙・張遼',
+      bgPrimary: '#0c2e2c', bgSecondary: '#144542', roadColor: '#4e3624', accentColor: '#00e676',
+      weatherColor: 'rgba(105, 240, 174, 0.70)', weatherType: 'mist',
+      trait: 'terror_aura', traitDesc: '威震逍遙（雙倍鐵戟菁英與高速突擊）',
+      grunt:  { name: '張遼逍遙鐵衛', bodyKey: 'body_xiahoudun',wpnKey: 'rig_fangtian',capeColor: '#00e676', bootColor: '#004d40' },
+      shield: { name: '小師橋斷後巨盾',bodyKey: 'body_shield',  wpnKey: 'rig_fangtian',capeColor: '#1de9b6', bootColor: '#004d40' },
+      charger:{ name: '虎步江南突騎', bodyKey: 'body_xiahoudun',wpnKey: 'rig_fangtian',capeColor: '#64ffda', bootColor: '#00695c' },
+      archer: { name: '水寨破帆強弩', bodyKey: 'body_sunshangxiang',wpnKey:'rig_bow',  capeColor: '#80cbc4', bootColor: '#004d40' },
+      shaman: { name: '逍遙津雷鳴師', bodyKey: 'body_zhugeliang',wpnKey:'rig_thunder', capeColor: '#00e5ff', bootColor: '#004d40' },
+      elite:  { name: '★張遼八百死士・鐵戟統領', bodyKey: 'body_xiahoudun', wpnKey: 'rig_fangtian', capeColor: '#ffd740', bootColor: '#004d40' }
+    },
+    {
+      stageIdx: 14, waves: '71～75', mapStyle: 'maple_cliff', mapName: '地圖15：葭萌關秋楓懸崖道',
+      legionName: '【張郃麾下】巧變幻影奇兵', bossLeader: '巧變名將・張郃',
+      bgPrimary: '#2e1a0f', bgSecondary: '#452616', roadColor: '#5e351e', accentColor: '#ffd740',
+      weatherColor: 'rgba(255, 138, 101, 0.76)', weatherType: 'leaves',
+      trait: 'mirage_flank', traitDesc: '巧變奇陣（幻影斜角包抄走位）',
+      grunt:  { name: '張郃巧變劍兵', bodyKey: 'body_zhouyu',   wpnKey: 'rig_twinswords',capeColor:'#ffd740', bootColor: '#e65100' },
+      shield: { name: '瓦口隘玄甲衛', bodyKey: 'body_shield',   wpnKey: 'rig_halberd', capeColor: '#ffab00', bootColor: '#bf360c' },
+      charger:{ name: '蜀道移形奇騎', bodyKey: 'body_zhouyu',   wpnKey: 'rig_twinswords',capeColor:'#ffe57f', bootColor: '#ff6f00' },
+      archer: { name: '葭萌楓林暗器營',bodyKey: 'body_sunshangxiang',wpnKey:'rig_needles',capeColor:'#ff9100',bootColor: '#e65100' },
+      shaman: { name: '四象幻影陣師', bodyKey: 'body_zhugeliang',wpnKey:'rig_twinswords',capeColor:'#ffd740',bootColor: '#ff6f00' },
+      elite:  { name: '★張郃親傳・巧變奇門督軍', bodyKey: 'body_zhouyu', wpnKey: 'rig_twinswords', capeColor: '#ffffff', bootColor: '#e65100' }
+    },
+    {
+      stageIdx: 15, waves: '76～80', mapStyle: 'dingjun_summit', mapName: '地圖16：定軍山斬將烽火台',
+      legionName: '【夏侯淵麾下】三日千里神射營', bossLeader: '疾行虎步・夏侯淵',
+      bgPrimary: '#2b1912', bgSecondary: '#40251b', roadColor: '#593426', accentColor: '#ffc400',
+      weatherColor: 'rgba(255, 196, 0, 0.78)', weatherType: 'leaves',
+      trait: 'rapid_volley', traitDesc: '三日千里（全軍移速與遠程箭雨射速+30%）',
+      grunt:  { name: '夏侯淵疾行卒', bodyKey: 'body_xiahoudun',wpnKey: 'rig_bow',     capeColor: '#ffc400', bootColor: '#bf360c' },
+      shield: { name: '定軍鹿角重盾', bodyKey: 'body_shield',   wpnKey: 'rig_halberd', capeColor: '#ff9100', bootColor: '#3e2723' },
+      charger:{ name: '虎步關右千里騎',bodyKey: 'body_xiahoudun',wpnKey: 'rig_bow',    capeColor: '#ffd740', bootColor: '#e65100' },
+      archer: { name: '定軍流星神弓手',bodyKey: 'body_sunshangxiang',wpnKey:'rig_bow',  capeColor: '#ffab00', bootColor: '#d84315' },
+      shaman: { name: '天蕩山神威砲兵',bodyKey: 'body_xiahoudun',wpnKey: 'rig_cannon',  capeColor: '#ff6d00', bootColor: '#bf360c' },
+      elite:  { name: '★夏侯淵親衛・流星神射統領', bodyKey: 'body_xiahoudun', wpnKey: 'rig_bow', capeColor: '#ffd740', bootColor: '#d50000' }
+    },
+    {
+      stageIdx: 16, waves: '81～85', mapStyle: 'fire_jungle', mapName: '地圖17：瀘水赤焰火神叢林',
+      legionName: '【祝融麾下】南中赤焰飛刀營', bossLeader: '火神後裔・祝融夫人',
+      bgPrimary: '#29121a', bgSecondary: '#3d1b27', roadColor: '#542536', accentColor: '#ff4081',
+      weatherColor: 'rgba(255, 64, 129, 0.74)', weatherType: 'spores',
+      trait: 'fire_venom', traitDesc: '火神淬毒（赤焰飛刀與淬毒暗器齊發）',
+      grunt:  { name: '祝融赤焰女獵手',bodyKey: 'body_sunshangxiang',wpnKey:'rig_needles',capeColor:'#ff4081',bootColor: '#880e4f' },
+      shield: { name: '三洞火紋蠻盾', bodyKey: 'body_shield',   wpnKey: 'rig_serpent', capeColor: '#f50057', bootColor: '#4a0e2e' },
+      charger:{ name: '火神赤豹突襲騎',bodyKey: 'body_sunshangxiang',wpnKey:'rig_needles',capeColor:'#ff80ab',bootColor: '#ad1457' },
+      archer: { name: '南中奪命飛刀手',bodyKey: 'body_sunshangxiang',wpnKey:'rig_needles',capeColor:'#ff4081',bootColor: '#880e4f' },
+      shaman: { name: '瀘水赤焰毒巫', bodyKey: 'body_zhouyu',   wpnKey: 'rig_firefan', capeColor: '#ff1744', bootColor: '#880e4f' },
+      elite:  { name: '★祝融親傳・火神飛刀統領', bodyKey: 'body_sunshangxiang', wpnKey: 'rig_needles', capeColor: '#ffd740', bootColor: '#880e4f' }
+    },
+    {
+      stageIdx: 17, waves: '86～90', mapStyle: 'poison_swamp', mapName: '地圖18：盤蛇谷劇毒冒泡沼',
+      legionName: '【孟獲麾下】烏戈藤甲巨象軍', bossLeader: '南蠻獸王・孟獲',
+      bgPrimary: '#14260d', bgSecondary: '#1f3b14', roadColor: '#2c521d', accentColor: '#76ff03',
+      weatherColor: 'rgba(118, 255, 3, 0.75)', weatherType: 'spores',
+      trait: 'rattan_armor', traitDesc: '烏戈藤甲（高比例巨漢・物理減傷畏懼火雷）',
+      grunt:  { name: '孟獲南蠻力士', bodyKey: 'body_zhangfei', wpnKey: 'rig_serpent', capeColor: '#76ff03', bootColor: '#33691e' },
+      shield: { name: '烏戈國不死藤甲',bodyKey: 'body_shield',  wpnKey: 'rig_serpent', capeColor: '#64dd17', bootColor: '#1b5e20' },
+      charger:{ name: '木鹿大王狂象騎',bodyKey: 'body_zhangfei',wpnKey: 'rig_serpent', capeColor: '#b2ff59', bootColor: '#33691e' },
+      archer: { name: '朵思毒泉吹箭手',bodyKey: 'body_grunt',   wpnKey: 'rig_needles', capeColor: '#00e676', bootColor: '#1b5e20' },
+      shaman: { name: '盤蛇谷萬蠱巫師',bodyKey: 'body_zhugeliang',wpnKey:'rig_needles',capeColor: '#76ff03', bootColor: '#33691e' },
+      elite:  { name: '★孟獲結義・烏戈藤甲巨王', bodyKey: 'body_zhangfei', wpnKey: 'rig_serpent', capeColor: '#ffd740', bootColor: '#1b5e20' }
+    },
+    {
+      stageIdx: 18, waves: '91～95', mapStyle: 'qimen_monolith', mapName: '地圖19：子午谷奇門八門陣',
+      legionName: '【魏延麾下】子午谷反骨狂軍', bossLeader: '狂骨魔將・魏延',
+      bgPrimary: '#21132b', bgSecondary: '#311c40', roadColor: '#442759', accentColor: '#ff5252',
+      weatherColor: 'rgba(255, 82, 82, 0.78)', weatherType: 'starlight',
+      trait: 'blood_frenzy', traitDesc: '反骨噬血（狂骨軍高攻高跑速突襲）',
+      grunt:  { name: '魏延反骨狂刀卒',bodyKey: 'body_guanyu',  wpnKey: 'rig_halberd', capeColor: '#ff5252', bootColor: '#4a148c' },
+      shield: { name: '子午谷重裝血盾',bodyKey: 'body_shield',  wpnKey: 'rig_halberd', capeColor: '#d50000', bootColor: '#311b92' },
+      charger:{ name: '奇謀血月突襲騎',bodyKey: 'body_guanyu',  wpnKey: 'rig_halberd', capeColor: '#ff1744', bootColor: '#b71c1c' },
+      archer: { name: '祁山轟天重砲手',bodyKey: 'body_xiahoudun',wpnKey: 'rig_cannon', capeColor: '#ff8a80', bootColor: '#4a148c' },
+      shaman: { name: '八門金鎖破陣師',bodyKey: 'body_zhugeliang',wpnKey:'rig_thunder',capeColor: '#e040fb', bootColor: '#311b92' },
+      elite:  { name: '★魏延親率・反骨噬血督軍', bodyKey: 'body_guanyu', wpnKey: 'rig_halberd', capeColor: '#ffd740', bootColor: '#b71c1c' }
+    },
+    {
+      stageIdx: 19, waves: '96～100', mapStyle: 'starfall_abyss', mapName: '地圖20：五丈原星隕七星壇',
+      legionName: '【魔神呂布麾下】九天修羅魔軍', bossLeader: '九天無雙魔神・呂奉先',
+      bgPrimary: '#1a0926', bgSecondary: '#2b0f40', roadColor: '#42145e', accentColor: '#ff1744',
+      weatherColor: 'rgba(234, 128, 252, 0.85)', weatherType: 'starlight',
+      trait: 'demon_apocalypse', traitDesc: '九天修羅（全軍魔神化・全屬性極限暴走）',
+      grunt:  { name: '九天修羅魔戟兵',bodyKey: 'body_lubu',    wpnKey: 'rig_fangtian',capeColor: '#ff1744', bootColor: '#311b92' },
+      shield: { name: '五丈原魔神重鎧',bodyKey: 'body_lubu',    wpnKey: 'rig_fangtian',capeColor: '#d50000', bootColor: '#1a0526' },
+      charger:{ name: '滅世赤兔魔神騎',bodyKey: 'body_lubu',    wpnKey: 'rig_fangtian',capeColor: '#ff3d00', bootColor: '#aa00ff' },
+      archer: { name: '星隕毀滅魔砲手',bodyKey: 'body_caocao',  wpnKey: 'rig_cannon',  capeColor: '#e040fb', bootColor: '#4a148c' },
+      shaman: { name: '七星逆天魔導師',bodyKey: 'body_zhugeliang',wpnKey:'rig_thunder',capeColor: '#ffd740', bootColor: '#aa00ff' },
+      elite:  { name: '★魔神呂布親衛・九天無雙魔將', bodyKey: 'body_lubu', wpnKey: 'rig_fangtian', capeColor: '#ffd740', bootColor: '#ff1744' }
+    }
+  ];
+
   const TOTAL_WAVES = 100;
   const WAVES = Array.from({ length: TOTAL_WAVES }, (_, idx) => {
     const waveNum = idx + 1;
     const chapIdx = Math.floor(idx / 10);
     const subIdx = idx % 10;
+    const stageIdx = Math.floor(idx / 5); // Changes every 5 waves! (0..19 -> 20 distinct maps & Boss legions)
+    const stageSubIdx = idx % 5;         // 0..4 within the 5-wave stage
     const chap = CHAPTERS[chapIdx];
+    const stageSpec = STAGE_LEGIONS[stageIdx] || STAGE_LEGIONS[0];
     const isMajorBoss = waveNum % 10 === 0;
     const isMidBoss = !isMajorBoss && waveNum % 5 === 0;
     const isBoss = isMajorBoss || isMidBoss;
 
-    // Distinct escalating intensity per wave & chapter
-    const hpMul = +(Math.pow(1.096, idx) * (1 + chapIdx * 0.25) * (1 + subIdx * 0.04)).toFixed(2);
-    const speedMul = +(1.0 + Math.min(1.15, idx * 0.011 + chapIdx * 0.035)).toFixed(2);
-    const dmgMul = +(1.0 + idx * 0.065 + chapIdx * 0.15).toFixed(2);
-    const spawnInterval = Math.max(0.095, +(0.58 * Math.pow(0.980, idx)).toFixed(3));
-    const maxEnemies = Math.min(190, 82 + Math.floor(idx * 1.15));
-    const duration = isMajorBoss ? 60 : (isMidBoss ? 45 : Math.min(28, 20 + (subIdx % 5)));
+    // Continuous escalating intensity EVERY wave + step-up EVERY 5-wave stage!
+    const hpMul = +(Math.pow(1.118, idx) * (1 + stageIdx * 0.26) * (1 + stageSubIdx * 0.08)).toFixed(2);
+    const speedMul = +(1.0 + Math.min(1.25, idx * 0.012 + stageIdx * 0.025 + stageSubIdx * 0.02)).toFixed(2);
+    const dmgMul = +(1.0 + idx * 0.08 + stageIdx * 0.14 + stageSubIdx * 0.05).toFixed(2);
+    const spawnInterval = Math.max(0.085, +(0.54 * Math.pow(0.978, idx) * (1 - stageSubIdx * 0.025)).toFixed(3));
+    const maxEnemies = Math.min(195, 86 + Math.floor(idx * 1.25) + stageSubIdx * 4);
+    const duration = isMajorBoss ? 60 : (isMidBoss ? 45 : Math.min(28, 20 + stageSubIdx * 2));
 
     return {
       wave: waveNum,
       chapIdx,
+      stageIdx,
+      stageSubIdx,
+      stageSpec,
+      mapStyle: stageSpec.mapStyle,
+      mapName: stageSpec.mapName,
+      legionName: stageSpec.legionName,
       chapterName: chap.name,
       biome: chap.biome,
       groundTint: chap.groundTint,
       gridColor: chap.gridColor,
-      weatherColor: chap.weatherColor,
-      weatherType: chap.weatherType,
-      title: `第 ${waveNum} / 100 陣｜${chap.subTitles[subIdx]}`,
+      weatherColor: stageSpec.weatherColor || chap.weatherColor,
+      weatherType: stageSpec.weatherType || chap.weatherType,
+      title: `第 ${waveNum} / 100 陣｜${stageSpec.mapName.split('：')[1]}・${chap.subTitles[subIdx]}`,
       shortTitle: chap.subTitles[subIdx],
       duration,
       spawnInterval,
@@ -2976,18 +3260,35 @@
     renderHeroSelect();
   }
 
+  function getEffectiveMobScale(w) {
+    const waveIdx = Math.max(0, (w ? w.wave : 1) - 1);
+    const baseHpMul = w ? w.hpMul : 1;
+    const baseDmgMul = w ? w.dmgMul : 1;
+    const baseSpdMul = w ? w.speedMul : 1;
+    // Adaptive Player-DPS floor so mobs continuously feel tougher every wave even when player merges high-tier weapons!
+    const playerDps = estimatePlayerDps();
+    const dpsRatio = Math.max(1.0, playerDps / 115);
+    const adaptiveHpFloor = dpsRatio * (0.78 + waveIdx * 0.055 + Math.floor(waveIdx / 5) * 0.18);
+    const hpMul = +(Math.max(baseHpMul, adaptiveHpFloor)).toFixed(2);
+    const dmgMul = +(baseDmgMul * (1 + Math.min(0.45, Math.max(0, dpsRatio - 1.5) * 0.08))).toFixed(2);
+    const speedMul = baseSpdMul;
+    return { hpMul, dmgMul, speedMul };
+  }
+
   function startWave(idx) {
     state.waveIdx = Math.max(0, Math.min(TOTAL_WAVES - 1, idx));
     recordBestWave(state.waveIdx + 1);
 
     const w = WAVES[state.waveIdx];
+    const st = w.stageSpec || STAGE_LEGIONS[0];
+    const eff = getEffectiveMobScale(w);
     state.phase = 'WAVE';
     state.waveTimer = w.duration;
     state.autoSaveTimer = 3.0;
     state.spawnAccum = 0;
-    state.cavalryTimer = Math.max(7.5, 13.5 - w.chapIdx * 0.45);
+    state.cavalryTimer = st.trait === 'tiger_cavalry' ? 5.5 : Math.max(7.0, 13.0 - w.stageIdx * 0.25);
     state.propSpawnTimer = 3.5;
-    state.eliteSpawnTimer = 9.0;
+    state.eliteSpawnTimer = st.trait === 'terror_aura' ? 6.0 : 9.0;
     state.walkPhase = 0;
     state.enemies = [];
     state.projectiles = [];
@@ -3007,16 +3308,19 @@
     state.musouDomainTimer = 0;
     state.bossDomainTimer = 0;
 
+    // Show 5-Wave Map & Boss Legion Banner at top of screen for 3.2s
+    state.stageBannerTimer = 3.2;
+
     // Immediately auto-save upon entering any wave!
     saveCampaignProgress(state.waveIdx, false);
 
     sfx.setBgmMode(w.boss ? 'boss' : 'battle', w.chapIdx);
 
     document.getElementById('shopOverlay').classList.add('hidden');
-    document.getElementById('waveTitle').textContent = `${w.chapterName.split('・')[1]}｜${w.title}`;
+    document.getElementById('waveTitle').textContent = `第 ${w.wave}/100 陣｜${st.mapName.split('：')[1]}・${st.legionName} (強度×${eff.hpMul})`;
     document.getElementById('bossBanner').classList.toggle('visible', !!w.boss);
 
-    // Initialize ambient weather particles for this biome
+    // Initialize ambient weather particles for this 5-wave biome
     state.weatherParticles = [];
     for (let i = 0; i < 36; i++) {
       state.weatherParticles.push({
@@ -3034,7 +3338,7 @@
       spawnBattlefieldProp();
     }
 
-    const initialPack = Math.min(20, 8 + Math.floor(state.waveIdx / 6));
+    const initialPack = Math.min(22, 9 + Math.floor(state.waveIdx / 5));
     for (let i = 0; i < initialPack; i++) {
       spawnEnemy();
     }
@@ -3045,12 +3349,12 @@
 
     state.floatTexts.push({
       x: state.x,
-      y: state.y - 68,
-      text: `【${w.chapterName}】${w.shortTitle}`,
-      color: '#ffd740',
-      size: 20,
-      life: 1.6,
-      maxLife: 1.6
+      y: state.y - 76,
+      text: `🗺️ ${st.mapName}｜👾 ${st.legionName}（敵軍戰力 ×${eff.hpMul}）`,
+      color: st.accentColor || '#ffd740',
+      size: 19,
+      life: 2.1,
+      maxLife: 2.1
     });
 
     updateHud();
@@ -3085,13 +3389,16 @@
 
   function spawnCavalryFormation() {
     const w = WAVES[state.waveIdx];
+    const st = w.stageSpec || STAGE_LEGIONS[0];
+    const eff = getEffectiveMobScale(w);
+    const cavSpec = st.charger || STAGE_LEGIONS[0].charger;
     const horizontal = Math.random() < 0.5;
     const dir = Math.random() < 0.5 ? 1 : -1;
     const laneOffset = (Math.random() - 0.5) * 260;
     const laneX = horizontal ? state.x - dir * 720 : state.x + laneOffset;
     const laneY = horizontal ? state.y + laneOffset : state.y - dir * 620;
-    const vx = horizontal ? dir * 480 : 0;
-    const vy = horizontal ? 0 : dir * 480;
+    const vx = horizontal ? dir * 485 : 0;
+    const vy = horizontal ? 0 : dir * 485;
     const ang = Math.atan2(vy, vx);
 
     sfx.playWarDrum();
@@ -3112,21 +3419,24 @@
           const perpY = Math.cos(ang) * (i * 42);
           state.enemies.push({
             type: 'cavalry_rush',
-            bodyKey: 'body_charger',
-            bootColor: '#ff1744',
-            capeColor: '#d50000',
-            name: '西涼衝陣鐵騎',
+            bodyKey: cavSpec.bodyKey || 'body_charger',
+            wpnKey: cavSpec.wpnKey || 'rig_spear',
+            bootColor: cavSpec.bootColor || '#ff1744',
+            capeColor: cavSpec.capeColor || '#d50000',
+            name: cavSpec.name,
+            badgeText: `🐎${cavSpec.name.slice(0, 4)}`,
+            legionTrait: st.trait,
             x: laneX + perpX,
             y: laneY + perpY,
             vx,
             vy,
             radius: 23,
             drawSize: 62,
-            hp: Math.round(48 * w.hpMul),
-            maxHp: Math.round(48 * w.hpMul),
-            speed: 480,
-            dmg: Math.round(18 * w.dmgMul),
-            color: '#ff5252',
+            hp: Math.round(52 * eff.hpMul),
+            maxHp: Math.round(52 * eff.hpMul),
+            speed: 485,
+            dmg: Math.round(18 * eff.dmgMul),
+            color: st.accentColor || '#ff5252',
             jadeValue: 6 * (1 + Math.floor(state.waveIdx / 5)),
             hitFlash: 0,
             walkPhase: Math.random() * 6,
@@ -3141,8 +3451,8 @@
     state.floatTexts.push({
       x: state.x,
       y: state.y - 80,
-      text: '⚠️ 敵軍鐵騎列陣衝鋒！注意紅線閃避！',
-      color: '#ff5252',
+      text: `⚠️ ${st.legionName}【${cavSpec.name}】列陣衝鋒！`,
+      color: st.accentColor || '#ff5252',
       size: 16,
       life: 1.2,
       maxLife: 1.2
@@ -3151,6 +3461,8 @@
 
   function spawnEnemy(forcedType) {
     const w = WAVES[state.waveIdx];
+    const st = w.stageSpec || STAGE_LEGIONS[0];
+    const eff = getEffectiveMobScale(w);
     const pos = getSpawnRingCoord();
     const ex = pos.x;
     const ey = pos.y;
@@ -3158,82 +3470,135 @@
     let type = forcedType;
     if (!type) {
       const r = Math.random();
-      const chap = w.chapIdx;
-      // Dynamic enemy composition that evolves every chapter & wave!
-      if (state.waveIdx >= 1 && r < 0.16 + chap * 0.015) type = 'archer';
-      else if (state.waveIdx >= 2 && r < 0.30 + chap * 0.02) type = 'bomber';
-      else if (state.waveIdx >= 3 && r < 0.44 + chap * 0.015) type = 'charger';
-      else if (state.waveIdx >= 4 && r < 0.56 + chap * 0.015) type = 'shaman';
-      else if (state.waveIdx >= 5 && r < 0.68 + chap * 0.015) type = 'juggernaut';
-      else if (r < 0.82) type = 'shield';
-      else type = 'grunt';
+      const tr = st.trait;
+      // Boss-Specific Legion Troop Composition! Each 5-Wave Boss commands a distinct army mix:
+      if (tr === 'thunder_cult') {
+        // Zhang Jiao (Waves 6-10): High Talisman Shaman & Archer Cultist ratio
+        if (r < 0.30) type = 'shaman';
+        else if (r < 0.50) type = 'archer';
+        else if (r < 0.64) type = 'bomber';
+        else if (r < 0.78) type = 'shield';
+        else type = 'grunt';
+      } else if (tr === 'tiger_cavalry' || tr === 'lightning_spear') {
+        // Cao Chun / Ma Chao: Heavy Cavalry & Vanguard Charger army
+        if (r < 0.36) type = 'charger';
+        else if (r < 0.54) type = 'shield';
+        else if (r < 0.70) type = 'archer';
+        else if (r < 0.82) type = 'juggernaut';
+        else type = 'grunt';
+      } else if (tr === 'fire_marine' || tr === 'vanguard_burst') {
+        // Cai Mao / Yue Jin: Fire-Ship Bombers & Fire Archers
+        if (r < 0.26) type = 'bomber';
+        else if (r < 0.52) type = 'archer';
+        else if (r < 0.68) type = 'shaman';
+        else if (r < 0.84) type = 'shield';
+        else type = 'grunt';
+      } else if (tr === 'rapid_volley' || tr === 'fire_venom') {
+        // Xiahou Yuan / Zhurong: High-Speed Ranged Barrage & Venom Throwers
+        if (r < 0.38) type = 'archer';
+        else if (r < 0.58) type = 'charger';
+        else if (r < 0.74) type = 'shaman';
+        else if (r < 0.86) type = 'shield';
+        else type = 'grunt';
+      } else if (tr === 'rattan_armor') {
+        // Meng Huo: Giant Rattan-Armor Juggernauts & Poison Shamans
+        if (r < 0.34) type = 'juggernaut';
+        else if (r < 0.54) type = 'shaman';
+        else if (r < 0.72) type = 'charger';
+        else if (r < 0.86) type = 'shield';
+        else type = 'grunt';
+      } else {
+        // Balanced progressive scaling across all waves
+        const stage = w.stageIdx || 0;
+        if (r < 0.16 + stage * 0.006) type = 'archer';
+        else if (state.waveIdx >= 1 && r < 0.28 + stage * 0.006) type = 'bomber';
+        else if (r < 0.44 + stage * 0.006) type = 'charger';
+        else if (state.waveIdx >= 2 && r < 0.58 + stage * 0.006) type = 'shaman';
+        else if (state.waveIdx >= 3 && r < 0.70 + stage * 0.006) type = 'juggernaut';
+        else if (r < 0.84) type = 'shield';
+        else type = 'grunt';
+      }
     }
 
     const basePhase = Math.random() * Math.PI * 2;
     const jadeScale = 1 + Math.floor(state.waveIdx / 5);
+    const spdTraitBonus = (st.trait === 'bull_rush' || st.trait === 'whirlwind_step' || st.trait === 'sword_dash' || st.trait === 'rapid_volley' || st.trait === 'blood_frenzy' || st.trait === 'demon_apocalypse') ? 1.12 : 1.0;
+    const hpTraitBonus = (st.trait === 'unstoppable' || st.trait === 'imperial_guard' || st.trait === 'rattan_armor' || st.trait === 'demon_apocalypse') ? 1.16 : 1.0;
 
     if (type === 'elite') {
+      const sp = st.elite || STAGE_LEGIONS[0].elite;
       state.enemies.push({
         type: 'elite',
         isElite: true,
-        bodyKey: 'body_lubu',
-        bootColor: '#ffd740',
-        capeColor: '#ff9100',
-        name: '鎮陣菁英統領',
+        bodyKey: sp.bodyKey,
+        wpnKey: sp.wpnKey,
+        bootColor: sp.bootColor,
+        capeColor: sp.capeColor,
+        name: sp.name,
+        badgeText: sp.name,
+        legionTrait: st.trait,
         x: ex, y: ey,
         radius: 30,
-        drawSize: 78,
-        hp: Math.round(210 * w.hpMul),
-        maxHp: Math.round(210 * w.hpMul),
-        speed: 108 * w.speedMul,
-        dmg: Math.round(18 * w.dmgMul),
-        color: '#ffd740',
+        drawSize: 80,
+        hp: Math.round(235 * eff.hpMul * hpTraitBonus),
+        maxHp: Math.round(235 * eff.hpMul * hpTraitBonus),
+        speed: 110 * eff.speedMul * spdTraitBonus,
+        dmg: Math.round(19 * eff.dmgMul),
+        color: st.accentColor || '#ffd740',
         jadeValue: 18 * jadeScale,
         hitFlash: 0,
         walkPhase: basePhase,
         strideFreq: 13,
         facing: 1,
-        shootTimer: 2.2
+        shootTimer: 2.0
       });
       return;
     }
 
     if (type === 'archer') {
+      const sp = st.archer || STAGE_LEGIONS[0].archer;
       state.enemies.push({
         type: 'archer',
-        bodyKey: 'body_grunt',
-        bootColor: '#0288d1',
-        capeColor: '#00e5ff',
-        name: '連弩神射營',
+        bodyKey: sp.bodyKey,
+        wpnKey: sp.wpnKey,
+        bootColor: sp.bootColor,
+        capeColor: sp.capeColor,
+        name: sp.name,
+        badgeText: sp.name.slice(0, 5),
+        legionTrait: st.trait,
         x: ex, y: ey,
         radius: 19,
-        drawSize: 52,
-        hp: Math.round(24 * w.hpMul),
-        maxHp: Math.round(24 * w.hpMul),
-        speed: 95 * w.speedMul,
-        dmg: Math.round(11 * w.dmgMul),
-        color: '#00e5ff',
+        drawSize: 54,
+        hp: Math.round(28 * eff.hpMul * hpTraitBonus),
+        maxHp: Math.round(28 * eff.hpMul * hpTraitBonus),
+        speed: 96 * eff.speedMul * spdTraitBonus,
+        dmg: Math.round(12 * eff.dmgMul),
+        color: st.accentColor || '#00e5ff',
         jadeValue: 4 * jadeScale,
         hitFlash: 0,
         walkPhase: basePhase,
         strideFreq: 13,
         facing: 1,
-        shootTimer: 1.4 + Math.random() * 1.2
+        shootTimer: (st.trait === 'rapid_volley' ? 1.0 : 1.4) + Math.random() * 1.0
       });
     } else if (type === 'bomber') {
+      const sp = st.grunt || STAGE_LEGIONS[0].grunt;
       state.enemies.push({
         type: 'bomber',
-        bodyKey: 'body_grunt',
+        bodyKey: sp.bodyKey,
+        wpnKey: 'rig_cannon',
         bootColor: '#ff1744',
         capeColor: '#ff9100',
-        name: '火藥自爆死士',
+        name: `${st.bossLeader.split('・')[1] || '死士'}火藥卒`,
+        badgeText: '💣火藥死士',
+        legionTrait: st.trait,
         x: ex, y: ey,
         radius: 18,
-        drawSize: 50,
-        hp: Math.round(20 * w.hpMul),
-        maxHp: Math.round(20 * w.hpMul),
-        speed: 158 * w.speedMul,
-        dmg: Math.round(18 * w.dmgMul),
+        drawSize: 52,
+        hp: Math.round(24 * eff.hpMul),
+        maxHp: Math.round(24 * eff.hpMul),
+        speed: 160 * eff.speedMul * spdTraitBonus,
+        dmg: Math.round(19 * eff.dmgMul),
         color: '#ff9100',
         jadeValue: 4 * jadeScale,
         hitFlash: 0,
@@ -3242,42 +3607,50 @@
         facing: 1
       });
     } else if (type === 'shaman') {
+      const sp = st.shaman || STAGE_LEGIONS[0].shaman;
       state.enemies.push({
         type: 'shaman',
-        bodyKey: 'body_zhugeliang',
-        bootColor: '#7b1fa2',
-        capeColor: '#e040fb',
-        name: '太平妖術師',
+        bodyKey: sp.bodyKey,
+        wpnKey: sp.wpnKey,
+        bootColor: sp.bootColor,
+        capeColor: sp.capeColor,
+        name: sp.name,
+        badgeText: `🔮${sp.name.slice(-3)}`,
+        legionTrait: st.trait,
         x: ex, y: ey,
         radius: 20,
         drawSize: 56,
-        hp: Math.round(38 * w.hpMul),
-        maxHp: Math.round(38 * w.hpMul),
-        speed: 86 * w.speedMul,
-        dmg: Math.round(13 * w.dmgMul),
-        color: '#e040fb',
+        hp: Math.round(42 * eff.hpMul * hpTraitBonus),
+        maxHp: Math.round(42 * eff.hpMul * hpTraitBonus),
+        speed: 88 * eff.speedMul * spdTraitBonus,
+        dmg: Math.round(14 * eff.dmgMul),
+        color: sp.capeColor || '#e040fb',
         jadeValue: 5 * jadeScale,
         hitFlash: 0,
         walkPhase: basePhase,
         strideFreq: 11,
         facing: 1,
-        shootTimer: 1.8 + Math.random() * 1.2
+        shootTimer: (st.trait === 'thunder_cult' ? 1.25 : 1.7) + Math.random() * 1.0
       });
     } else if (type === 'juggernaut') {
+      const sp = st.shield || STAGE_LEGIONS[0].shield;
       state.enemies.push({
         type: 'juggernaut',
-        bodyKey: 'body_shield',
-        bootColor: '#1b5e20',
-        capeColor: '#76ff03',
-        name: '烏戈藤甲巨漢',
+        bodyKey: sp.bodyKey,
+        wpnKey: sp.wpnKey,
+        bootColor: sp.bootColor,
+        capeColor: sp.capeColor,
+        name: `${sp.name}・巨漢`,
+        badgeText: `🛡️${sp.name.slice(0, 4)}`,
+        legionTrait: st.trait,
         x: ex, y: ey,
         radius: 27,
         drawSize: 70,
-        hp: Math.round(98 * w.hpMul),
-        maxHp: Math.round(98 * w.hpMul),
-        speed: 72 * w.speedMul,
-        dmg: Math.round(17 * w.dmgMul),
-        color: '#76ff03',
+        hp: Math.round(108 * eff.hpMul * hpTraitBonus),
+        maxHp: Math.round(108 * eff.hpMul * hpTraitBonus),
+        speed: 74 * eff.speedMul * spdTraitBonus,
+        dmg: Math.round(18 * eff.dmgMul),
+        color: st.accentColor || '#76ff03',
         jadeValue: 6 * jadeScale,
         hitFlash: 0,
         walkPhase: basePhase,
@@ -3285,19 +3658,24 @@
         facing: 1
       });
     } else if (type === 'shield') {
+      const sp = st.shield || STAGE_LEGIONS[0].shield;
       state.enemies.push({
         type: 'shield',
-        bodyKey: 'body_shield',
-        bootColor: '#37474f',
-        name: '重甲刀盾兵',
+        bodyKey: sp.bodyKey,
+        wpnKey: sp.wpnKey,
+        bootColor: sp.bootColor,
+        capeColor: sp.capeColor,
+        name: sp.name,
+        badgeText: '',
+        legionTrait: st.trait,
         x: ex, y: ey,
         radius: 23,
         drawSize: 60,
-        hp: Math.round(56 * w.hpMul),
-        maxHp: Math.round(56 * w.hpMul),
-        speed: 82 * w.speedMul,
-        dmg: Math.round(14 * w.dmgMul),
-        color: '#5c7cfa',
+        hp: Math.round(62 * eff.hpMul * hpTraitBonus),
+        maxHp: Math.round(62 * eff.hpMul * hpTraitBonus),
+        speed: 84 * eff.speedMul * spdTraitBonus,
+        dmg: Math.round(15 * eff.dmgMul),
+        color: sp.capeColor || '#5c7cfa',
         jadeValue: 4 * jadeScale,
         hitFlash: 0,
         walkPhase: basePhase,
@@ -3305,44 +3683,54 @@
         facing: 1
       });
     } else if (type === 'charger') {
+      const sp = st.charger || STAGE_LEGIONS[0].charger;
       state.enemies.push({
         type: 'charger',
-        bodyKey: 'body_charger',
-        bootColor: '#b71c1c',
-        name: '西涼狼騎',
+        bodyKey: sp.bodyKey,
+        wpnKey: sp.wpnKey,
+        bootColor: sp.bootColor,
+        capeColor: sp.capeColor,
+        name: sp.name,
+        badgeText: `⚡${sp.name.slice(-3)}`,
+        legionTrait: st.trait,
         x: ex, y: ey,
         radius: 22,
         drawSize: 58,
-        hp: Math.round(44 * w.hpMul),
-        maxHp: Math.round(44 * w.hpMul),
-        speed: 142 * w.speedMul,
-        dmg: Math.round(16 * w.dmgMul),
-        color: '#ff6b6b',
+        hp: Math.round(48 * eff.hpMul * hpTraitBonus),
+        maxHp: Math.round(48 * eff.hpMul * hpTraitBonus),
+        speed: 145 * eff.speedMul * spdTraitBonus,
+        dmg: Math.round(16 * eff.dmgMul),
+        color: sp.capeColor || '#ff6b6b',
         jadeValue: 5 * jadeScale,
         hitFlash: 0,
         walkPhase: basePhase,
         strideFreq: 18,
         facing: 1,
-        chargeCd: 2.5 + Math.random() * 1.5,
+        chargeCd: (st.trait === 'bull_rush' || st.trait === 'tiger_cavalry' ? 1.8 : 2.5) + Math.random() * 1.2,
         windupTimer: 0,
         dashTimer: 0,
         dashVx: 0,
         dashVy: 0
       });
     } else {
+      const sp = st.grunt || STAGE_LEGIONS[0].grunt;
       state.enemies.push({
         type: 'grunt',
-        bodyKey: 'body_grunt',
-        bootColor: '#5d4037',
-        name: '黃巾步卒',
+        bodyKey: sp.bodyKey,
+        wpnKey: sp.wpnKey,
+        bootColor: sp.bootColor,
+        capeColor: sp.capeColor,
+        name: sp.name,
+        badgeText: '',
+        legionTrait: st.trait,
         x: ex, y: ey,
         radius: 19,
-        drawSize: 52,
-        hp: Math.round(26 * w.hpMul),
-        maxHp: Math.round(26 * w.hpMul),
-        speed: (106 + Math.random() * 22) * w.speedMul,
-        dmg: Math.round(10 * w.dmgMul),
-        color: '#d49b35',
+        drawSize: 53,
+        hp: Math.round(30 * eff.hpMul * hpTraitBonus),
+        maxHp: Math.round(30 * eff.hpMul * hpTraitBonus),
+        speed: (108 + Math.random() * 22) * eff.speedMul * spdTraitBonus,
+        dmg: Math.round(11 * eff.dmgMul),
+        color: sp.capeColor || '#d49b35',
         jadeValue: 2 * jadeScale,
         hitFlash: 0,
         walkPhase: basePhase,
@@ -3481,8 +3869,11 @@
     const isCrit = Math.random() < state.critChance;
     const extraCritBonus = Math.max(0, state.critChance - 1.0);
     const critMult = isCrit ? (2.0 + extraCritBonus) : 1.0;
-    // Rattan armor juggernauts take 1.8x damage from fire/thunder/poison!
-    const elemMult = (enemy.type === 'juggernaut' && (elem === 'fire' || elem === 'thunder')) ? 1.8 : 1.0;
+    // Rattan armor juggernauts & Meng Huo's Rattan Legion take 1.75x damage from fire/thunder, and resist physical!
+    const isRattan = enemy.type === 'juggernaut' || enemy.legionTrait === 'rattan_armor';
+    const elemMult = isRattan
+      ? ((elem === 'fire' || elem === 'thunder') ? 1.75 : 0.82)
+      : 1.0;
     let dmg = Math.max(1, Math.round(baseAmount * state.dmgMul * critMult * elemMult));
 
     // Boss Heavy Armor & Anti-Shotgun Protection so Bosses cannot be melted before reaching melee!
@@ -3512,8 +3903,8 @@
     const dx = enemy.x - state.x;
     const dy = enemy.y - state.y;
     const len = Math.hypot(dx, dy) || 1;
-    // Boss has Unstoppable Poise (0 knockback) so ranged weapons never push Boss away from the player!
-    const kbFactor = enemy.isBoss ? 0 : (enemy.isElite ? 0.35 : 1.0);
+    // Boss has Unstoppable Poise (0 knockback); Lu Bu's Xianzhen Camp ('unstoppable') resists 55% knockback!
+    const kbFactor = enemy.isBoss ? 0 : (enemy.isElite ? 0.35 : (enemy.legionTrait === 'unstoppable' ? 0.45 : 1.0));
     enemy.x += (dx / len) * knockback * kbFactor;
     enemy.y += (dy / len) * knockback * kbFactor;
 
@@ -4859,16 +5250,18 @@
       ctx.fill();
     }
 
-    // Colossal Boss Wielded Weapon
-    if (isBoss && wpnKey && CUTOUT_RIGS[wpnKey] && CUTOUT_RIGS[wpnKey].normal) {
+    // Wielded Weapon for both Colossal Bosses AND Boss-Specific Legion Mobs!
+    if (wpnKey && CUTOUT_RIGS[wpnKey] && CUTOUT_RIGS[wpnKey].normal) {
       const wRig = CUTOUT_RIGS[wpnKey];
-      const swing = Math.sin(walkPhase * 0.85) * (isDashing ? 0.65 : 0.24) - 0.28;
+      const swing = Math.sin(walkPhase * (isBoss ? 0.85 : 1.15)) * (isDashing ? 0.65 : 0.28) - 0.24;
       ctx.save();
-      ctx.translate(size * 0.24, -size * 0.32);
+      ctx.translate(size * (isBoss ? 0.24 : 0.22), -size * (isBoss ? 0.32 : 0.30));
       ctx.rotate(swing);
-      ctx.shadowColor = isMajorBoss ? '#ff1744' : '#ffd740';
-      ctx.shadowBlur = 16;
-      const wLen = size * 0.82;
+      if (isBoss) {
+        ctx.shadowColor = isMajorBoss ? '#ff1744' : '#ffd740';
+        ctx.shadowBlur = 16;
+      }
+      const wLen = size * (isBoss ? 0.82 : 0.64);
       const wH = wLen / Math.max(0.55, wRig.aspect || 1.6);
       ctx.drawImage(wRig.normal, -wLen * 0.28, -wH / 2, wLen, wH);
       ctx.restore();
@@ -4897,10 +5290,13 @@
       ctx.strokeRect(-bw / 2, by, bw, bh);
     } else {
       if (badgeText) {
-        ctx.font = '800 10px "Noto Sans TC"';
-        ctx.fillStyle = ringColor || '#ffd740';
+        ctx.font = '800 10.5px "Noto Sans TC"';
         ctx.textAlign = 'center';
-        ctx.fillText(badgeText, 0, -size * 0.96);
+        ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+        ctx.lineWidth = 2.5;
+        ctx.strokeText(badgeText, 0, -size * 0.95);
+        ctx.fillStyle = ringColor || '#ffd740';
+        ctx.fillText(badgeText, 0, -size * 0.95);
       }
 
       if (typeof hpRatio === 'number' && hpRatio < 1 && hpRatio > 0) {
@@ -5476,20 +5872,22 @@
         const ang = Math.atan2(state.y - e.y, state.x - e.x);
         const stopDist = e.isElite ? 160 : 290;
         if (distToHero > stopDist) {
-          e.x += Math.cos(ang) * e.speed * slowFactor * dt;
-          e.y += Math.sin(ang) * e.speed * slowFactor * dt;
+          const flankAngle = e.legionTrait === 'mirage_flank' ? Math.sin(e.walkPhase * 0.5) * 0.45 : 0;
+          e.x += Math.cos(ang + flankAngle) * e.speed * slowFactor * dt;
+          e.y += Math.sin(ang + flankAngle) * e.speed * slowFactor * dt;
           e.walkPhase += dt * e.strideFreq;
         }
         e.shootTimer = (e.shootTimer || 1.8) - dt;
         if (e.shootTimer <= 0 && distToHero < 560) {
-          e.shootTimer = e.isElite ? 2.1 : 2.5;
-          const shots = e.isElite ? 3 : 1;
+          e.shootTimer = e.isElite ? 2.0 : (e.legionTrait === 'rapid_volley' ? 1.85 : 2.4);
+          const extraSpread = (e.legionTrait === 'fire_marine' || e.legionTrait === 'vanguard_burst' || e.legionTrait === 'thunder_cult' || e.legionTrait === 'demon_apocalypse');
+          const shots = e.isElite ? 3 : (extraSpread ? 2 : 1);
           for (let s = 0; s < shots; s++) {
             const a = ang + (s - (shots - 1) / 2) * 0.22;
             state.enemyProjectiles.push({
               x: e.x, y: e.y,
-              vx: Math.cos(a) * (e.type === 'shaman' ? 235 : 290),
-              vy: Math.sin(a) * (e.type === 'shaman' ? 235 : 290),
+              vx: Math.cos(a) * (e.type === 'shaman' ? 245 : 300),
+              vy: Math.sin(a) * (e.type === 'shaman' ? 245 : 300),
               radius: e.type === 'shaman' ? 8 : 6,
               dmg: e.dmg,
               color: e.color || '#ff5252',
@@ -5506,15 +5904,16 @@
         } else if (e.windupTimer > 0) {
           e.windupTimer -= dt;
           if (e.windupTimer <= 0) {
-            e.dashTimer = 0.45;
-            e.dashVx = Math.cos(e.chargeAng) * 420;
-            e.dashVy = Math.sin(e.chargeAng) * 420;
+            e.dashTimer = 0.46;
+            const dashSpd = e.legionTrait === 'tiger_cavalry' || e.legionTrait === 'lightning_spear' ? 465 : 425;
+            e.dashVx = Math.cos(e.chargeAng) * dashSpd;
+            e.dashVy = Math.sin(e.chargeAng) * dashSpd;
           }
         } else {
           e.chargeCd = (e.chargeCd || 2.5) - dt;
-          if (e.chargeCd <= 0 && distToHero < 360) {
-            e.chargeCd = 3.2;
-            e.windupTimer = 0.48;
+          if (e.chargeCd <= 0 && distToHero < 370) {
+            e.chargeCd = e.legionTrait === 'tiger_cavalry' ? 2.4 : 3.1;
+            e.windupTimer = 0.46;
             e.chargeAng = Math.atan2(state.y - e.y, state.x - e.x);
           } else {
             const ang = Math.atan2(state.y - e.y, state.x - e.x);
@@ -5525,9 +5924,11 @@
         }
       } else if (e.type !== 'cavalry_rush') {
         const ang = Math.atan2(state.y - e.y, state.x - e.x);
-        e.x += Math.cos(ang) * e.speed * slowFactor * dt;
-        e.y += Math.sin(ang) * e.speed * slowFactor * dt;
-        e.walkPhase += dt * e.strideFreq;
+        const rageBoost = (e.legionTrait === 'coffin_rage' && e.hp < e.maxHp * 0.55) ? 1.35 : 1.0;
+        const flankAngle = e.legionTrait === 'mirage_flank' ? Math.sin(e.walkPhase * 0.45) * 0.42 : 0;
+        e.x += Math.cos(ang + flankAngle) * e.speed * rageBoost * slowFactor * dt;
+        e.y += Math.sin(ang + flankAngle) * e.speed * rageBoost * slowFactor * dt;
+        e.walkPhase += dt * e.strideFreq * rageBoost;
       }
 
       for (let k = Math.min(i - 1, state.enemies.length - 1); k >= 0; k--) {
@@ -5624,6 +6025,10 @@
       if (pt.life <= 0) state.particles.splice(i, 1);
     }
 
+    if (state.stageBannerTimer > 0) {
+      state.stageBannerTimer = Math.max(0, state.stageBannerTimer - dt);
+    }
+
     // Update ambient weather particles
     for (const wp of state.weatherParticles) {
       wp.ox += wp.speedX * dt;
@@ -5644,74 +6049,346 @@
     return 1.0;
   }
 
-  function drawBiomeLandmarks(tx, ty, w, c, r, pulse) {
+  // =========================================================================
+  // 20 Distinct 5-Wave Procedural Battlefield Maps ("五關一張全新地圖")
+  // =========================================================================
+  function drawStageMapTile(tx, ty, w, c, r, pulse) {
+    const st = w.stageSpec || STAGE_LEGIONS[0];
+    const style = st.mapStyle || 'ochre_steppe';
     const cx = tx + TILE_W * 0.5;
     const cy = ty + TILE_H * 0.5;
-    ctx.save();
 
-    if (w.biome === 'snowfield') {
-      // Frozen river ice cracks & snowdrifts
-      ctx.strokeStyle = 'rgba(179, 229, 252, 0.30)';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(tx + 180, ty + 220);
-      ctx.lineTo(cx - 40, cy + 10);
-      ctx.lineTo(tx + TILE_W - 210, ty + TILE_H - 180);
-      ctx.stroke();
-    } else if (w.biome === 'shipdeck') {
-      // Chibi Warship wooden planks & iron chains
-      ctx.strokeStyle = 'rgba(30, 14, 6, 0.55)';
-      ctx.lineWidth = 3;
-      for (let yOff = 120; yOff < TILE_H; yOff += 130) {
-        ctx.beginPath();
-        ctx.moveTo(tx, ty + yOff);
-        ctx.lineTo(tx + TILE_W, ty + yOff);
-        ctx.stroke();
-      }
-      // Iron chain across ship decks
-      ctx.strokeStyle = 'rgba(180, 190, 200, 0.38)';
-      ctx.lineWidth = 6;
-      ctx.setLineDash([16, 10]);
-      ctx.beginPath();
-      ctx.moveTo(tx + 80, ty + 80);
-      ctx.lineTo(tx + TILE_W - 80, ty + TILE_H - 80);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    } else if (w.biome === 'bamboo') {
-      // Bamboo grove clusters
-      ctx.fillStyle = 'rgba(46, 125, 50, 0.45)';
-      for (let b = 0; b < 4; b++) {
-        ctx.beginPath();
-        ctx.arc(tx + 240 + b * 18, ty + 620 - (b % 2) * 14, 14, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    } else if (w.biome === 'swamp') {
-      // Bubbling poison swamp pool
-      ctx.fillStyle = 'rgba(118, 255, 3, 0.16)';
-      ctx.beginPath();
-      ctx.ellipse(cx + 180, cy - 120, 95, 58, 0, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (w.biome === 'starfall') {
-      // Wuzhangyuan Seven-Star Ritual Constellation
-      ctx.strokeStyle = 'rgba(224, 64, 251, 0.36)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(cx, cy, 185, 0, Math.PI * 2);
-      ctx.stroke();
+    ctx.save();
+    // 1. Distinct Base Terrain Fill per 5-Wave Stage
+    ctx.fillStyle = st.bgPrimary || '#241c14';
+    ctx.fillRect(tx, ty, TILE_W, TILE_H);
+
+    // Subtle secondary terrain patches
+    ctx.fillStyle = st.bgSecondary || '#30251b';
+    ctx.fillRect(tx + 60, ty + 60, TILE_W - 120, TILE_H - 120);
+
+    // Blend subtle stone/earth grain from arena_floor at low opacity (0.14) so each map's own architecture dominates!
+    const floorImg = IMAGES.arena_floor;
+    if (floorImg && floorImg.complete && floorImg.naturalWidth > 0) {
+      ctx.save();
+      ctx.globalAlpha = 0.14;
+      ctx.translate(cx, cy);
+      ctx.scale((Math.abs(c) % 2 === 1) ? -1 : 1, (Math.abs(r) % 2 === 1) ? -1 : 1);
+      ctx.drawImage(floorImg, -TILE_W / 2, -TILE_H / 2, TILE_W, TILE_H);
+      ctx.restore();
     }
 
-    // Center Chapter Aura Ring
-    ctx.strokeStyle = w.ringTint || 'rgba(212, 168, 79, 0.22)';
+    // 2. Draw Unique 5-Wave Map Architecture, Roads, Rivers, Bridges, Decks & Landmarks!
+    if (style === 'ochre_steppe') {
+      // Map 01 (Waves 1-5): 穎川黃土荒原・十字古道與鹿角拒馬
+      ctx.fillStyle = st.roadColor;
+      ctx.fillRect(tx, cy - 58, TILE_W, 116);
+      ctx.fillRect(cx - 58, ty, 116, TILE_H);
+      ctx.strokeStyle = 'rgba(245, 176, 65, 0.25)';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(tx + 24, ty + 24, TILE_W - 48, TILE_H - 48);
+      // Steppe grass tufts & wooden spikes
+      ctx.fillStyle = 'rgba(125, 140, 60, 0.35)';
+      for (let i = 0; i < 6; i++) {
+        ctx.beginPath();
+        ctx.ellipse(tx + 180 + (i % 3) * 360, ty + 170 + Math.floor(i / 3) * 460, 48, 22, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // Wooden barricade X-spikes (鹿角拒馬)
+      ctx.strokeStyle = '#8d6e63';
+      ctx.lineWidth = 6;
+      [[tx + 220, ty + 210], [tx + TILE_W - 220, ty + 210], [tx + 220, ty + TILE_H - 210], [tx + TILE_W - 220, ty + TILE_H - 210]].forEach(([bx, by]) => {
+        ctx.beginPath();
+        ctx.moveTo(bx - 28, by - 16); ctx.lineTo(bx + 28, by + 16);
+        ctx.moveTo(bx + 28, by - 16); ctx.lineTo(bx - 28, by + 16);
+        ctx.stroke();
+      });
+    } else if (style === 'bagua_altar') {
+      // Map 02 (Waves 6-10): 廣宗八卦祭壇・太極符石陣
+      ctx.strokeStyle = 'rgba(255, 213, 79, 0.38)';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      for (let k = 0; k < 8; k++) {
+        const a = (k * Math.PI) / 4 + Math.PI / 8;
+        const rx = cx + Math.cos(a) * 280;
+        const ry = cy + Math.sin(a) * 280;
+        if (k === 0) ctx.moveTo(rx, ry);
+        else ctx.lineTo(rx, ry);
+      }
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(61, 46, 92, 0.55)';
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx, cy, 175, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.font = '900 42px serif';
+      ctx.fillStyle = 'rgba(255, 213, 79, 0.28)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('蒼天已死・黃天當立', cx, cy);
+    } else if (style === 'obsidian_fort') {
+      // Map 03 (Waves 11-15): 汜水關黑曜甕城・鐵鎖城磚與護城血渠
+      ctx.strokeStyle = 'rgba(144, 164, 174, 0.18)';
+      ctx.lineWidth = 2;
+      for (let y = 0; y < TILE_H; y += 80) {
+        const shift = (Math.floor(y / 80) % 2) * 70;
+        for (let x = shift; x < TILE_W; x += 140) {
+          ctx.strokeRect(tx + x, ty + y, 140, 80);
+        }
+      }
+      // Fortress blood trench canals
+      ctx.fillStyle = 'rgba(183, 28, 28, 0.38)';
+      ctx.fillRect(tx, ty + 90, TILE_W, 34);
+      ctx.fillRect(tx, ty + TILE_H - 124, TILE_W, 34);
+      ctx.strokeStyle = '#ef5350';
+      ctx.strokeRect(cx - 190, cy - 130, 380, 260);
+    } else if (style === 'lava_hell') {
+      // Map 04 (Waves 16-20): 虎牢關修羅熔岩・赤紅地裂火海
+      ctx.strokeStyle = 'rgba(255, 61, 0, 0.65)';
+      ctx.lineWidth = 10;
+      ctx.beginPath();
+      ctx.moveTo(tx + 80, ty + 140);
+      ctx.lineTo(cx - 90, cy - 40);
+      ctx.lineTo(cx + 110, cy + 70);
+      ctx.lineTo(tx + TILE_W - 90, ty + TILE_H - 130);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(255, 215, 64, 0.75)';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      // Lava pools
+      ctx.fillStyle = `rgba(255, 61, 0, ${0.28 + pulse * 0.14})`;
+      ctx.beginPath();
+      ctx.ellipse(tx + 260, ty + TILE_H - 200, 95, 52, 0.2, 0, Math.PI * 2);
+      ctx.ellipse(tx + TILE_W - 260, ty + 200, 85, 48, -0.3, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (style === 'frozen_river') {
+      // Map 05 (Waves 21-25): 白馬津冰封河渡・寒霜冰裂與木棧橋
+      ctx.fillStyle = 'rgba(129, 212, 250, 0.18)';
+      ctx.fillRect(tx, ty + 180, TILE_W, TILE_H - 360);
+      ctx.strokeStyle = 'rgba(225, 245, 254, 0.45)';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(tx + 120, ty + 260); ctx.lineTo(cx, cy); ctx.lineTo(tx + TILE_W - 140, ty + 290);
+      ctx.moveTo(cx, cy); ctx.lineTo(cx + 80, ty + TILE_H - 220);
+      ctx.stroke();
+      // Wooden ice-crossing pier
+      ctx.fillStyle = '#4e342e';
+      for (let x = 0; x < TILE_W; x += 48) {
+        ctx.fillRect(tx + x, cy - 46, 38, 92);
+      }
+    } else if (style === 'snow_depot') {
+      // Map 06 (Waves 26-30): 官渡烏巢凍雪原・雪地車轍與火燒糧營
+      ctx.fillStyle = 'rgba(225, 245, 254, 0.14)';
+      for (let i = 0; i < 5; i++) {
+        ctx.beginPath();
+        ctx.ellipse(tx + 200 + i * 180, ty + 180 + (i % 2) * 420, 90, 45, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      // Burning Wuchao grain depot circles
+      [[tx + 250, ty + 240], [tx + TILE_W - 250, ty + TILE_H - 240]].forEach(([gx, gy]) => {
+        ctx.fillStyle = 'rgba(255, 87, 34, 0.32)';
+        ctx.beginPath(); ctx.arc(gx, gy, 68 * pulse, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#ffab40'; ctx.lineWidth = 3;
+        ctx.strokeRect(gx - 34, gy - 24, 68, 48);
+      });
+    } else if (style === 'bamboo_grove') {
+      // Map 07 (Waves 31-35): 當陽幽翠竹林道・蜿蜒青石板古道
+      ctx.fillStyle = st.roadColor;
+      ctx.beginPath();
+      ctx.moveTo(tx, cy - 55);
+      ctx.quadraticCurveTo(cx, cy - 140, tx + TILE_W, cy - 55);
+      ctx.lineTo(tx + TILE_W, cy + 55);
+      ctx.quadraticCurveTo(cx, cy - 30, tx, cy + 55);
+      ctx.closePath();
+      ctx.fill();
+      // Lush Bamboo clusters
+      ctx.fillStyle = '#2e7d32';
+      ctx.strokeStyle = '#69f0ae';
+      ctx.lineWidth = 2;
+      [[tx + 190, ty + 190], [tx + TILE_W - 210, ty + 210], [tx + 240, ty + TILE_H - 180], [tx + TILE_W - 190, ty + TILE_H - 200]].forEach(([bx, by]) => {
+        for (let b = 0; b < 4; b++) {
+          ctx.beginPath();
+          ctx.arc(bx + (b - 1.5) * 20, by + (b % 2) * 14, 15, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+      });
+    } else if (style === 'changban_bridge') {
+      // Map 08 (Waves 36-40): 長坂坡當陽斷橋・湍急漢水與跨河巨橋
+      ctx.fillStyle = '#0d3b66';
+      ctx.fillRect(tx, cy - 135, TILE_W, 270);
+      // Rushing river foam lines
+      ctx.strokeStyle = 'rgba(129, 212, 250, 0.35)';
+      ctx.lineWidth = 3;
+      for (let wLine = -90; wLine <= 90; wLine += 45) {
+        ctx.beginPath();
+        ctx.moveTo(tx + 40, cy + wLine);
+        ctx.lineTo(tx + TILE_W - 40, cy + wLine);
+        ctx.stroke();
+      }
+      // Giant Wooden Changban Bridge spanning vertically & horizontally
+      ctx.fillStyle = '#5d4037';
+      ctx.strokeStyle = '#d7ccc8';
+      ctx.lineWidth = 4;
+      ctx.fillRect(cx - 110, ty, 220, TILE_H);
+      ctx.strokeRect(cx - 110, ty, 220, TILE_H);
+      ctx.strokeStyle = '#3e2723';
+      for (let py = ty + 24; py < ty + TILE_H; py += 36) {
+        ctx.beginPath(); ctx.moveTo(cx - 106, py); ctx.lineTo(cx + 106, py); ctx.stroke();
+      }
+    } else if (style === 'chibi_warship') {
+      // Map 09 (Waves 41-45): 赤壁連環巨艦甲板・鐵索連舟
+      ctx.fillStyle = '#0a2239';
+      ctx.fillRect(tx, ty, TILE_W, 70);
+      ctx.fillRect(tx, ty + TILE_H - 70, TILE_W, 70);
+      // Wooden ship deck planks
+      ctx.strokeStyle = 'rgba(25, 12, 5, 0.65)';
+      ctx.lineWidth = 3;
+      for (let yOff = 95; yOff < TILE_H - 70; yOff += 52) {
+        ctx.beginPath(); ctx.moveTo(tx, ty + yOff); ctx.lineTo(tx + TILE_W, ty + yOff); ctx.stroke();
+      }
+      // Heavy Iron Chains linking warships
+      ctx.strokeStyle = 'rgba(176, 190, 197, 0.55)';
+      ctx.lineWidth = 8;
+      ctx.setLineDash([18, 10]);
+      ctx.beginPath();
+      ctx.moveTo(tx + 90, ty); ctx.lineTo(tx + 240, ty + TILE_H);
+      ctx.moveTo(tx + TILE_W - 90, ty); ctx.lineTo(tx + TILE_W - 240, ty + TILE_H);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    } else if (style === 'scorched_forest') {
+      // Map 10 (Waves 46-50): 烏林華容道焦土・餘燼火坑與焦木
+      ctx.fillStyle = '#3e2723';
+      ctx.fillRect(tx, cy - 52, TILE_W, 104);
+      [[tx + 240, ty + 200], [tx + TILE_W - 260, ty + 220], [cx, ty + TILE_H - 180]].forEach(([ex, ey]) => {
+        const g = ctx.createRadialGradient(ex, ey, 6, ex, ey, 68);
+        g.addColorStop(0, 'rgba(255, 87, 34, 0.55)');
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(ex, ey, 68, 0, Math.PI * 2); ctx.fill();
+      });
+    } else if (style === 'desert_dunes') {
+      // Map 11 (Waves 51-55): 潼關黃沙風蝕戈壁・流線沙丘
+      ctx.strokeStyle = 'rgba(255, 213, 79, 0.26)';
+      ctx.lineWidth = 5;
+      for (let d = 140; d < TILE_H; d += 160) {
+        ctx.beginPath();
+        ctx.moveTo(tx, ty + d);
+        ctx.quadraticCurveTo(cx - 180, ty + d - 45, cx, ty + d);
+        ctx.quadraticCurveTo(cx + 180, ty + d + 45, tx + TILE_W, ty + d);
+        ctx.stroke();
+      }
+    } else if (style === 'ice_riverwall') {
+      // Map 12 (Waves 56-60): 渭水冰城鐵騎營・凝冰城牆與西涼戰鼓
+      ctx.strokeStyle = 'rgba(224, 64, 251, 0.35)';
+      ctx.fillStyle = 'rgba(179, 229, 252, 0.16)';
+      ctx.lineWidth = 4;
+      ctx.fillRect(tx + 120, ty + 110, TILE_W - 240, 48);
+      ctx.strokeRect(tx + 120, ty + 110, TILE_W - 240, 48);
+      ctx.fillRect(tx + 120, ty + TILE_H - 158, TILE_W - 240, 48);
+      ctx.strokeRect(tx + 120, ty + TILE_H - 158, TILE_W - 240, 48);
+    } else if (style === 'hefei_canal') {
+      // Map 13 (Waves 61-65): 合淝護城青石渠・江南水道與青石廣場
+      ctx.fillStyle = '#004d40';
+      ctx.fillRect(tx, ty + 150, TILE_W, 64);
+      ctx.fillRect(tx, ty + TILE_H - 214, TILE_W, 64);
+      ctx.strokeStyle = 'rgba(105, 240, 174, 0.35)';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(tx + 80, ty + 230, TILE_W - 160, TILE_H - 460);
+    } else if (style === 'xiaoyao_waterfort') {
+      // Map 14 (Waves 66-70): 逍遙津江南水寨橋・碧波蓮池與水上木棧台
+      ctx.fillStyle = '#073b3a';
+      ctx.fillRect(tx + 40, ty + 40, TILE_W - 80, TILE_H - 80);
+      // Wooden floating water-fortress platform & walkways
+      ctx.fillStyle = '#4e3624';
+      ctx.strokeStyle = '#a1887f';
+      ctx.lineWidth = 3;
+      ctx.fillRect(cx - 240, cy - 170, 480, 340);
+      ctx.strokeRect(cx - 240, cy - 170, 480, 340);
+      ctx.fillRect(tx, cy - 52, TILE_W, 104);
+      ctx.fillRect(cx - 52, ty, 104, TILE_H);
+      // Lotus pads on the water corners
+      ctx.fillStyle = 'rgba(46, 125, 50, 0.65)';
+      [[tx + 140, ty + 130], [tx + TILE_W - 150, ty + 140], [tx + 150, ty + TILE_H - 130], [tx + TILE_W - 140, ty + TILE_H - 140]].forEach(([lx, ly]) => {
+        ctx.beginPath(); ctx.arc(lx, ly, 24, 0.2, Math.PI * 1.9); ctx.fill();
+      });
+    } else if (style === 'maple_cliff') {
+      // Map 15 (Waves 71-75): 葭萌關秋楓懸崖道・蜀道木棧與紅楓簇
+      ctx.fillStyle = '#4e2c18';
+      ctx.fillRect(tx, cy - 64, TILE_W, 128);
+      ctx.fillStyle = 'rgba(255, 87, 34, 0.32)';
+      [[tx + 210, ty + 180], [tx + TILE_W - 220, ty + 190], [tx + 260, ty + TILE_H - 180], [tx + TILE_W - 230, ty + TILE_H - 190]].forEach(([mx, my]) => {
+        ctx.beginPath(); ctx.arc(mx, my, 46, 0, Math.PI * 2); ctx.fill();
+      });
+    } else if (style === 'dingjun_summit') {
+      // Map 16 (Waves 76-80): 定軍山斬將烽火台・層疊高台
+      ctx.strokeStyle = 'rgba(255, 196, 0, 0.42)';
+      ctx.lineWidth = 3.5;
+      ctx.strokeRect(cx - 280, cy - 200, 560, 400);
+      ctx.strokeRect(cx - 190, cy - 130, 380, 260);
+    } else if (style === 'fire_jungle') {
+      // Map 17 (Waves 81-85): 瀘水赤焰火神叢林・南中火神圖騰
+      ctx.strokeStyle = 'rgba(255, 64, 129, 0.45)';
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(cx, cy, 190, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = 'rgba(46, 125, 50, 0.38)';
+      [[tx + 170, ty + 170], [tx + TILE_W - 170, ty + 170], [tx + 170, ty + TILE_H - 170], [tx + TILE_W - 170, ty + TILE_H - 170]].forEach(([jx, jy]) => {
+        ctx.beginPath(); ctx.arc(jx, jy, 52, 0, Math.PI * 2); ctx.fill();
+      });
+    } else if (style === 'poison_swamp') {
+      // Map 18 (Waves 86-90): 盤蛇谷劇毒冒泡沼・綠螢毒泉池
+      ctx.fillStyle = `rgba(118, 255, 3, ${0.20 + pulse * 0.10})`;
+      [[cx - 210, cy - 130, 115, 68], [cx + 210, cy + 130, 125, 72], [cx + 180, cy - 150, 85, 50]].forEach(([px, py, rx, ry]) => {
+        ctx.beginPath(); ctx.ellipse(px, py, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+      });
+    } else if (style === 'qimen_monolith') {
+      // Map 19 (Waves 91-95): 子午谷奇門八門陣・八門金鎖石柱
+      ctx.strokeStyle = 'rgba(255, 82, 82, 0.42)';
+      ctx.lineWidth = 3;
+      for (let k = 0; k < 8; k++) {
+        const a = (k * Math.PI) / 4;
+        const mx = cx + Math.cos(a) * 230;
+        const my = cy + Math.sin(a) * 230;
+        ctx.fillStyle = '#311b92';
+        ctx.fillRect(mx - 18, my - 18, 36, 36);
+        ctx.strokeRect(mx - 18, my - 18, 36, 36);
+      }
+    } else if (style === 'starfall_abyss') {
+      // Map 20 (Waves 96-100): 五丈原星隕七星壇・北斗七星續命陣
+      const dipper = [[-220, -140], [-120, -95], [-30, -40], [55, 10], [160, -20], [230, 65], [125, 125]];
+      ctx.strokeStyle = 'rgba(234, 128, 252, 0.65)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      dipper.forEach(([dx, dy], idx) => {
+        if (idx === 0) ctx.moveTo(cx + dx, cy + dy);
+        else ctx.lineTo(cx + dx, cy + dy);
+      });
+      ctx.stroke();
+      dipper.forEach(([dx, dy]) => {
+        ctx.fillStyle = '#ffd740';
+        ctx.beginPath(); ctx.arc(cx + dx, cy + dy, 8 * pulse, 0, Math.PI * 2); ctx.fill();
+      });
+    }
+
+    // 3. Center Stage Seal Ring & Watermark Map Title on Ground
+    ctx.strokeStyle = st.accentColor ? (st.accentColor + '44') : 'rgba(212, 168, 79, 0.25)';
     ctx.lineWidth = 2.5;
     ctx.beginPath();
-    ctx.arc(cx, cy, 145, 0, Math.PI * 2);
+    ctx.arc(cx, cy, 142, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Corner War Torch Brazier glow
-    const torchX = tx + 140;
-    const torchY = ty + 140;
+    ctx.font = '900 22px "Noto Serif TC", serif';
+    ctx.fillStyle = st.accentColor ? (st.accentColor + '28') : 'rgba(255, 255, 255, 0.12)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(st.mapName.split('：')[1] || st.mapName, cx, cy + 168);
+
+    // 4. Corner War Torch Brazier glow
+    const torchX = tx + 135;
+    const torchY = ty + 135;
     const grad = ctx.createRadialGradient(torchX, torchY, 4, torchX, torchY, 72 * pulse);
-    grad.addColorStop(0, w.torchTint || 'rgba(255, 160, 64, 0.42)');
+    grad.addColorStop(0, st.accentColor ? (st.accentColor + '66') : 'rgba(255, 160, 64, 0.42)');
     grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = grad;
     ctx.beginPath();
@@ -5719,14 +6396,14 @@
     ctx.fill();
 
     ctx.fillStyle = '#2d241e';
-    ctx.strokeStyle = '#d4a84f';
+    ctx.strokeStyle = st.accentColor || '#d4a84f';
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(torchX, torchY, 11, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
 
-    ctx.fillStyle = w.weatherColor || '#ff9100';
+    ctx.fillStyle = st.accentColor || '#ff9100';
     ctx.beginPath();
     ctx.arc(torchX, torchY, 6 * pulse, 0, Math.PI * 2);
     ctx.fill();
@@ -5747,37 +6424,14 @@
     const startRow = Math.floor(viewTop / TILE_H);
     const endRow = Math.floor(viewBottom / TILE_H);
 
-    const floorImg = IMAGES.arena_floor;
-    const hasFloor = floorImg && floorImg.complete && floorImg.naturalWidth > 0;
     const w = WAVES[state.waveIdx] || WAVES[0];
 
     for (let r = startRow; r <= endRow; r++) {
       for (let c = startCol; c <= endCol; c++) {
         const tx = c * TILE_W;
         const ty = r * TILE_H;
-
-        ctx.save();
-        ctx.translate(tx + TILE_W / 2, ty + TILE_H / 2);
-        const flipX = (Math.abs(c) % 2 === 1) ? -1 : 1;
-        const flipY = (Math.abs(r) % 2 === 1) ? -1 : 1;
-        ctx.scale(flipX, flipY);
-
-        if (hasFloor) {
-          ctx.drawImage(floorImg, -TILE_W / 2, -TILE_H / 2, TILE_W, TILE_H);
-        } else {
-          ctx.fillStyle = '#14110e';
-          ctx.fillRect(-TILE_W / 2, -TILE_H / 2, TILE_W, TILE_H);
-        }
-        ctx.restore();
-
-        // Chapter Biome Color Overlay so every Chapter looks unmistakably different!
-        if (w.groundTint) {
-          ctx.fillStyle = w.groundTint;
-          ctx.fillRect(tx, ty, TILE_W, TILE_H);
-        }
-
         const pulse = 0.75 + Math.sin(performance.now() * 0.008 + c * 1.7 + r * 2.3) * 0.25;
-        drawBiomeLandmarks(tx, ty, w, c, r, pulse);
+        drawStageMapTile(tx, ty, w, c, r, pulse);
       }
     }
   }
@@ -6062,10 +6716,10 @@
           facing: e.facing,
           bootColor: e.bootColor,
           capeColor: e.capeColor || (e.isBoss ? (e.color || '#b71c1c') : null),
-          ringColor: e.isBoss ? 'rgba(255, 61, 0, 0.90)' : (e.isElite ? 'rgba(255, 215, 64, 0.92)' : 'rgba(220, 60, 50, 0.38)'),
+          ringColor: e.isBoss ? 'rgba(255, 61, 0, 0.90)' : (e.isElite ? 'rgba(255, 215, 64, 0.92)' : (e.color ? e.color + '88' : 'rgba(220, 60, 50, 0.38)')),
           hitFlash: e.hitFlash > 0,
           hpRatio: e.hp / e.maxHp,
-          badgeText: e.type === 'bomber' ? '💣自爆' : (e.isElite ? '★統領' : ''),
+          badgeText: e.badgeText || (e.type === 'bomber' ? '💣自爆' : (e.isElite ? '★統領' : '')),
           isBoss: !!e.isBoss,
           isMajorBoss: !!e.isMajorBoss,
           bossName: e.name,
@@ -6322,6 +6976,38 @@
       ctx.globalAlpha = Math.max(0, (state.screenFlash.life / state.screenFlash.maxLife) * 0.42);
       ctx.fillStyle = state.screenFlash.color || '#ffffff';
       ctx.fillRect(0, 0, cw, ch);
+      ctx.restore();
+    }
+
+    // 2B. 5-Wave Map & Boss-Specific Legion Callout Banner at Wave Start
+    if (state.stageBannerTimer > 0 && state.phase === 'WAVE' && !state.cutIn && !state.bossVictoryCutIn) {
+      const w = WAVES[state.waveIdx] || WAVES[0];
+      const st = w.stageSpec || STAGE_LEGIONS[0];
+      const eff = getEffectiveMobScale(w);
+      const alpha = Math.min(1, state.stageBannerTimer / 0.4, (3.2 - state.stageBannerTimer + 0.15) / 0.25);
+      const bw = Math.min(cw * 0.92, 520);
+      const bh = 58;
+      const by = state.boss ? 118 : 74;
+
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(cx, by);
+      ctx.fillStyle = 'rgba(14, 11, 9, 0.90)';
+      ctx.strokeStyle = st.accentColor || '#ffd740';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(-bw / 2, 0, bw, bh, 10);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.textAlign = 'center';
+      ctx.font = `900 ${cw < 480 ? 13.5 : 15.5}px "Noto Serif TC", serif`;
+      ctx.fillStyle = st.accentColor || '#ffd740';
+      ctx.fillText(`🗺️ ${st.mapName} ｜ 👾 ${st.legionName}（敵軍戰力 ×${eff.hpMul}）`, 0, 22);
+
+      ctx.font = `700 ${cw < 480 ? 11 : 12.5}px "Noto Sans TC", sans-serif`;
+      ctx.fillStyle = '#e8dfd1';
+      ctx.fillText(`鎮守統帥：${st.bossLeader} ｜ 軍團特性：${st.traitDesc}`, 0, 43);
       ctx.restore();
     }
 
