@@ -1040,6 +1040,7 @@
     <div class="hud-right">
       <button class="icon-btn active" id="btnAudio" type="button">樂音：開</button>
       <button class="icon-btn" id="btnMotion" type="button">減震：關</button>
+      <button class="icon-btn" id="btnSaveExitHud" type="button" style="border-color:var(--jade-bright);color:var(--jade-bright);">💾 存檔暫離</button>
       <button class="icon-btn" id="btnHelp" type="button">？兵法</button>
     </div>
   </div>
@@ -1079,10 +1080,28 @@
         </div>
       </div>
 
+      <!-- Prominent Auto-Save Resume Banner at the very top of Title Screen -->
+      <div id="savedRunCard" style="display:none;background:linear-gradient(135deg, rgba(22, 56, 38, 0.95) 0%, rgba(18, 28, 22, 0.96) 100%);border:2px solid var(--jade-bright);border-radius:14px;padding:12px 16px;margin:8px 0 12px;box-shadow:0 8px 26px rgba(67, 198, 135, 0.28);">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <img id="savedHeroAvatar" src="assets/hero_zhaoyun.webp" alt="Saved Hero" style="width:54px;height:54px;border-radius:50%;object-fit:cover;border:2.5px solid var(--gold-bright);box-shadow:0 4px 12px rgba(0,0,0,0.6);" />
+            <div>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <span style="background:rgba(92,230,160,0.22);color:var(--jade-bright);border:1px solid var(--jade-bright);font-size:11px;font-weight:900;padding:2px 8px;border-radius:6px;">💾 自動存檔紀錄</span>
+                <span id="savedWaveTitle" style="font-family:'Noto Serif TC',serif;font-weight:900;font-size:16px;color:var(--gold-bright);">第 1 / 100 陣</span>
+              </div>
+              <div id="savedStatsSummary" style="font-size:12px;color:#e8dfd1;margin-top:4px;"></div>
+              <div id="savedWeaponsSummary" style="font-size:11.5px;color:var(--jade-bright);margin-top:3px;font-weight:700;"></div>
+            </div>
+          </div>
+          <button class="btn-continue" id="btnContinueTop" type="button" style="font-size:16px;padding:12px 22px;white-space:nowrap;">▶ 繼續上次遠征</button>
+        </div>
+      </div>
+
       <div class="controls-hint">
         <span><strong>單指拖曳 / WASD</strong>：八向走位閃避紅圈與箭雨</span>
         <span><strong>12 種神兵合成</strong>：V 階【鬼神覺醒】、X 階【神話超武】質變</span>
-        <span><strong>戰場機關</strong>：打爆🛢️火藥桶炸群敵、撿⚒️神鐵砧當場升階</span>
+        <span><strong>全程自動存檔</strong>：每陣開戰、營帳合成與戰敗皆自動保存進度</span>
       </div>
 
       <div class="camp-section-title">
@@ -1096,7 +1115,7 @@
 
       <div class="campaign-selector-bar">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-          <span style="font-weight:800;font-size:13px;color:var(--gold-bright);">戰役章節 / 起始陣數：</span>
+          <span style="font-weight:800;font-size:13px;color:var(--gold-bright);">新開局章節 / 起始陣數：</span>
           <select id="chapterSelect" class="campaign-select-input">
             <option value="1">第 1 陣｜第一章：黃巾起義・符陣祭壇（1～10 陣）</option>
             <option value="11">第 11 陣｜第二章：虎牢關血戰・修羅血城（11～20 陣）</option>
@@ -1119,7 +1138,7 @@
       </div>
 
       <div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:12px;">
-        <button class="btn-continue" id="btnContinueRun" type="button" style="display:none;">繼續遠征</button>
+        <button class="btn-continue" id="btnContinueRun" type="button" style="display:none;">▶ 繼續上次遠征</button>
         <button class="btn-primary" id="btnStartGame" type="button">擂鼓出征（進入第 1 陣）</button>
       </div>
     </div>
@@ -1148,7 +1167,7 @@
 
       <div class="camp-section-title">
         <span>隨身神兵架（<span id="arsenalCountText">1/6</span>）</span>
-        <span style="font-size:12px;color:var(--jade-bright);font-family:'Noto Sans TC';">提示：V 階解鎖【★鬼神覺醒】名號與雙倍特效；X 階突破【👑神話超武】終極清場型態！</span>
+        <span style="font-size:12px;color:var(--jade-bright);font-family:'Noto Sans TC';">💾 營帳每次合成與購買皆已自動存檔，隨時重整網頁都不會遺失！</span>
       </div>
       <div class="arsenal-grid" id="shopArsenalGrid"></div>
 
@@ -1159,7 +1178,8 @@
 
       <div class="stats-strip" id="shopStatsStrip"></div>
 
-      <div style="display:flex;justify-content:flex-end;margin-top:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px;">
+        <button class="btn-secondary" id="btnSaveExitShop" type="button" style="border-color:var(--jade-bright);color:var(--jade-bright);">💾 存檔並返回主畫面</button>
         <button class="btn-primary" id="btnNextWave" type="button">拔劍迎敵（進入下一陣）</button>
       </div>
     </div>
@@ -1167,7 +1187,7 @@
 
   <!-- Result Overlay (Victory / Defeat) -->
   <div class="overlay hidden" id="resultOverlay">
-    <div class="panel" style="max-width:540px;text-align:center;">
+    <div class="panel" style="max-width:580px;text-align:center;">
       <div class="title-kv-wrap" style="height:140px;margin-bottom:14px;">
         <img class="title-kv-img" id="resultBannerImg" src="assets/title_banner.webp" decoding="async" alt="Result Banner" />
         <div class="title-kv-overlay">
@@ -1176,8 +1196,10 @@
       </div>
       <p class="title-sub" id="resultSub" style="font-size:14px;margin:10px 0 16px;"></p>
       <div class="stats-strip" id="resultStats" style="justify-content:center;margin-bottom:20px;"></div>
-      <div style="display:flex;gap:12px;justify-content:center;">
-        <button class="btn-primary" id="btnPlayAgain" type="button">再次出征</button>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn-primary" id="btnRetryWave" type="button">🔥 原陣重整再戰（保留神兵與戰力）</button>
+        <button class="btn-continue" id="btnRetryShop" type="button">🏕️ 先回鍛造營帳補給</button>
+        <button class="btn-secondary" id="btnPlayAgain" type="button">🏠 返回主畫面（已存檔）</button>
       </div>
     </div>
   </div>
@@ -2535,16 +2557,28 @@
     refreshTitleProgressUI();
   }
 
-  function saveCampaignProgress() {
+  function saveCampaignProgress(overrideWaveIdx, inShopFlag) {
     try {
+      if (!state.hero) return;
+      const inShop = typeof inShopFlag === 'boolean' ? inShopFlag : (state.phase === 'SHOP');
+      const defaultShopNext = typeof state.shopNextWaveIdx === 'number'
+        ? state.shopNextWaveIdx
+        : Math.min(TOTAL_WAVES - 1, state.waveIdx + 1);
+      const targetWaveIdx = typeof overrideWaveIdx === 'number'
+        ? Math.max(0, Math.min(TOTAL_WAVES - 1, overrideWaveIdx))
+        : (inShop ? defaultShopNext : Math.max(0, Math.min(TOTAL_WAVES - 1, state.waveIdx)));
+      const shopWaveIdx = Math.max(0, targetWaveIdx - 1);
+
       const payload = {
         heroId: state.hero.id,
-        nextWaveIdx: state.waveIdx + 1,
+        nextWaveIdx: targetWaveIdx,
+        shopWaveIdx,
+        inShop,
         jade: state.jade,
         kills: state.kills,
         totalJadeEarned: state.totalJadeEarned,
         maxHp: state.maxHp,
-        hp: state.hp,
+        hp: Math.max(1, Math.round(state.hp || state.maxHp)),
         speedMul: state.speedMul,
         dmgMul: state.dmgMul,
         cdMul: state.cdMul,
@@ -2552,7 +2586,9 @@
         pickupRadius: state.pickupRadius,
         waveBonusJade: state.waveBonusJade,
         musouGauge: state.musouGauge,
-        weapons: state.weapons.map(w => ({ id: w.id, tier: w.tier }))
+        rerollCost: state.rerollCost || 8,
+        weapons: state.weapons.map(w => ({ id: w.id, tier: w.tier })),
+        savedAt: Date.now()
       };
       localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
     } catch (e) {}
@@ -2589,14 +2625,47 @@
 
     const saved = loadCampaignProgress();
     const btnCont = document.getElementById('btnContinueRun');
-    if (btnCont) {
-      if (saved) {
-        const h = HEROES.find(item => item.id === saved.heroId) || HEROES[0];
+    const btnContTop = document.getElementById('btnContinueTop');
+    const savedCard = document.getElementById('savedRunCard');
+
+    if (saved) {
+      const h = HEROES.find(item => item.id === saved.heroId) || HEROES[0];
+      const waveNum = Math.max(1, Math.min(TOTAL_WAVES, (saved.nextWaveIdx || 0) + 1));
+      const wInfo = WAVES[waveNum - 1] || WAVES[0];
+      const phaseTag = saved.inShop ? '🏕️ 營帳補給備戰中' : '⚔️ 戰陣進行中';
+      const btnLabel = `▶ 繼續上次遠征（第 ${waveNum} / 100 陣・${h.name.split('・')[0]}）`;
+
+      if (btnCont) {
         btnCont.style.display = 'inline-block';
-        btnCont.textContent = `繼續遠征（第 ${saved.nextWaveIdx + 1} / 100 陣・${h.name.split('・')[0]}）`;
-      } else {
-        btnCont.style.display = 'none';
+        btnCont.textContent = btnLabel;
       }
+      if (btnContTop) {
+        btnContTop.textContent = btnLabel;
+      }
+      if (savedCard) {
+        savedCard.style.display = 'block';
+        const avatarEl = document.getElementById('savedHeroAvatar');
+        if (avatarEl) avatarEl.src = h.imgUrl;
+        const titleEl = document.getElementById('savedWaveTitle');
+        if (titleEl) {
+          titleEl.textContent = `第 ${waveNum} / 100 陣｜${wInfo.chapterName.split('・')[1]}（${phaseTag}）`;
+        }
+        const statsEl = document.getElementById('savedStatsSummary');
+        if (statsEl) {
+          statsEl.textContent = `名將：${h.name} ｜ 戰功翠玉：${saved.jade || 0} ｜ 氣血上限：${saved.maxHp || 105} ｜ 傷害倍率：${Math.round((saved.dmgMul || 1) * 100)}%`;
+        }
+        const wpnsEl = document.getElementById('savedWeaponsSummary');
+        if (wpnsEl) {
+          const wpnList = (saved.weapons || []).map(w => {
+            const name = getWeaponDisplayName(w.id, w.tier || 1);
+            return `${name}(${TIER_SHORT[w.tier || 1]})`;
+          });
+          wpnsEl.textContent = `隨身神兵 (${wpnList.length}/6)：${wpnList.join('、') || '無'}`;
+        }
+      }
+    } else {
+      if (btnCont) btnCont.style.display = 'none';
+      if (savedCard) savedCard.style.display = 'none';
     }
   }
 
@@ -2631,6 +2700,10 @@
     });
     refreshTitleProgressUI();
   }
+  const initialSave = loadCampaignProgress();
+  if (initialSave && initialSave.heroId) {
+    selectedHeroId = initialSave.heroId;
+  }
   renderHeroSelect();
 
   const chapterSelectEl = document.getElementById('chapterSelect');
@@ -2639,8 +2712,9 @@
 
   function syncStartWaveButtonText() {
     const targetWave = Math.max(1, Math.min(TOTAL_WAVES, Number(customWaveInputEl.value) || 1));
-    btnStartGameEl.textContent = `擂鼓出征（進入第 ${targetWave} / 100 陣）`;
+    btnStartGameEl.textContent = `🔄 重新開局（從第 ${targetWave} / 100 陣開始新遠征）`;
   }
+  syncStartWaveButtonText();
 
   chapterSelectEl.addEventListener('change', () => {
     customWaveInputEl.value = chapterSelectEl.value;
@@ -2652,10 +2726,19 @@
   });
 
   function startNewRun() {
+    const existingSave = loadCampaignProgress();
+    const targetWaveNum = Math.max(1, Math.min(TOTAL_WAVES, Number(customWaveInputEl.value) || 1));
+    if (existingSave && (existingSave.nextWaveIdx > 0 || (existingSave.weapons && existingSave.weapons.length > 1) || (existingSave.jade || 0) > 40)) {
+      const savedWaveNum = (existingSave.nextWaveIdx || 0) + 1;
+      const savedHero = HEROES.find(h => h.id === existingSave.heroId) || HEROES[0];
+      const ok = confirm(`⚠️ 您目前有【第 ${savedWaveNum} 陣・${savedHero.name}】的自動存檔紀錄！\n\n若要接著上次的進度與神兵繼續玩，請按「取消」並點擊綠色的【▶ 繼續上次遠征】按鈕。\n\n確定要覆蓋舊存檔，從第 ${targetWaveNum} 陣重新開局嗎？`);
+      if (!ok) return;
+    }
+
     sfx.init();
     sfx.playWarDrum();
     const hero = HEROES.find(h => h.id === selectedHeroId) || HEROES[0];
-    const startWaveNum = Math.max(1, Math.min(TOTAL_WAVES, Number(customWaveInputEl.value) || 1));
+    const startWaveNum = targetWaveNum;
     const startIdx = startWaveNum - 1;
 
     state.hero = hero;
@@ -2722,18 +2805,19 @@
     selectedHeroId = hero.id;
     state.hero = hero;
     state.waveIdx = Math.max(0, Math.min(TOTAL_WAVES - 1, saved.nextWaveIdx));
-    state.jade = saved.jade || 25;
+    state.jade = typeof saved.jade === 'number' ? saved.jade : 25;
     state.kills = saved.kills || 0;
     state.totalJadeEarned = saved.totalJadeEarned || state.jade;
     state.maxHp = saved.maxHp || 105;
-    state.hp = saved.hp || state.maxHp;
+    state.hp = state.maxHp;
     state.speedMul = saved.speedMul || 1.0;
     state.dmgMul = saved.dmgMul || 1.0;
     state.cdMul = saved.cdMul || 1.0;
     state.critChance = saved.critChance || 0.12;
     state.pickupRadius = saved.pickupRadius || 140;
     state.waveBonusJade = saved.waveBonusJade || 0;
-    state.musouGauge = saved.musouGauge || 50;
+    state.musouGauge = typeof saved.musouGauge === 'number' ? saved.musouGauge : 50;
+    state.rerollCost = saved.rerollCost || 8;
     state.x = 0;
     state.y = 0;
 
@@ -2756,7 +2840,37 @@
     document.getElementById('hudHeroLabel').textContent = hero.name.split('・')[0];
     document.getElementById('hudHeroAvatar').src = hero.imgUrl;
 
-    startWave(state.waveIdx);
+    if (saved.inShop) {
+      openCampShop(state.waveIdx);
+    } else {
+      startWave(state.waveIdx);
+    }
+  }
+
+  function returnToTitleWithSave() {
+    if (state.phase === 'SHOP') {
+      const nextTarget = typeof state.shopNextWaveIdx === 'number' ? state.shopNextWaveIdx : (state.waveIdx + 1);
+      saveCampaignProgress(nextTarget, true);
+    } else if (state.phase === 'WAVE') {
+      for (const g of state.gems) {
+        state.jade += g.value;
+        state.totalJadeEarned += g.value;
+      }
+      state.gems = [];
+      saveCampaignProgress(state.waveIdx, false);
+    }
+    state.phase = 'TITLE';
+    state.cutIn = null;
+    state.bossVictoryCutIn = null;
+    pointer.active = false;
+    sfx.setBgmMode('title', 0);
+    document.getElementById('shopOverlay').classList.add('hidden');
+    document.getElementById('resultOverlay').classList.add('hidden');
+    document.getElementById('bossBanner').classList.remove('visible');
+    document.getElementById('hudTop').style.display = 'none';
+    document.getElementById('hudBottom').style.display = 'none';
+    document.getElementById('titleOverlay').classList.remove('hidden');
+    renderHeroSelect();
   }
 
   function startWave(idx) {
@@ -2766,6 +2880,7 @@
     const w = WAVES[state.waveIdx];
     state.phase = 'WAVE';
     state.waveTimer = w.duration;
+    state.autoSaveTimer = 3.0;
     state.spawnAccum = 0;
     state.cavalryTimer = Math.max(7.5, 13.5 - w.chapIdx * 0.45);
     state.propSpawnTimer = 3.5;
@@ -2788,6 +2903,9 @@
     state.screenFlash = null;
     state.musouDomainTimer = 0;
     state.bossDomainTimer = 0;
+
+    // Immediately auto-save upon entering any wave!
+    saveCampaignProgress(state.waveIdx, false);
 
     sfx.setBgmMode(w.boss ? 'boss' : 'battle', w.chapIdx);
 
@@ -4752,6 +4870,7 @@
         maxLife: 1.2
       });
     }
+    saveCampaignProgress(state.waveIdx, false);
   }
 
   function update(dt) {
@@ -4812,6 +4931,13 @@
       }
     } else {
       state.waveTimer = Math.max(0, state.waveTimer - dt);
+    }
+
+    // Periodic auto-save during combat (every 3 seconds) so refreshing/closing mid-battle never loses progress
+    state.autoSaveTimer = (state.autoSaveTimer || 3.0) - dt;
+    if (state.autoSaveTimer <= 0) {
+      state.autoSaveTimer = 3.0;
+      saveCampaignProgress(state.waveIdx, false);
     }
 
     let mx = 0;
@@ -6788,17 +6914,21 @@
     state.jade += waveClearJade;
     state.totalJadeEarned += waveClearJade;
 
-    saveCampaignProgress();
-    openCampShop();
+    openCampShop(state.waveIdx + 1);
   }
 
-  function openCampShop() {
+  function openCampShop(targetNextWaveIdx) {
     state.phase = 'SHOP';
-    sfx.setBgmMode('title', WAVES[state.waveIdx].chapIdx);
-    state.rerollCost = 6 + Math.floor(state.waveIdx * 1.4);
+    state.shopNextWaveIdx = typeof targetNextWaveIdx === 'number'
+      ? Math.max(0, Math.min(TOTAL_WAVES - 1, targetNextWaveIdx))
+      : Math.min(TOTAL_WAVES - 1, state.waveIdx + 1);
+    const refWave = WAVES[state.shopNextWaveIdx] || WAVES[state.waveIdx];
+    sfx.setBgmMode('title', refWave.chapIdx);
+    state.rerollCost = 6 + Math.floor(state.shopNextWaveIdx * 1.4);
     state.lastAwakenMsg = '';
     sfx.playMergeClang(false);
     generateShopOffers();
+    saveCampaignProgress(state.shopNextWaveIdx, true);
     renderShopUI();
     document.getElementById('shopOverlay').classList.remove('hidden');
   }
@@ -6887,8 +7017,11 @@
   }
 
   function renderShopUI() {
-    const nextWave = WAVES[state.waveIdx + 1] || WAVES[state.waveIdx];
-    document.getElementById('shopTitle').textContent = `中軍鍛造營帳 — 備戰第 ${state.waveIdx + 2} / 100 陣（${nextWave.shortTitle}）`;
+    const nextIdx = typeof state.shopNextWaveIdx === 'number'
+      ? state.shopNextWaveIdx
+      : Math.min(TOTAL_WAVES - 1, state.waveIdx + 1);
+    const nextWave = WAVES[nextIdx] || WAVES[state.waveIdx];
+    document.getElementById('shopTitle').textContent = `中軍鍛造營帳 — 備戰第 ${nextIdx + 1} / 100 陣（${nextWave.shortTitle}）`;
     document.getElementById('shopJadeCount').textContent = state.jade;
     document.getElementById('btnReroll').textContent = `重鑄補給 (-${state.rerollCost} 玉)`;
     document.getElementById('arsenalCountText').textContent = `${state.weapons.length} / 6`;
@@ -7056,7 +7189,7 @@
     });
 
     document.getElementById('shopStatsStrip').innerHTML = `
-      <span>當前戰役：<strong>${WAVES[state.waveIdx].chapterName}（第 ${state.waveIdx + 1} / 100 陣）</strong></span>
+      <span>即將出征：<strong>${nextWave.chapterName}（第 ${nextIdx + 1} / 100 陣）</strong></span>
       <span>氣血上限：<strong>${state.maxHp}</strong></span>
       <span>傷害倍率：<strong>${Math.round(state.dmgMul * 100)}%</strong></span>
       <span>冷卻縮減：<strong>${Math.round(state.cdMul * 100)}%</strong></span>
@@ -7070,18 +7203,44 @@
     pointer.active = false;
     sfx.setBgmMode('title', 0);
     sfx.playWarDrum();
+
+    if (!victory) {
+      for (const g of state.gems) {
+        state.jade += g.value;
+        state.totalJadeEarned += g.value;
+      }
+      state.gems = [];
+      state.hp = state.maxHp;
+      saveCampaignProgress(state.waveIdx, false);
+    }
+
     refreshTitleProgressUI();
     document.getElementById('resultOverlay').classList.remove('hidden');
     document.getElementById('resultTitle').textContent = victory ? '百陣無雙！一統天下大捷' : '馬革裹屍・戰陣失守';
     document.getElementById('resultTitle').style.color = victory ? 'var(--gold-bright)' : 'var(--crimson-glow)';
     document.getElementById('resultSub').textContent = victory
       ? `${state.hero.name} 成功突破全 100 陣、擊潰九天無雙魔神呂奉先，威震華夏！`
-      : `於【${WAVES[state.waveIdx].title}】力戰不支（可回主畫面點擊「繼續遠征」從本陣營帳重整再戰）！`;
+      : `於【${WAVES[state.waveIdx].title}】力戰不支！您的神兵、翠玉與戰力已完整自動保存，可直接原陣再戰或先回營帳補給！`;
+
+    const btnRetryWaveEl = document.getElementById('btnRetryWave');
+    const btnRetryShopEl = document.getElementById('btnRetryShop');
+    const btnPlayAgainEl = document.getElementById('btnPlayAgain');
+    if (btnRetryWaveEl) {
+      btnRetryWaveEl.style.display = victory ? 'none' : 'inline-block';
+      btnRetryWaveEl.textContent = `🔥 原陣重整再戰（第 ${state.waveIdx + 1} 陣・保留神兵與戰力）`;
+    }
+    if (btnRetryShopEl) {
+      btnRetryShopEl.style.display = victory ? 'none' : 'inline-block';
+      btnRetryShopEl.textContent = `🏕️ 先回鍛造營帳補給（備戰第 ${state.waveIdx + 1} 陣）`;
+    }
+    if (btnPlayAgainEl) {
+      btnPlayAgainEl.textContent = victory ? '🏆 凱旋返回主畫面' : '🏠 存檔返回主畫面';
+    }
 
     document.getElementById('resultStats').innerHTML = `
-      <span>突破陣數：<strong>${victory ? 100 : state.waveIdx + 1} / 100</strong></span>
+      <span>當前陣數：<strong>第 ${victory ? 100 : state.waveIdx + 1} / 100 陣</strong></span>
       <span>斬獲敵首：<strong>${state.kills}</strong></span>
-      <span>累積戰功翠玉：<strong>${state.totalJadeEarned}</strong></span>
+      <span>持有戰功翠玉：<strong>${state.jade}（累積 ${state.totalJadeEarned}）</strong></span>
     `;
   }
 
@@ -7149,18 +7308,73 @@
   window.addEventListener('pointercancel', cancelPointer);
   window.addEventListener('blur', () => cancelPointer());
 
+  // Auto-save whenever player switches tabs, locks phone screen, or closes/refreshes browser
+  const autoSaveOnLeave = () => {
+    if (state.phase === 'WAVE') {
+      saveCampaignProgress(state.waveIdx, false);
+    } else if (state.phase === 'SHOP') {
+      const nextTarget = typeof state.shopNextWaveIdx === 'number' ? state.shopNextWaveIdx : (state.waveIdx + 1);
+      saveCampaignProgress(nextTarget, true);
+    }
+  };
+  window.addEventListener('beforeunload', autoSaveOnLeave);
+  window.addEventListener('pagehide', autoSaveOnLeave);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') autoSaveOnLeave();
+  });
+
   document.getElementById('btnStartGame').addEventListener('click', startNewRun);
   document.getElementById('btnContinueRun').addEventListener('click', continueSavedRun);
+  const btnContinueTopEl = document.getElementById('btnContinueTop');
+  if (btnContinueTopEl) {
+    btnContinueTopEl.addEventListener('click', continueSavedRun);
+  }
+  const btnSaveExitHudEl = document.getElementById('btnSaveExitHud');
+  if (btnSaveExitHudEl) {
+    btnSaveExitHudEl.addEventListener('click', returnToTitleWithSave);
+  }
+  const btnSaveExitShopEl = document.getElementById('btnSaveExitShop');
+  if (btnSaveExitShopEl) {
+    btnSaveExitShopEl.addEventListener('click', returnToTitleWithSave);
+  }
+  const btnRetryWaveEl = document.getElementById('btnRetryWave');
+  if (btnRetryWaveEl) {
+    btnRetryWaveEl.addEventListener('click', () => {
+      sfx.init();
+      sfx.playWarDrum();
+      state.hp = state.maxHp;
+      document.getElementById('resultOverlay').classList.add('hidden');
+      document.getElementById('hudTop').style.display = 'flex';
+      document.getElementById('hudBottom').style.display = 'flex';
+      startWave(state.waveIdx);
+    });
+  }
+  const btnRetryShopEl = document.getElementById('btnRetryShop');
+  if (btnRetryShopEl) {
+    btnRetryShopEl.addEventListener('click', () => {
+      sfx.init();
+      state.hp = state.maxHp;
+      document.getElementById('resultOverlay').classList.add('hidden');
+      document.getElementById('hudTop').style.display = 'flex';
+      document.getElementById('hudBottom').style.display = 'flex';
+      openCampShop(state.waveIdx);
+    });
+  }
   document.getElementById('btnPlayAgain').addEventListener('click', () => {
     sfx.setBgmMode('title', 0);
     refreshTitleProgressUI();
     document.getElementById('resultOverlay').classList.add('hidden');
+    document.getElementById('hudTop').style.display = 'none';
+    document.getElementById('hudBottom').style.display = 'none';
     document.getElementById('titleOverlay').classList.remove('hidden');
   });
 
   document.getElementById('btnNextWave').addEventListener('click', () => {
     sfx.playWarDrum();
-    startWave(state.waveIdx + 1);
+    const nextIdx = typeof state.shopNextWaveIdx === 'number'
+      ? state.shopNextWaveIdx
+      : (state.waveIdx + 1);
+    startWave(nextIdx);
   });
 
   document.getElementById('btnAutoMerge').addEventListener('click', performAutoMergeAll);
@@ -7171,6 +7385,7 @@
     state.rerollCost += 4;
     sfx.playGemPickup();
     generateShopOffers();
+    saveCampaignProgress();
     renderShopUI();
     updateHud();
   });
