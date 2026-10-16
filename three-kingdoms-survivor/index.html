@@ -2169,7 +2169,7 @@
     const dmgMul = +(1.0 + idx * 0.065 + chapIdx * 0.15).toFixed(2);
     const spawnInterval = Math.max(0.095, +(0.58 * Math.pow(0.980, idx)).toFixed(3));
     const maxEnemies = Math.min(190, 82 + Math.floor(idx * 1.15));
-    const duration = isMajorBoss ? 38 : (isMidBoss ? 30 : Math.min(28, 20 + (subIdx % 5)));
+    const duration = isMajorBoss ? 60 : (isMidBoss ? 45 : Math.min(28, 20 + (subIdx % 5)));
 
     return {
       wave: waveNum,
@@ -2927,12 +2927,40 @@
     }
   }
 
+  function estimatePlayerDps() {
+    let total = 0;
+    for (const wSlot of state.weapons) {
+      const spec = WEAPON_CATALOG[wSlot.id];
+      if (!spec) continue;
+      const awakenBoost = wSlot.tier >= 10 ? 1.85 : (wSlot.tier >= 5 ? 1.35 : 1.0);
+      const tierMul = Math.pow(1.48, wSlot.tier - 1) * awakenBoost;
+      const multiHit = (wSlot.id === 'bow' || wSlot.id === 'poisonNeedles')
+        ? Math.min(4.2, 1.5 + wSlot.tier * 0.35)
+        : (wSlot.id === 'bladeRing' ? 2.5 : (wSlot.tier >= 5 ? 1.8 : 1.2));
+      const critFactor = 1 + Math.min(1.0, state.critChance) * 1.0;
+      const cd = Math.max(0.12, spec.baseCd * state.cdMul);
+      total += (spec.baseDmg * tierMul * multiHit * state.dmgMul * critFactor) / cd;
+    }
+    return Math.max(95, total);
+  }
+
   function spawnBoss(w) {
     const spec = w.bossSpec || { name: '鬼神・呂奉先', color: '#ff3d00', bootColor: '#d50000', bodyKey: 'body_lubu', wpnKey: 'rig_halberd' };
     const isMajor = !!w.isMajorBoss;
-    const baseBossHp = isMajor ? 1650 : 880;
-    const bossHp = Math.round(baseBossHp * w.hpMul);
+
+    // 1. Massive Boss HP + Dynamic Player-DPS Adaptive Floor so Boss NEVER melts before engaging!
+    const baseBossHp = (isMajor ? 9800 : 4800) * w.hpMul;
+    const playerDps = estimatePlayerDps();
+    const minCombatSeconds = isMajor ? 22 : 13;
+    const bossHp = Math.round(Math.max(baseBossHp, playerDps * minCombatSeconds));
     const jadeScale = 1 + Math.floor(state.waveIdx / 4);
+
+    // Spawn at 340px and immediately gap-close charge into melee range!
+    const spawnAng = -Math.PI / 2 + (Math.random() - 0.5) * 0.7;
+    const spawnDist = 340;
+    const bx = state.x + Math.cos(spawnAng) * spawnDist;
+    const by = state.y + Math.sin(spawnAng) * spawnDist;
+    const toHeroAng = Math.atan2(state.y - by, state.x - bx);
 
     // Colossal Boss Scaling (巨大化): 2.9x Hero size for Mid-Boss, 3.8x Hero size for Chapter Final Boss!
     const boss = {
@@ -2944,25 +2972,32 @@
       bootColor: spec.bootColor || '#d50000',
       capeColor: spec.color || '#d50000',
       name: spec.name,
-      x: state.x,
-      y: state.y - 430,
+      x: bx,
+      y: by,
       radius: isMajor ? 92 : 68,
       drawSize: isMajor ? 256 : 196,
       hp: bossHp,
       maxHp: bossHp,
-      speed: (isMajor ? 134 : 124) * Math.min(1.5, 0.95 + state.waveIdx * 0.006),
-      dmg: Math.round((isMajor ? 26 : 19) * w.dmgMul),
+      speed: (isMajor ? 172 : 158) * Math.min(1.55, 1.0 + state.waveIdx * 0.006),
+      dmg: Math.round((isMajor ? 32 : 24) * w.dmgMul),
       color: spec.color || '#ff3d00',
-      jadeValue: (isMajor ? 60 : 35) * jadeScale,
+      jadeValue: (isMajor ? 75 : 42) * jadeScale,
       hitFlash: 0,
       walkPhase: 0,
-      strideFreq: 10.5,
-      facing: 1,
-      skillTimer: 2.5,
+      strideFreq: 12.5,
+      facing: Math.cos(toHeroAng) >= 0 ? 1 : -1,
+      // Immediate entrance gap-closer dash + 2.0s Golden Armor Spawn Shield (75% damage reduction)
+      spawnShieldTimer: 2.0,
+      enraged: false,
+      windupTimer: 0,
+      chargeAng: toHeroAng,
+      skillTimer: 1.8,
       skillCount: 0,
-      dashTime: 0,
-      dashVx: 0,
-      dashVy: 0
+      dashTime: 0.36,
+      dashVx: Math.cos(toHeroAng) * 540,
+      dashVy: Math.sin(toHeroAng) * 540,
+      multiHitWindow: 0,
+      multiHitCount: 0
     };
     state.enemies.push(boss);
     state.boss = boss;
@@ -2972,7 +3007,7 @@
     state.floatTexts.push({
       x: state.x,
       y: state.y - 110,
-      text: `⚠️ 巨型BOSS降臨：${isMajor ? '【鎮關魔將】' : '【鎮陣先鋒】'}${boss.name}！`,
+      text: `⚠️ 巨型BOSS霸體突襲：${isMajor ? '【鎮關魔將】' : '【鎮陣先鋒】'}${boss.name}！`,
       color: '#ff5252',
       size: 22,
       life: 2.2,
@@ -3009,19 +3044,37 @@
     const critMult = isCrit ? (2.0 + extraCritBonus) : 1.0;
     // Rattan armor juggernauts take 1.8x damage from fire/thunder/poison!
     const elemMult = (enemy.type === 'juggernaut' && (elem === 'fire' || elem === 'thunder')) ? 1.8 : 1.0;
-    const dmg = Math.max(1, Math.round(baseAmount * state.dmgMul * critMult * elemMult));
+    let dmg = Math.max(1, Math.round(baseAmount * state.dmgMul * critMult * elemMult));
+
+    // Boss Heavy Armor & Anti-Shotgun Protection so Bosses cannot be melted before reaching melee!
+    if (enemy.isBoss) {
+      enemy.multiHitCount = (enemy.multiHitCount || 0) + 1;
+      // Diminishing returns against multi-projectile shotgunning in the same 0.18s window
+      if (enemy.multiHitCount > 2) {
+        dmg = Math.max(1, Math.round(dmg * Math.max(0.22, 1 / Math.sqrt(enemy.multiHitCount))));
+      }
+      // Entrance Golden Poise Shield (first 2.0s after spawn: 75% damage reduction while gap-closing)
+      if (enemy.spawnShieldTimer > 0) {
+        dmg = Math.max(1, Math.round(dmg * 0.25));
+      }
+      // Per-hit max HP cap (single hit cannot exceed 4.2% of Boss Max HP)
+      const maxSingleHit = Math.max(20, Math.round(enemy.maxHp * (enemy.isMajorBoss ? 0.035 : 0.048)));
+      dmg = Math.min(dmg, maxSingleHit);
+    }
+
     enemy.hp -= dmg;
     enemy.hitFlash = 0.12;
 
     if (elem === 'poison') {
       enemy.poisonTimer = 3.5;
-      enemy.poisonDps = Math.max(enemy.poisonDps || 0, dmg * 0.45);
+      enemy.poisonDps = Math.max(enemy.poisonDps || 0, (enemy.isBoss ? dmg * 0.18 : dmg * 0.45));
     }
 
     const dx = enemy.x - state.x;
     const dy = enemy.y - state.y;
     const len = Math.hypot(dx, dy) || 1;
-    const kbFactor = enemy.isBoss ? 0.18 : (enemy.isElite ? 0.45 : 1.0);
+    // Boss has Unstoppable Poise (0 knockback) so ranged weapons never push Boss away from the player!
+    const kbFactor = enemy.isBoss ? 0 : (enemy.isElite ? 0.35 : 1.0);
     enemy.x += (dx / len) * knockback * kbFactor;
     enemy.y += (dy / len) * knockback * kbFactor;
 
@@ -4199,40 +4252,159 @@
       const slowFactor = e.poisonTimer > 0 ? 0.68 : 1.0;
 
       if (e.isBoss) {
-        e.skillTimer -= dt;
+        if (e.spawnShieldTimer > 0) e.spawnShieldTimer -= dt;
+        e.multiHitWindow = (e.multiHitWindow || 0) + dt;
+        if (e.multiHitWindow >= 0.18) {
+          e.multiHitWindow = 0;
+          e.multiHitCount = 0;
+        }
+
+        // Phase 2 Enrage at <= 52% HP!
+        if (!e.enraged && e.hp <= e.maxHp * 0.52) {
+          e.enraged = true;
+          e.spawnShieldTimer = 1.1;
+          e.speed *= 1.38;
+          e.dmg = Math.round(e.dmg * 1.25);
+          sfx.playMusouCast();
+          triggerShake(0.45, 15);
+          state.slashes.push({
+            x: e.x, y: e.y, ang: 0, radius: 220, isFullCircle: true,
+            color: '#ff1744', life: 0.36, maxLife: 0.36
+          });
+          for (let b = 0; b < 14; b++) {
+            const ba = (b * Math.PI * 2) / 14;
+            state.enemyProjectiles.push({
+              x: e.x, y: e.y,
+              vx: Math.cos(ba) * 320,
+              vy: Math.sin(ba) * 320,
+              radius: 10,
+              dmg: Math.round(e.dmg * 0.85),
+              color: '#ff1744',
+              life: 3.2
+            });
+          }
+          state.floatTexts.push({
+            x: e.x, y: e.y - e.drawSize * 0.65,
+            text: `🔥【${e.name}・魔神狂暴化】攻速移速暴增！`,
+            color: '#ffeb3b', size: 22, life: 2.2, maxLife: 2.2
+          });
+        }
+
+        // Anti-Kiting Gap-Closer: if player runs too far (> 560px), Boss immediately charges in!
+        if (distToHero > 560 && e.dashTime <= 0 && e.windupTimer <= 0) {
+          const ang = Math.atan2(state.y - e.y, state.x - e.x);
+          e.dashVx = Math.cos(ang) * 680;
+          e.dashVy = Math.sin(ang) * 680;
+          e.dashTime = 0.42;
+        }
+
         if (e.dashTime > 0) {
           e.dashTime -= dt;
           e.x += e.dashVx * dt;
           e.y += e.dashVy * dt;
-          e.walkPhase += dt * 26;
-        } else if (e.skillTimer <= 0) {
-          e.skillTimer = Math.max(2.3, 3.8 - state.waveIdx * 0.015);
-          e.skillCount = (e.skillCount || 0) + 1;
-          const ang = Math.atan2(state.y - e.y, state.x - e.x);
-          const dashSpd = 410 + Math.min(140, state.waveIdx * 1.5);
-          e.dashVx = Math.cos(ang) * dashSpd;
-          e.dashVy = Math.sin(ang) * dashSpd;
-          e.dashTime = 0.55;
-          sfx.playWarDrum();
-          // Boss fires an 8-way or 12-way bullet ring!
-          const ringCount = e.isMajorBoss ? 12 : 8;
-          for (let b = 0; b < ringCount; b++) {
-            const ba = ang + (b * Math.PI * 2) / ringCount;
-            state.enemyProjectiles.push({
-              x: e.x, y: e.y,
-              vx: Math.cos(ba) * 265,
-              vy: Math.sin(ba) * 265,
-              radius: 8,
-              dmg: Math.round(e.dmg * 0.75),
-              color: e.color || '#ff1744',
-              life: 3.0
+          e.walkPhase += dt * 28;
+          if (e.dashTime <= 0) {
+            // Heavy Ground Slam at the end of Boss Charge!
+            sfx.playHeavyImpact();
+            triggerShake(0.24, 10);
+            state.slashes.push({
+              x: e.x, y: e.y, ang: 0, radius: e.isMajorBoss ? 175 : 140, isFullCircle: true,
+              color: e.color || '#ff1744', life: 0.28, maxLife: 0.28
             });
+            if (Math.hypot(state.x - e.x, state.y - e.y) <= (e.isMajorBoss ? 175 : 140) && state.invulnTimer <= 0) {
+              state.hp = Math.max(0, state.hp - e.dmg);
+              state.invulnTimer = 0.6;
+              sfx.playHurt();
+              state.floatTexts.push({ x: state.x, y: state.y - 38, text: `💥震地 -${e.dmg}`, color: '#ff1744', size: 18, life: 0.75, maxLife: 0.75 });
+              if (state.hp <= 0) { endGame(false); return; }
+            }
+          }
+        } else if (e.windupTimer > 0) {
+          e.windupTimer -= dt;
+          if (e.windupTimer <= 0) {
+            const dashSpd = (e.enraged ? 760 : 640) + Math.min(120, state.waveIdx * 1.4);
+            e.dashVx = Math.cos(e.chargeAng) * dashSpd;
+            e.dashVy = Math.sin(e.chargeAng) * dashSpd;
+            e.dashTime = 0.50;
+            sfx.playWarDrum();
           }
         } else {
-          const ang = Math.atan2(state.y - e.y, state.x - e.x);
-          e.x += Math.cos(ang) * e.speed * slowFactor * dt;
-          e.y += Math.sin(ang) * e.speed * slowFactor * dt;
-          e.walkPhase += dt * e.strideFreq;
+          e.skillTimer -= dt * (e.enraged ? 1.45 : 1.0);
+          if (e.skillTimer <= 0) {
+            e.skillTimer = Math.max(1.65, 2.85 - state.waveIdx * 0.012);
+            e.skillCount = (e.skillCount || 0) + 1;
+            const ang = Math.atan2(state.y - e.y, state.x - e.x);
+            const moveType = e.skillCount % 3;
+
+            if (moveType === 1) {
+              // Skill 1: Lock-on Red Corridor Telegraph -> High-Speed Charge + Ground Slam
+              e.chargeAng = ang;
+              e.windupTimer = e.enraged ? 0.42 : 0.55;
+              sfx.playWarDrum();
+              state.floatTexts.push({
+                x: e.x, y: e.y - e.drawSize * 0.55,
+                text: `⚡【${e.name}】破軍突襲預備！`,
+                color: '#ff5252', size: 17, life: 0.75, maxLife: 0.75
+              });
+            } else if (moveType === 2) {
+              // Skill 2: 5-Way Aimed Crescent Fan + 360° Ring Barrage
+              sfx.playThunder();
+              const fanCount = e.isMajorBoss ? 7 : 5;
+              for (let f = 0; f < fanCount; f++) {
+                const fa = ang + (f - (fanCount - 1) / 2) * 0.20;
+                state.enemyProjectiles.push({
+                  x: e.x, y: e.y,
+                  vx: Math.cos(fa) * 345,
+                  vy: Math.sin(fa) * 345,
+                  radius: 11,
+                  dmg: e.dmg,
+                  color: '#ffd740',
+                  life: 3.0
+                });
+              }
+              const ringCount = e.isMajorBoss ? 12 : 8;
+              for (let b = 0; b < ringCount; b++) {
+                const ba = ang + (b * Math.PI * 2) / ringCount;
+                state.enemyProjectiles.push({
+                  x: e.x, y: e.y,
+                  vx: Math.cos(ba) * 245,
+                  vy: Math.sin(ba) * 245,
+                  radius: 8,
+                  dmg: Math.round(e.dmg * 0.8),
+                  color: e.color || '#ff1744',
+                  life: 3.2
+                });
+              }
+            } else {
+              // Skill 3: Vanguard Guard Summon + Flame/Bomb Hazard Around Player
+              sfx.playHeavyImpact();
+              spawnEnemy('charger');
+              if (e.isMajorBoss) spawnEnemy('bomber');
+              for (let z = 0; z < (e.isMajorBoss ? 3 : 2); z++) {
+                const za = Math.random() * Math.PI * 2;
+                const zd = 60 + Math.random() * 140;
+                state.groundZones.push({
+                  kind: 'bomb_telegraph',
+                  x: state.x + Math.cos(za) * zd,
+                  y: state.y + Math.sin(za) * zd,
+                  radius: 95,
+                  life: 0.85,
+                  maxLife: 0.85,
+                  dmg: e.dmg * 1.15
+                });
+              }
+              state.floatTexts.push({
+                x: e.x, y: e.y - e.drawSize * 0.55,
+                text: `🔥【${e.name}】號令親衛・煉獄轟炸！`,
+                color: '#ff9100', size: 17, life: 0.9, maxLife: 0.9
+              });
+            }
+          } else {
+            const ang = Math.atan2(state.y - e.y, state.x - e.x);
+            e.x += Math.cos(ang) * e.speed * slowFactor * dt;
+            e.y += Math.sin(ang) * e.speed * slowFactor * dt;
+            e.walkPhase += dt * e.strideFreq;
+          }
         }
       } else if (e.type === 'archer' || e.type === 'shaman' || e.isElite) {
         const ang = Math.atan2(state.y - e.y, state.x - e.x);
@@ -4743,16 +4915,26 @@
     for (const item of renderList) {
       if (item.kind === 'enemy') {
         const e = item.entity;
-        // Draw charger telegraph line if winding up!
+        // Draw charger / Boss charge telegraph corridor if winding up!
         if (e.windupTimer > 0) {
           ctx.save();
-          ctx.strokeStyle = '#ff1744';
-          ctx.lineWidth = 3;
-          ctx.setLineDash([8, 6]);
-          ctx.beginPath();
-          ctx.moveTo(e.x, e.y);
-          ctx.lineTo(e.x + Math.cos(e.chargeAng) * 260, e.y + Math.sin(e.chargeAng) * 260);
-          ctx.stroke();
+          if (e.isBoss) {
+            ctx.translate(e.x, e.y);
+            ctx.rotate(e.chargeAng || 0);
+            ctx.fillStyle = 'rgba(255, 23, 68, 0.28)';
+            ctx.strokeStyle = '#ff1744';
+            ctx.lineWidth = 3;
+            ctx.fillRect(0, -e.radius * 0.72, 360, e.radius * 1.44);
+            ctx.strokeRect(0, -e.radius * 0.72, 360, e.radius * 1.44);
+          } else {
+            ctx.strokeStyle = '#ff1744';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([8, 6]);
+            ctx.beginPath();
+            ctx.moveTo(e.x, e.y);
+            ctx.lineTo(e.x + Math.cos(e.chargeAng) * 260, e.y + Math.sin(e.chargeAng) * 260);
+            ctx.stroke();
+          }
           ctx.restore();
         }
         drawSurvivorCharacter({
