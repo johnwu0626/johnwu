@@ -2857,6 +2857,8 @@
     hero: HEROES[0],
     x: 0,
     y: 0,
+    camX: 0,
+    camY: 0,
     vx: 0,
     vy: 0,
     isMoving: false,
@@ -2901,7 +2903,8 @@
     killBanner: null,
 
     shakeTime: 0,
-    shakeMag: 0
+    shakeMag: 0,
+    lastShakeAt: 0
   };
 
   const keys = {};
@@ -3133,6 +3136,10 @@
     state.kills = 0;
     state.x = 0;
     state.y = 0;
+    state.camX = 0;
+    state.camY = 0;
+    state.shakeTime = 0;
+    state.shakeMag = 0;
     state.lastAwakenMsg = '';
 
     // Balanced power scaling when jumping directly into mid/late waves so enemies still feel intense & dangerous
@@ -3207,6 +3214,10 @@
     state.rerollCost = saved.rerollCost || 8;
     state.x = 0;
     state.y = 0;
+    state.camX = 0;
+    state.camY = 0;
+    state.shakeTime = 0;
+    state.shakeMag = 0;
 
     state.weapons = (saved.weapons && saved.weapons.length > 0)
       ? saved.weapons.map(w => ({
@@ -3290,6 +3301,10 @@
     state.propSpawnTimer = 3.5;
     state.eliteSpawnTimer = st.trait === 'terror_aura' ? 6.0 : 9.0;
     state.walkPhase = 0;
+    state.camX = state.x;
+    state.camY = state.y;
+    state.shakeTime = 0;
+    state.shakeMag = 0;
     state.enemies = [];
     state.projectiles = [];
     state.enemyProjectiles = [];
@@ -3944,7 +3959,9 @@
 
   function triggerExplosion(x, y, radius, dmg, isFriendly = true, color = '#ff6e40') {
     sfx.playFireBurst();
-    triggerShake(0.26, 11);
+    if (!isFriendly && Math.hypot(state.x - x, state.y - y) < 420) {
+      triggerShake(0.16, 6);
+    }
     if (state.slashes.length < 24) {
       state.slashes.push({
         x, y,
@@ -5102,8 +5119,13 @@
 
   function triggerShake(duration, magnitude) {
     if (reduceMotion) return;
-    state.shakeTime = Math.max(state.shakeTime, duration);
-    state.shakeMag = Math.max(state.shakeMag, magnitude);
+    const now = performance.now();
+    // Throttle repeated shakes within 180ms so multi-hit or boss skills never stack high-frequency jitter
+    if (now - (state.lastShakeAt || 0) < 180 && magnitude * 0.28 <= state.shakeMag) return;
+    state.lastShakeAt = now;
+    const safeMag = Math.min(4.2, magnitude * 0.26); // Eye-friendly cap (max 4.2px gentle thud)
+    state.shakeTime = Math.max(state.shakeTime, Math.min(0.26, duration));
+    state.shakeMag = Math.max(state.shakeMag, safeMag);
   }
 
   // =========================================================================
@@ -5411,7 +5433,16 @@
   function update(dt) {
     if (state.phase !== 'WAVE') return;
 
-    if (state.shakeTime > 0) state.shakeTime -= dt;
+    if (state.shakeTime > 0) {
+      state.shakeTime = Math.max(0, state.shakeTime - dt);
+      state.shakeMag *= Math.pow(0.025, dt); // Smooth exponential decay so shake never lingers
+      if (state.shakeTime <= 0 || state.shakeMag < 0.08) {
+        state.shakeTime = 0;
+        state.shakeMag = 0;
+      }
+    } else {
+      state.shakeMag = 0;
+    }
     if (state.screenFlash) {
       state.screenFlash.life -= dt;
       if (state.screenFlash.life <= 0) state.screenFlash = null;
@@ -5496,6 +5527,20 @@
     const spd = state.baseSpeed * state.speedMul * (state.musouDomainTimer > 0 ? 1.16 : 1.0);
     state.x += mx * spd * dt;
     state.y += my * spd * dt;
+
+    // Smoothly damp camera toward hero so fast dodging/turning doesn't yank the background
+    if (typeof state.camX !== 'number' || Number.isNaN(state.camX)) state.camX = state.x;
+    if (typeof state.camY !== 'number' || Number.isNaN(state.camY)) state.camY = state.y;
+    const camLerp = 1 - Math.exp(-9.0 * dt);
+    state.camX += (state.x - state.camX) * camLerp;
+    state.camY += (state.y - state.camY) * camLerp;
+    const camDx = state.x - state.camX;
+    const camDy = state.y - state.camY;
+    const camDist = Math.hypot(camDx, camDy);
+    if (camDist > 68) {
+      state.camX = state.x - (camDx / camDist) * 68;
+      state.camY = state.y - (camDy / camDist) * 68;
+    }
 
     state.isMoving = Math.hypot(mx, my) > 0.08;
     if (Math.abs(mx) > 0.08) {
@@ -6050,374 +6095,294 @@
   }
 
   // =========================================================================
-  // 20 Distinct 5-Wave Procedural Battlefield Maps ("五關一張全新地圖")
+  // 20 Distinct 5-Wave Seamless & Eye-Friendly Battlefield Maps ("五關一張全新無縫護眼地圖")
   // =========================================================================
-  function drawStageMapTile(tx, ty, w, c, r, pulse) {
+  function tileHash(c, r, seed) {
+    const n = Math.sin(c * 127.1 + r * 311.7 + seed * 74.7) * 43758.5453;
+    return n - Math.floor(n);
+  }
+
+  function drawSoftHorizontalRoad(tx, cy, width, centerColor, edgeColor) {
+    const g = ctx.createLinearGradient(0, cy - width / 2, 0, cy + width / 2);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(0.18, edgeColor);
+    g.addColorStop(0.5, centerColor);
+    g.addColorStop(0.82, edgeColor);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(tx - 1, cy - width / 2, TILE_W + 2, width);
+  }
+
+  function drawSoftVerticalRoad(cx, ty, width, centerColor, edgeColor) {
+    const g = ctx.createLinearGradient(cx - width / 2, 0, cx + width / 2, 0);
+    g.addColorStop(0, 'rgba(0,0,0,0)');
+    g.addColorStop(0.18, edgeColor);
+    g.addColorStop(0.5, centerColor);
+    g.addColorStop(0.82, edgeColor);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(cx - width / 2, ty - 1, width, TILE_H + 2);
+  }
+
+  function drawStageMapTile(tx, ty, w, c, r) {
     const st = w.stageSpec || STAGE_LEGIONS[0];
     const style = st.mapStyle || 'ochre_steppe';
     const cx = tx + TILE_W * 0.5;
     const cy = ty + TILE_H * 0.5;
 
     ctx.save();
-    // 1. Distinct Base Terrain Fill per 5-Wave Stage
-    ctx.fillStyle = st.bgPrimary || '#241c14';
-    ctx.fillRect(tx, ty, TILE_W, TILE_H);
 
-    // Subtle secondary terrain patches
-    ctx.fillStyle = st.bgSecondary || '#30251b';
-    ctx.fillRect(tx + 60, ty + 60, TILE_W - 120, TILE_H - 120);
-
-    // Blend subtle stone/earth grain from arena_floor at low opacity (0.14) so each map's own architecture dominates!
+    // 1. Seamless Mirrored Ground Grain (low 0.10 opacity so there are zero hard edges or high-frequency flicker)
     const floorImg = IMAGES.arena_floor;
     if (floorImg && floorImg.complete && floorImg.naturalWidth > 0) {
       ctx.save();
-      ctx.globalAlpha = 0.14;
+      ctx.globalAlpha = 0.10;
       ctx.translate(cx, cy);
       ctx.scale((Math.abs(c) % 2 === 1) ? -1 : 1, (Math.abs(r) % 2 === 1) ? -1 : 1);
-      ctx.drawImage(floorImg, -TILE_W / 2, -TILE_H / 2, TILE_W, TILE_H);
+      ctx.drawImage(floorImg, -TILE_W / 2 - 1, -TILE_H / 2 - 1, TILE_W + 2, TILE_H + 2);
       ctx.restore();
     }
 
-    // 2. Draw Unique 5-Wave Map Architecture, Roads, Rivers, Bridges, Decks & Landmarks!
+    // Soft organic terrain shading patches (varied per tile via tileHash, never touching tile edges)
+    ctx.fillStyle = st.bgSecondary || '#30251b';
+    ctx.globalAlpha = 0.45;
+    for (let p = 0; p < 3; p++) {
+      const px = tx + 220 + tileHash(c, r, p * 3 + 1) * (TILE_W - 440);
+      const py = ty + 180 + tileHash(c, r, p * 3 + 2) * (TILE_H - 360);
+      const rx = 110 + tileHash(c, r, p * 3 + 3) * 90;
+      const ry = 65 + tileHash(c, r, p * 3 + 4) * 50;
+      ctx.beginPath();
+      ctx.ellipse(px, py, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // 2. Seamless 5-Wave Map Architecture (100% edge-matched across tiles, static & low-contrast for eye comfort)
     if (style === 'ochre_steppe') {
-      // Map 01 (Waves 1-5): 穎川黃土荒原・十字古道與鹿角拒馬
-      ctx.fillStyle = st.roadColor;
-      ctx.fillRect(tx, cy - 58, TILE_W, 116);
-      ctx.fillRect(cx - 58, ty, 116, TILE_H);
-      ctx.strokeStyle = 'rgba(245, 176, 65, 0.25)';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(tx + 24, ty + 24, TILE_W - 48, TILE_H - 48);
-      // Steppe grass tufts & wooden spikes
-      ctx.fillStyle = 'rgba(125, 140, 60, 0.35)';
-      for (let i = 0; i < 6; i++) {
-        ctx.beginPath();
-        ctx.ellipse(tx + 180 + (i % 3) * 360, ty + 170 + Math.floor(i / 3) * 460, 48, 22, 0, 0, Math.PI * 2);
-        ctx.fill();
+      // Map 01 (Waves 1-5): 穎川黃土荒原・無縫十字古道與荒原草甸
+      drawSoftHorizontalRoad(tx, cy, 140, '#44321e', 'rgba(59, 44, 26, 0.55)');
+      if (Math.abs(c) % 2 === 0) {
+        drawSoftVerticalRoad(cx, ty, 130, '#44321e', 'rgba(59, 44, 26, 0.55)');
       }
-      // Wooden barricade X-spikes (鹿角拒馬)
-      ctx.strokeStyle = '#8d6e63';
-      ctx.lineWidth = 6;
-      [[tx + 220, ty + 210], [tx + TILE_W - 220, ty + 210], [tx + 220, ty + TILE_H - 210], [tx + TILE_W - 220, ty + TILE_H - 210]].forEach(([bx, by]) => {
-        ctx.beginPath();
-        ctx.moveTo(bx - 28, by - 16); ctx.lineTo(bx + 28, by + 16);
-        ctx.moveTo(bx + 28, by - 16); ctx.lineTo(bx - 28, by + 16);
-        ctx.stroke();
-      });
-    } else if (style === 'bagua_altar') {
-      // Map 02 (Waves 6-10): 廣宗八卦祭壇・太極符石陣
-      ctx.strokeStyle = 'rgba(255, 213, 79, 0.38)';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      for (let k = 0; k < 8; k++) {
-        const a = (k * Math.PI) / 4 + Math.PI / 8;
-        const rx = cx + Math.cos(a) * 280;
-        const ry = cy + Math.sin(a) * 280;
-        if (k === 0) ctx.moveTo(rx, ry);
-        else ctx.lineTo(rx, ry);
-      }
-      ctx.closePath();
-      ctx.fillStyle = 'rgba(61, 46, 92, 0.55)';
-      ctx.fill();
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(cx, cy, 175, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.font = '900 42px serif';
-      ctx.fillStyle = 'rgba(255, 213, 79, 0.28)';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('蒼天已死・黃天當立', cx, cy);
-    } else if (style === 'obsidian_fort') {
-      // Map 03 (Waves 11-15): 汜水關黑曜甕城・鐵鎖城磚與護城血渠
-      ctx.strokeStyle = 'rgba(144, 164, 174, 0.18)';
-      ctx.lineWidth = 2;
-      for (let y = 0; y < TILE_H; y += 80) {
-        const shift = (Math.floor(y / 80) % 2) * 70;
-        for (let x = shift; x < TILE_W; x += 140) {
-          ctx.strokeRect(tx + x, ty + y, 140, 80);
-        }
-      }
-      // Fortress blood trench canals
-      ctx.fillStyle = 'rgba(183, 28, 28, 0.38)';
-      ctx.fillRect(tx, ty + 90, TILE_W, 34);
-      ctx.fillRect(tx, ty + TILE_H - 124, TILE_W, 34);
-      ctx.strokeStyle = '#ef5350';
-      ctx.strokeRect(cx - 190, cy - 130, 380, 260);
-    } else if (style === 'lava_hell') {
-      // Map 04 (Waves 16-20): 虎牢關修羅熔岩・赤紅地裂火海
-      ctx.strokeStyle = 'rgba(255, 61, 0, 0.65)';
-      ctx.lineWidth = 10;
-      ctx.beginPath();
-      ctx.moveTo(tx + 80, ty + 140);
-      ctx.lineTo(cx - 90, cy - 40);
-      ctx.lineTo(cx + 110, cy + 70);
-      ctx.lineTo(tx + TILE_W - 90, ty + TILE_H - 130);
-      ctx.stroke();
-      ctx.strokeStyle = 'rgba(255, 215, 64, 0.75)';
-      ctx.lineWidth = 3;
-      ctx.stroke();
-      // Lava pools
-      ctx.fillStyle = `rgba(255, 61, 0, ${0.28 + pulse * 0.14})`;
-      ctx.beginPath();
-      ctx.ellipse(tx + 260, ty + TILE_H - 200, 95, 52, 0.2, 0, Math.PI * 2);
-      ctx.ellipse(tx + TILE_W - 260, ty + 200, 85, 48, -0.3, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (style === 'frozen_river') {
-      // Map 05 (Waves 21-25): 白馬津冰封河渡・寒霜冰裂與木棧橋
-      ctx.fillStyle = 'rgba(129, 212, 250, 0.18)';
-      ctx.fillRect(tx, ty + 180, TILE_W, TILE_H - 360);
-      ctx.strokeStyle = 'rgba(225, 245, 254, 0.45)';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(tx + 120, ty + 260); ctx.lineTo(cx, cy); ctx.lineTo(tx + TILE_W - 140, ty + 290);
-      ctx.moveTo(cx, cy); ctx.lineTo(cx + 80, ty + TILE_H - 220);
-      ctx.stroke();
-      // Wooden ice-crossing pier
-      ctx.fillStyle = '#4e342e';
-      for (let x = 0; x < TILE_W; x += 48) {
-        ctx.fillRect(tx + x, cy - 46, 38, 92);
-      }
-    } else if (style === 'snow_depot') {
-      // Map 06 (Waves 26-30): 官渡烏巢凍雪原・雪地車轍與火燒糧營
-      ctx.fillStyle = 'rgba(225, 245, 254, 0.14)';
-      for (let i = 0; i < 5; i++) {
-        ctx.beginPath();
-        ctx.ellipse(tx + 200 + i * 180, ty + 180 + (i % 2) * 420, 90, 45, 0, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      // Burning Wuchao grain depot circles
-      [[tx + 250, ty + 240], [tx + TILE_W - 250, ty + TILE_H - 240]].forEach(([gx, gy]) => {
-        ctx.fillStyle = 'rgba(255, 87, 34, 0.32)';
-        ctx.beginPath(); ctx.arc(gx, gy, 68 * pulse, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = '#ffab40'; ctx.lineWidth = 3;
-        ctx.strokeRect(gx - 34, gy - 24, 68, 48);
-      });
-    } else if (style === 'bamboo_grove') {
-      // Map 07 (Waves 31-35): 當陽幽翠竹林道・蜿蜒青石板古道
-      ctx.fillStyle = st.roadColor;
-      ctx.beginPath();
-      ctx.moveTo(tx, cy - 55);
-      ctx.quadraticCurveTo(cx, cy - 140, tx + TILE_W, cy - 55);
-      ctx.lineTo(tx + TILE_W, cy + 55);
-      ctx.quadraticCurveTo(cx, cy - 30, tx, cy + 55);
-      ctx.closePath();
-      ctx.fill();
-      // Lush Bamboo clusters
-      ctx.fillStyle = '#2e7d32';
-      ctx.strokeStyle = '#69f0ae';
-      ctx.lineWidth = 2;
-      [[tx + 190, ty + 190], [tx + TILE_W - 210, ty + 210], [tx + 240, ty + TILE_H - 180], [tx + TILE_W - 190, ty + TILE_H - 200]].forEach(([bx, by]) => {
-        for (let b = 0; b < 4; b++) {
+      ctx.fillStyle = 'rgba(115, 132, 58, 0.24)';
+      for (let i = 0; i < 4; i++) {
+        const gx = tx + 190 + tileHash(c, r, 10 + i) * (TILE_W - 380);
+        const gy = ty + 150 + tileHash(c, r, 20 + i) * (TILE_H - 300);
+        if (Math.abs(gy - cy) > 95) {
           ctx.beginPath();
-          ctx.arc(bx + (b - 1.5) * 20, by + (b % 2) * 14, 15, 0, Math.PI * 2);
+          ctx.ellipse(gx, gy, 52, 24, 0, 0, Math.PI * 2);
           ctx.fill();
-          ctx.stroke();
         }
+      }
+    } else if (style === 'bagua_altar') {
+      // Map 02 (Waves 6-10): 廣宗八卦祭壇・沉穩青石道壇
+      drawSoftHorizontalRoad(tx, cy, 130, '#33264d', 'rgba(44, 34, 64, 0.5)');
+      if ((c + r) % 2 === 0) {
+        ctx.strokeStyle = 'rgba(212, 175, 85, 0.16)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        for (let k = 0; k < 8; k++) {
+          const a = (k * Math.PI) / 4 + Math.PI / 8;
+          const rx = cx + Math.cos(a) * 210;
+          const ry = cy + Math.sin(a) * 210;
+          if (k === 0) ctx.moveTo(rx, ry);
+          else ctx.lineTo(rx, ry);
+        }
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(48, 36, 74, 0.32)';
+        ctx.fill();
+        ctx.stroke();
+      }
+    } else if (style === 'obsidian_fort') {
+      // Map 03 (Waves 11-15): 汜水關黑曜甕城・無縫玄武岩馳道（移除高頻刺眼磚格）
+      drawSoftHorizontalRoad(tx, cy, 160, '#2e3340', 'rgba(38, 41, 51, 0.6)');
+      drawSoftVerticalRoad(cx, ty, 150, '#2e3340', 'rgba(38, 41, 51, 0.6)');
+      ctx.fillStyle = 'rgba(120, 28, 28, 0.22)';
+      ctx.fillRect(tx - 1, ty + 110, TILE_W + 2, 24);
+      ctx.fillRect(tx - 1, ty + TILE_H - 134, TILE_W + 2, 24);
+    } else if (style === 'lava_hell') {
+      // Map 04 (Waves 16-20): 虎牢關修羅熔岩・無縫焦岩古道與靜態暗紅熔脈
+      drawSoftHorizontalRoad(tx, cy, 150, '#471515', 'rgba(66, 18, 18, 0.55)');
+      // Seamless horizontal lava vein (starts & ends at exact same Y=ty+190 on left/right edges)
+      ctx.strokeStyle = 'rgba(190, 50, 18, 0.34)';
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(tx, ty + 190);
+      ctx.bezierCurveTo(tx + TILE_W * 0.33, ty + 135, tx + TILE_W * 0.66, ty + 245, tx + TILE_W, ty + 190);
+      ctx.stroke();
+    } else if (style === 'frozen_river') {
+      // Map 05 (Waves 21-25): 白馬津冰封河渡・無縫冰河與平整木棧道（移除頻閃木條）
+      drawSoftHorizontalRoad(tx, cy, 290, 'rgba(35, 88, 125, 0.55)', 'rgba(22, 59, 86, 0.35)');
+      // Smooth continuous wooden bridge deck without high-frequency strobe gaps
+      ctx.fillStyle = '#3d2b24';
+      ctx.fillRect(tx - 1, cy - 48, TILE_W + 2, 96);
+      ctx.fillStyle = 'rgba(180, 215, 235, 0.16)';
+      ctx.fillRect(tx - 1, cy - 48, TILE_W + 2, 5);
+      ctx.fillRect(tx - 1, cy + 43, TILE_W + 2, 5);
+    } else if (style === 'snow_depot') {
+      // Map 06 (Waves 26-30): 官渡烏巢凍雪原・無縫雪地糧道與靜態營盤
+      drawSoftHorizontalRoad(tx, cy, 135, '#2b3d54', 'rgba(36, 53, 74, 0.55)');
+      ctx.fillStyle = 'rgba(205, 225, 238, 0.08)';
+      for (let i = 0; i < 3; i++) {
+        const sx = tx + 210 + tileHash(c, r, 30 + i) * (TILE_W - 420);
+        const sy = ty + 160 + tileHash(c, r, 40 + i) * (TILE_H - 320);
+        ctx.beginPath();
+        ctx.ellipse(sx, sy, 85, 42, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else if (style === 'bamboo_grove') {
+      // Map 07 (Waves 31-35): 當陽幽翠竹林道・無縫蜿蜒林間道（左右邊界 100% 水平切線銜接）
+      ctx.strokeStyle = '#1f4730';
+      ctx.lineWidth = 115;
+      ctx.lineCap = 'butt';
+      ctx.beginPath();
+      ctx.moveTo(tx - 2, cy);
+      ctx.bezierCurveTo(tx + TILE_W * 0.33, cy - 75, tx + TILE_W * 0.66, cy + 75, tx + TILE_W + 2, cy);
+      ctx.stroke();
+      // Soft bamboo clusters along top & bottom margins
+      ctx.fillStyle = 'rgba(42, 108, 62, 0.42)';
+      [[tx + 220, ty + 155], [tx + TILE_W - 240, ty + 165], [tx + 260, ty + TILE_H - 155], [tx + TILE_W - 220, ty + TILE_H - 165]].forEach(([bx, by]) => {
+        ctx.beginPath();
+        ctx.arc(bx, by, 34, 0, Math.PI * 2);
+        ctx.arc(bx + 26, by + 10, 26, 0, Math.PI * 2);
+        ctx.fill();
       });
     } else if (style === 'changban_bridge') {
-      // Map 08 (Waves 36-40): 長坂坡當陽斷橋・湍急漢水與跨河巨橋
-      ctx.fillStyle = '#0d3b66';
-      ctx.fillRect(tx, cy - 135, TILE_W, 270);
-      // Rushing river foam lines
-      ctx.strokeStyle = 'rgba(129, 212, 250, 0.35)';
-      ctx.lineWidth = 3;
-      for (let wLine = -90; wLine <= 90; wLine += 45) {
-        ctx.beginPath();
-        ctx.moveTo(tx + 40, cy + wLine);
-        ctx.lineTo(tx + TILE_W - 40, cy + wLine);
-        ctx.stroke();
-      }
-      // Giant Wooden Changban Bridge spanning vertically & horizontally
-      ctx.fillStyle = '#5d4037';
-      ctx.strokeStyle = '#d7ccc8';
-      ctx.lineWidth = 4;
-      ctx.fillRect(cx - 110, ty, 220, TILE_H);
-      ctx.strokeRect(cx - 110, ty, 220, TILE_H);
-      ctx.strokeStyle = '#3e2723';
-      for (let py = ty + 24; py < ty + TILE_H; py += 36) {
-        ctx.beginPath(); ctx.moveTo(cx - 106, py); ctx.lineTo(cx + 106, py); ctx.stroke();
+      // Map 08 (Waves 36-40): 長坂坡當陽斷橋・無縫漢水河道與平整跨河石橋（移除密集橫線）
+      drawSoftHorizontalRoad(tx, cy, 250, '#103554', 'rgba(16, 53, 84, 0.45)');
+      if (Math.abs(c) % 2 === 0) {
+        ctx.fillStyle = '#4a352b';
+        ctx.fillRect(cx - 96, ty - 1, 192, TILE_H + 2);
+        ctx.fillStyle = 'rgba(195, 180, 170, 0.22)';
+        ctx.fillRect(cx - 96, ty - 1, 8, TILE_H + 2);
+        ctx.fillRect(cx + 88, ty - 1, 8, TILE_H + 2);
       }
     } else if (style === 'chibi_warship') {
-      // Map 09 (Waves 41-45): 赤壁連環巨艦甲板・鐵索連舟
-      ctx.fillStyle = '#0a2239';
-      ctx.fillRect(tx, ty, TILE_W, 70);
-      ctx.fillRect(tx, ty + TILE_H - 70, TILE_W, 70);
-      // Wooden ship deck planks
-      ctx.strokeStyle = 'rgba(25, 12, 5, 0.65)';
+      // Map 09 (Waves 41-45): 赤壁連環巨艦甲板・沉穩大船甲板與無縫水道（移除高頻甲板黑線與斜斷鐵索）
+      drawSoftHorizontalRoad(tx, ty + 60, 110, '#0d263d', 'rgba(13, 38, 61, 0.4)');
+      drawSoftHorizontalRoad(tx, ty + TILE_H - 60, 110, '#0d263d', 'rgba(13, 38, 61, 0.4)');
+      ctx.fillStyle = 'rgba(72, 40, 22, 0.35)';
+      ctx.fillRect(tx - 1, cy - 90, TILE_W + 2, 180);
+      ctx.strokeStyle = 'rgba(160, 140, 120, 0.16)';
       ctx.lineWidth = 3;
-      for (let yOff = 95; yOff < TILE_H - 70; yOff += 52) {
-        ctx.beginPath(); ctx.moveTo(tx, ty + yOff); ctx.lineTo(tx + TILE_W, ty + yOff); ctx.stroke();
-      }
-      // Heavy Iron Chains linking warships
-      ctx.strokeStyle = 'rgba(176, 190, 197, 0.55)';
-      ctx.lineWidth = 8;
-      ctx.setLineDash([18, 10]);
       ctx.beginPath();
-      ctx.moveTo(tx + 90, ty); ctx.lineTo(tx + 240, ty + TILE_H);
-      ctx.moveTo(tx + TILE_W - 90, ty); ctx.lineTo(tx + TILE_W - 240, ty + TILE_H);
+      ctx.moveTo(tx, cy - 90); ctx.lineTo(tx + TILE_W, cy - 90);
+      ctx.moveTo(tx, cy + 90); ctx.lineTo(tx + TILE_W, cy + 90);
       ctx.stroke();
-      ctx.setLineDash([]);
     } else if (style === 'scorched_forest') {
-      // Map 10 (Waves 46-50): 烏林華容道焦土・餘燼火坑與焦木
-      ctx.fillStyle = '#3e2723';
-      ctx.fillRect(tx, cy - 52, TILE_W, 104);
-      [[tx + 240, ty + 200], [tx + TILE_W - 260, ty + 220], [cx, ty + TILE_H - 180]].forEach(([ex, ey]) => {
-        const g = ctx.createRadialGradient(ex, ey, 6, ex, ey, 68);
-        g.addColorStop(0, 'rgba(255, 87, 34, 0.55)');
-        g.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = g;
-        ctx.beginPath(); ctx.arc(ex, ey, 68, 0, Math.PI * 2); ctx.fill();
+      // Map 10 (Waves 46-50): 烏林華容道焦土・無縫焦木險道
+      drawSoftHorizontalRoad(tx, cy, 130, '#3a221c', 'rgba(58, 34, 28, 0.5)');
+      ctx.fillStyle = 'rgba(95, 42, 24, 0.26)';
+      [[tx + 260, ty + 185], [tx + TILE_W - 260, ty + TILE_H - 185]].forEach(([ex, ey]) => {
+        ctx.beginPath();
+        ctx.ellipse(ex, ey, 65, 36, 0, 0, Math.PI * 2);
+        ctx.fill();
       });
     } else if (style === 'desert_dunes') {
-      // Map 11 (Waves 51-55): 潼關黃沙風蝕戈壁・流線沙丘
-      ctx.strokeStyle = 'rgba(255, 213, 79, 0.26)';
-      ctx.lineWidth = 5;
-      for (let d = 140; d < TILE_H; d += 160) {
+      // Map 11 (Waves 51-55): 潼關黃沙風蝕戈壁・無縫柔和大漠沙丘線
+      drawSoftHorizontalRoad(tx, cy, 145, '#4f391b', 'rgba(79, 57, 27, 0.5)');
+      ctx.strokeStyle = 'rgba(215, 178, 95, 0.14)';
+      ctx.lineWidth = 6;
+      [ty + 180, ty + TILE_H - 180].forEach((dy) => {
         ctx.beginPath();
-        ctx.moveTo(tx, ty + d);
-        ctx.quadraticCurveTo(cx - 180, ty + d - 45, cx, ty + d);
-        ctx.quadraticCurveTo(cx + 180, ty + d + 45, tx + TILE_W, ty + d);
+        ctx.moveTo(tx, dy);
+        ctx.bezierCurveTo(tx + TILE_W * 0.33, dy - 32, tx + TILE_W * 0.66, dy + 32, tx + TILE_W, dy);
         ctx.stroke();
-      }
+      });
     } else if (style === 'ice_riverwall') {
-      // Map 12 (Waves 56-60): 渭水冰城鐵騎營・凝冰城牆與西涼戰鼓
-      ctx.strokeStyle = 'rgba(224, 64, 251, 0.35)';
-      ctx.fillStyle = 'rgba(179, 229, 252, 0.16)';
-      ctx.lineWidth = 4;
-      ctx.fillRect(tx + 120, ty + 110, TILE_W - 240, 48);
-      ctx.strokeRect(tx + 120, ty + 110, TILE_W - 240, 48);
-      ctx.fillRect(tx + 120, ty + TILE_H - 158, TILE_W - 240, 48);
-      ctx.strokeRect(tx + 120, ty + TILE_H - 158, TILE_W - 240, 48);
+      // Map 12 (Waves 56-60): 渭水冰城鐵騎營・無縫凝冰馳道
+      drawSoftHorizontalRoad(tx, cy, 160, '#2a3447', 'rgba(42, 52, 71, 0.55)');
+      ctx.fillStyle = 'rgba(145, 195, 225, 0.10)';
+      ctx.fillRect(tx - 1, ty + 125, TILE_W + 2, 32);
+      ctx.fillRect(tx - 1, ty + TILE_H - 157, TILE_W + 2, 32);
     } else if (style === 'hefei_canal') {
-      // Map 13 (Waves 61-65): 合淝護城青石渠・江南水道與青石廣場
-      ctx.fillStyle = '#004d40';
-      ctx.fillRect(tx, ty + 150, TILE_W, 64);
-      ctx.fillRect(tx, ty + TILE_H - 214, TILE_W, 64);
-      ctx.strokeStyle = 'rgba(105, 240, 174, 0.35)';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(tx + 80, ty + 230, TILE_W - 160, TILE_H - 460);
+      // Map 13 (Waves 61-65): 合淝護城青石渠・無縫江南水道與青石大道
+      drawSoftHorizontalRoad(tx, ty + 160, 80, '#0a3d38', 'rgba(10, 61, 56, 0.45)');
+      drawSoftHorizontalRoad(tx, ty + TILE_H - 160, 80, '#0a3d38', 'rgba(10, 61, 56, 0.45)');
+      drawSoftHorizontalRoad(tx, cy, 150, '#20444a', 'rgba(32, 68, 74, 0.5)');
     } else if (style === 'xiaoyao_waterfort') {
-      // Map 14 (Waves 66-70): 逍遙津江南水寨橋・碧波蓮池與水上木棧台
-      ctx.fillStyle = '#073b3a';
-      ctx.fillRect(tx + 40, ty + 40, TILE_W - 80, TILE_H - 80);
-      // Wooden floating water-fortress platform & walkways
-      ctx.fillStyle = '#4e3624';
-      ctx.strokeStyle = '#a1887f';
-      ctx.lineWidth = 3;
-      ctx.fillRect(cx - 240, cy - 170, 480, 340);
-      ctx.strokeRect(cx - 240, cy - 170, 480, 340);
-      ctx.fillRect(tx, cy - 52, TILE_W, 104);
-      ctx.fillRect(cx - 52, ty, 104, TILE_H);
-      // Lotus pads on the water corners
-      ctx.fillStyle = 'rgba(46, 125, 50, 0.65)';
-      [[tx + 140, ty + 130], [tx + TILE_W - 150, ty + 140], [tx + 150, ty + TILE_H - 130], [tx + TILE_W - 140, ty + TILE_H - 140]].forEach(([lx, ly]) => {
-        ctx.beginPath(); ctx.arc(lx, ly, 24, 0.2, Math.PI * 1.9); ctx.fill();
+      // Map 14 (Waves 66-70): 逍遙津江南水寨橋・無縫十字水寨木棧道與碧水蓮池
+      drawSoftHorizontalRoad(tx, cy, 130, '#3e2c1e', 'rgba(62, 44, 30, 0.6)');
+      drawSoftVerticalRoad(cx, ty, 130, '#3e2c1e', 'rgba(62, 44, 30, 0.6)');
+      ctx.fillStyle = 'rgba(42, 110, 56, 0.36)';
+      [[tx + 210, ty + 175], [tx + TILE_W - 210, ty + 175], [tx + 210, ty + TILE_H - 175], [tx + TILE_W - 210, ty + TILE_H - 175]].forEach(([lx, ly]) => {
+        ctx.beginPath();
+        ctx.arc(lx, ly, 26, 0.2, Math.PI * 1.9);
+        ctx.fill();
       });
     } else if (style === 'maple_cliff') {
-      // Map 15 (Waves 71-75): 葭萌關秋楓懸崖道・蜀道木棧與紅楓簇
-      ctx.fillStyle = '#4e2c18';
-      ctx.fillRect(tx, cy - 64, TILE_W, 128);
-      ctx.fillStyle = 'rgba(255, 87, 34, 0.32)';
-      [[tx + 210, ty + 180], [tx + TILE_W - 220, ty + 190], [tx + 260, ty + TILE_H - 180], [tx + TILE_W - 230, ty + TILE_H - 190]].forEach(([mx, my]) => {
-        ctx.beginPath(); ctx.arc(mx, my, 46, 0, Math.PI * 2); ctx.fill();
+      // Map 15 (Waves 71-75): 葭萌關秋楓懸崖道・無縫蜀道與靜態楓林落葉區
+      drawSoftHorizontalRoad(tx, cy, 140, '#422515', 'rgba(66, 37, 21, 0.55)');
+      ctx.fillStyle = 'rgba(185, 68, 28, 0.20)';
+      [[tx + 230, ty + 175], [tx + TILE_W - 230, ty + TILE_H - 175]].forEach(([mx, my]) => {
+        ctx.beginPath();
+        ctx.ellipse(mx, my, 64, 36, 0, 0, Math.PI * 2);
+        ctx.fill();
       });
     } else if (style === 'dingjun_summit') {
-      // Map 16 (Waves 76-80): 定軍山斬將烽火台・層疊高台
-      ctx.strokeStyle = 'rgba(255, 196, 0, 0.42)';
-      ctx.lineWidth = 3.5;
-      ctx.strokeRect(cx - 280, cy - 200, 560, 400);
-      ctx.strokeRect(cx - 190, cy - 130, 380, 260);
+      // Map 16 (Waves 76-80): 定軍山斬將烽火台・無縫山脊馳道
+      drawSoftHorizontalRoad(tx, cy, 150, '#3b2219', 'rgba(59, 34, 25, 0.55)');
+      drawSoftVerticalRoad(cx, ty, 140, '#3b2219', 'rgba(59, 34, 25, 0.55)');
     } else if (style === 'fire_jungle') {
-      // Map 17 (Waves 81-85): 瀘水赤焰火神叢林・南中火神圖騰
-      ctx.strokeStyle = 'rgba(255, 64, 129, 0.45)';
-      ctx.lineWidth = 4;
-      ctx.beginPath(); ctx.arc(cx, cy, 190, 0, Math.PI * 2); ctx.stroke();
-      ctx.fillStyle = 'rgba(46, 125, 50, 0.38)';
-      [[tx + 170, ty + 170], [tx + TILE_W - 170, ty + 170], [tx + 170, ty + TILE_H - 170], [tx + TILE_W - 170, ty + TILE_H - 170]].forEach(([jx, jy]) => {
-        ctx.beginPath(); ctx.arc(jx, jy, 52, 0, Math.PI * 2); ctx.fill();
+      // Map 17 (Waves 81-85): 瀘水赤焰火神叢林・無縫叢林古道與熱帶巨蕨
+      drawSoftHorizontalRoad(tx, cy, 135, '#3b1a26', 'rgba(59, 26, 38, 0.55)');
+      ctx.fillStyle = 'rgba(38, 98, 46, 0.28)';
+      [[tx + 210, ty + 170], [tx + TILE_W - 210, ty + 170], [tx + 210, ty + TILE_H - 170], [tx + TILE_W - 210, ty + TILE_H - 170]].forEach(([jx, jy]) => {
+        ctx.beginPath();
+        ctx.ellipse(jx, jy, 58, 34, 0, 0, Math.PI * 2);
+        ctx.fill();
       });
     } else if (style === 'poison_swamp') {
-      // Map 18 (Waves 86-90): 盤蛇谷劇毒冒泡沼・綠螢毒泉池
-      ctx.fillStyle = `rgba(118, 255, 3, ${0.20 + pulse * 0.10})`;
-      [[cx - 210, cy - 130, 115, 68], [cx + 210, cy + 130, 125, 72], [cx + 180, cy - 150, 85, 50]].forEach(([px, py, rx, ry]) => {
-        ctx.beginPath(); ctx.ellipse(px, py, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+      // Map 18 (Waves 86-90): 盤蛇谷劇毒冒泡沼・靜態幽暗泥沼與林道
+      drawSoftHorizontalRoad(tx, cy, 135, '#1d3614', 'rgba(29, 54, 20, 0.55)');
+      ctx.fillStyle = 'rgba(72, 135, 24, 0.16)';
+      [[cx - 230, cy - 165, 95, 48], [cx + 230, cy + 165, 105, 52]].forEach(([px, py, rx, ry]) => {
+        ctx.beginPath();
+        ctx.ellipse(px, py, rx, ry, 0, 0, Math.PI * 2);
+        ctx.fill();
       });
     } else if (style === 'qimen_monolith') {
-      // Map 19 (Waves 91-95): 子午谷奇門八門陣・八門金鎖石柱
-      ctx.strokeStyle = 'rgba(255, 82, 82, 0.42)';
-      ctx.lineWidth = 3;
-      for (let k = 0; k < 8; k++) {
-        const a = (k * Math.PI) / 4;
-        const mx = cx + Math.cos(a) * 230;
-        const my = cy + Math.sin(a) * 230;
-        ctx.fillStyle = '#311b92';
-        ctx.fillRect(mx - 18, my - 18, 36, 36);
-        ctx.strokeRect(mx - 18, my - 18, 36, 36);
-      }
+      // Map 19 (Waves 91-95): 子午谷奇門八門陣・沉穩奇門石板路
+      drawSoftHorizontalRoad(tx, cy, 145, '#2d1a3b', 'rgba(45, 26, 59, 0.55)');
+      drawSoftVerticalRoad(cx, ty, 145, '#2d1a3b', 'rgba(45, 26, 59, 0.55)');
     } else if (style === 'starfall_abyss') {
-      // Map 20 (Waves 96-100): 五丈原星隕七星壇・北斗七星續命陣
-      const dipper = [[-220, -140], [-120, -95], [-30, -40], [55, 10], [160, -20], [230, 65], [125, 125]];
-      ctx.strokeStyle = 'rgba(234, 128, 252, 0.65)';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      dipper.forEach(([dx, dy], idx) => {
-        if (idx === 0) ctx.moveTo(cx + dx, cy + dy);
-        else ctx.lineTo(cx + dx, cy + dy);
-      });
-      ctx.stroke();
-      dipper.forEach(([dx, dy]) => {
-        ctx.fillStyle = '#ffd740';
-        ctx.beginPath(); ctx.arc(cx + dx, cy + dy, 8 * pulse, 0, Math.PI * 2); ctx.fill();
-      });
+      // Map 20 (Waves 96-100): 五丈原星隕七星壇・靜態北斗星紋石壇
+      drawSoftHorizontalRoad(tx, cy, 150, '#260d38', 'rgba(38, 13, 56, 0.55)');
+      if ((c + r) % 2 === 0) {
+        const dipper = [[-200, -120], [-110, -80], [-25, -35], [50, 10], [145, -18], [210, 55], [115, 110]];
+        ctx.strokeStyle = 'rgba(186, 104, 200, 0.22)';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        dipper.forEach(([dx, dy], idx) => {
+          if (idx === 0) ctx.moveTo(cx + dx, cy + dy);
+          else ctx.lineTo(cx + dx, cy + dy);
+        });
+        ctx.stroke();
+      }
     }
 
-    // 3. Center Stage Seal Ring & Watermark Map Title on Ground
-    ctx.strokeStyle = st.accentColor ? (st.accentColor + '44') : 'rgba(212, 168, 79, 0.25)';
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.arc(cx, cy, 142, 0, Math.PI * 2);
-    ctx.stroke();
+    // 3. Subtle Carved Ground Landmark (only on spaced tiles so it never clutters or looks like an active AOE ring)
+    if (Math.abs(c) % 2 === 0 && Math.abs(r) % 2 === 0) {
+      ctx.font = '900 20px "Noto Serif TC", serif';
+      ctx.fillStyle = 'rgba(255, 248, 225, 0.09)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(st.mapName.split('：')[1] || st.mapName, cx, cy);
+    }
 
-    ctx.font = '900 22px "Noto Serif TC", serif';
-    ctx.fillStyle = st.accentColor ? (st.accentColor + '28') : 'rgba(255, 255, 255, 0.12)';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(st.mapName.split('：')[1] || st.mapName, cx, cy + 168);
-
-    // 4. Corner War Torch Brazier glow
-    const torchX = tx + 135;
-    const torchY = ty + 135;
-    const grad = ctx.createRadialGradient(torchX, torchY, 4, torchX, torchY, 72 * pulse);
-    grad.addColorStop(0, st.accentColor ? (st.accentColor + '66') : 'rgba(255, 160, 64, 0.42)');
-    grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(torchX, torchY, 72 * pulse, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = '#2d241e';
-    ctx.strokeStyle = st.accentColor || '#d4a84f';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(torchX, torchY, 11, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.fillStyle = st.accentColor || '#ff9100';
-    ctx.beginPath();
-    ctx.arc(torchX, torchY, 6 * pulse, 0, Math.PI * 2);
-    ctx.fill();
     ctx.restore();
   }
 
   function drawInfiniteBattlefield() {
     const zoom = getCameraZoom();
-    const halfW = (canvas.width / 2) / zoom + 160;
-    const halfH = (canvas.height / 2) / zoom + 160;
-    const viewLeft = state.x - halfW;
-    const viewRight = state.x + halfW;
-    const viewTop = state.y - halfH;
-    const viewBottom = state.y + halfH;
+    const camX = typeof state.camX === 'number' ? state.camX : state.x;
+    const camY = typeof state.camY === 'number' ? state.camY : state.y;
+    const halfW = (canvas.width / 2) / zoom + 180;
+    const halfH = (canvas.height / 2) / zoom + 180;
+    const viewLeft = camX - halfW;
+    const viewRight = camX + halfW;
+    const viewTop = camY - halfH;
+    const viewBottom = camY + halfH;
 
     const startCol = Math.floor(viewLeft / TILE_W);
     const endCol = Math.floor(viewRight / TILE_W);
@@ -6425,13 +6390,17 @@
     const endRow = Math.floor(viewBottom / TILE_H);
 
     const w = WAVES[state.waveIdx] || WAVES[0];
+    const st = w.stageSpec || STAGE_LEGIONS[0];
+
+    // Single solid base fill across entire viewport so tile seams can NEVER appear
+    ctx.fillStyle = st.bgPrimary || '#241c14';
+    ctx.fillRect(viewLeft, viewTop, viewRight - viewLeft, viewBottom - viewTop);
 
     for (let r = startRow; r <= endRow; r++) {
       for (let c = startCol; c <= endCol; c++) {
         const tx = c * TILE_W;
         const ty = r * TILE_H;
-        const pulse = 0.75 + Math.sin(performance.now() * 0.008 + c * 1.7 + r * 2.3) * 0.25;
-        drawStageMapTile(tx, ty, w, c, r, pulse);
+        drawStageMapTile(tx, ty, w, c, r);
       }
     }
   }
@@ -6447,13 +6416,17 @@
     ctx.save();
     let shakeX = 0;
     let shakeY = 0;
-    if (state.shakeTime > 0 && !reduceMotion) {
-      shakeX = (Math.random() - 0.5) * state.shakeMag;
-      shakeY = (Math.random() - 0.5) * state.shakeMag;
+    if (state.shakeTime > 0 && state.shakeMag > 0.08 && !reduceMotion) {
+      // Smooth low-frequency sine wave thud instead of 60fps white-noise random jitter
+      const t = performance.now() * 0.024;
+      shakeX = Math.sin(t * 1.3) * state.shakeMag;
+      shakeY = Math.cos(t * 1.7) * state.shakeMag * 0.8;
     }
+    const camX = typeof state.camX === 'number' ? state.camX : state.x;
+    const camY = typeof state.camY === 'number' ? state.camY : state.y;
     ctx.translate(canvas.width / 2 + shakeX, canvas.height / 2 + shakeY);
     ctx.scale(zoom, zoom);
-    ctx.translate(-state.x, -state.y);
+    ctx.translate(-camX, -camY);
 
     // 1. Draw Seamless Infinite Scrolling Battlefield & Chapter Biome
     drawInfiniteBattlefield();
@@ -6860,14 +6833,17 @@
       ctx.restore();
     }
 
-    // 12. Draw Chapter Weather Particles
+    // 12. Draw Chapter Weather Particles (anchored to smooth camera coordinates with soft opacity)
     if (!reduceMotion && state.weatherParticles.length > 0) {
-      ctx.fillStyle = w.weatherColor || 'rgba(255,255,255,0.5)';
+      ctx.save();
+      ctx.globalAlpha = 0.36;
+      ctx.fillStyle = w.weatherColor || 'rgba(255,255,255,0.4)';
       for (const wp of state.weatherParticles) {
         ctx.beginPath();
-        ctx.arc(state.x + wp.ox, state.y + wp.oy, wp.size, 0, Math.PI * 2);
+        ctx.arc(camX + wp.ox, camY + wp.oy, wp.size, 0, Math.PI * 2);
         ctx.fill();
       }
+      ctx.restore();
     }
 
     // 13. Draw Floating Damage Texts
@@ -6886,7 +6862,7 @@
 
     ctx.restore();
 
-    // 14. Screen-Space Tension Overlays (Domain Speed Lines, Boss Menace, Kill-Streak Stamp)
+    // 14. Screen-Space Tension Overlays (Calm Vignette & Kill-Streak Stamp)
     drawScreenTensionEffects();
 
     // 15. Full-Screen Hero Musou & Boss Ultimate Cut-In Banner ("無雙與BOSS大招刷幕")
@@ -6926,54 +6902,36 @@
     const cx = cw / 2;
     const cy = ch / 2;
 
-    // 1. Boss Menace / Hero Musou / Low HP Edge Vignette
+    // 1. Boss Menace / Hero Musou / Low HP Edge Vignette (steady, eye-friendly atmospheric border)
     const hasBoss = !!state.boss;
     const isLowHp = state.phase === 'WAVE' && state.hp > 0 && state.hp / state.maxHp < 0.35;
     if (state.musouDomainTimer > 0 || state.bossDomainTimer > 0 || hasBoss || isLowHp) {
       ctx.save();
       const outerR = Math.hypot(cw, ch) * 0.58;
-      const innerR = Math.min(cw, ch) * 0.30;
+      const innerR = Math.min(cw, ch) * 0.34;
       const vGrad = ctx.createRadialGradient(cx, cy, innerR, cx, cy, outerR);
       vGrad.addColorStop(0, 'rgba(0,0,0,0)');
 
       if (state.musouDomainTimer > 0) {
-        vGrad.addColorStop(1, (state.hero.color || '#ffd740') + '44');
+        vGrad.addColorStop(1, (state.hero.color || '#ffd740') + '28');
       } else if (state.bossDomainTimer > 0) {
-        vGrad.addColorStop(1, 'rgba(255, 23, 68, 0.42)');
+        vGrad.addColorStop(1, 'rgba(255, 23, 68, 0.24)');
       } else if (isLowHp) {
-        const pulse = 0.22 + Math.abs(Math.sin(performance.now() * 0.008)) * 0.25;
+        const pulse = 0.16 + Math.abs(Math.sin(performance.now() * 0.004)) * 0.14;
         vGrad.addColorStop(1, `rgba(213, 0, 0, ${pulse})`);
       } else {
-        vGrad.addColorStop(1, 'rgba(140, 12, 24, 0.22)');
+        vGrad.addColorStop(1, 'rgba(140, 12, 24, 0.16)');
       }
 
       ctx.fillStyle = vGrad;
       ctx.fillRect(0, 0, cw, ch);
-
-      // Anime Perimeter Speed Lines during Hero Musou Domain or Boss Ultimate Domain!
-      if (!reduceMotion && (state.musouDomainTimer > 0 || state.bossDomainTimer > 0)) {
-        const isHeroDom = state.musouDomainTimer > 0;
-        ctx.strokeStyle = isHeroDom ? (state.hero.color || '#ffd740') : '#ff1744';
-        ctx.globalAlpha = 0.36;
-        ctx.lineWidth = 2.2;
-        const t = Math.floor(performance.now() / 45);
-        for (let i = 0; i < 28; i++) {
-          const a = (i * Math.PI * 2) / 28 + ((t + i * 7) % 5) * 0.02;
-          const r1 = outerR * (0.68 + ((t + i * 3) % 4) * 0.04);
-          const r2 = outerR * 1.05;
-          ctx.beginPath();
-          ctx.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
-          ctx.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2);
-          ctx.stroke();
-        }
-      }
       ctx.restore();
     }
 
-    // 2. Impact Screen Flash
+    // 2. Soft Impact Screen Tint (gentle 0.14 max opacity so it never strobes or blinds eyes)
     if (state.screenFlash && !reduceMotion) {
       ctx.save();
-      ctx.globalAlpha = Math.max(0, (state.screenFlash.life / state.screenFlash.maxLife) * 0.42);
+      ctx.globalAlpha = Math.max(0, (state.screenFlash.life / state.screenFlash.maxLife) * 0.14);
       ctx.fillStyle = state.screenFlash.color || '#ffffff';
       ctx.fillRect(0, 0, cw, ch);
       ctx.restore();
