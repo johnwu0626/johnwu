@@ -99,6 +99,22 @@ export class SoundEngine {
     this.applyVolumes();
   }
 
+  suspendAudio() {
+    if (this.ctx && this.ctx.state === 'running') {
+      try {
+        this.ctx.suspend();
+      } catch (_) {}
+    }
+  }
+
+  resumeAudio() {
+    if (this.ctx && this.ctx.state === 'suspended' && !this.muted) {
+      try {
+        this.ctx.resume();
+      } catch (_) {}
+    }
+  }
+
   setBgmVolume(v) {
     this.bgmVolume = Math.max(0, Math.min(1, v));
     this.applyVolumes();

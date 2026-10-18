@@ -21,6 +21,10 @@
       </div>
 
       <div class="top-actions">
+        <button type="button" class="icon-btn core-currency-pill" id="btn-top-tech" title="星艦科技中樞">
+          <span>💎</span>
+          <span id="top-cores-count">0</span>
+        </button>
         <button type="button" class="icon-btn" id="btn-mute-quick" title="聲音開關">
           <span id="audio-btn-label">🔊</span>
         </button>
@@ -69,7 +73,8 @@
 
           <div class="score-cluster">
             <div class="score-readout" id="hud-score">000000</div>
-            <div style="margin-top:2px;">
+            <div style="margin-top:2px;display:flex;justify-content:flex-end;gap:4px;align-items:center;">
+              <span class="combo-pill" id="hud-cores-pill" style="background:rgba(84,234,255,0.18);color:#9eefff;">💎 +0</span>
               <span class="combo-pill" id="hud-combo">x1.0</span>
             </div>
             <div class="stage-progress-track">
@@ -161,6 +166,15 @@
           </button>
         </div>
 
+        <!-- 自動存檔續戰橫幅（有未完成遠征時自動顯示） -->
+        <div id="saved-run-banner" class="saved-run-banner hidden">
+          <div class="saved-run-info">
+            <span class="saved-run-tag">💾 上次遠征進度</span>
+            <strong id="saved-run-summary">第 02 關 · 游隼 Lv.3</strong>
+          </div>
+          <button type="button" class="saved-run-btn" id="btn-resume-saved">▶ 繼續遠征</button>
+        </div>
+
         <!-- 三機體分段標籤 -->
         <div class="ship-tabs" id="ship-tabs-container">
           <button type="button" class="ship-tab-btn active" data-index="0">
@@ -199,16 +213,19 @@
           <button type="button" class="hero-start-btn" id="btn-launch-1p">
             🚀 立即出擊 START
           </button>
-          <div class="sub-actions-row">
+          <div class="sub-actions-row three-cols">
+            <button type="button" class="secondary-btn highlight-tech" id="hangar-btn-tech">
+              ⚙️ 科技強化 <span id="hangar-tech-badge"></span>
+            </button>
             <button type="button" class="secondary-btn" id="hangar-btn-showcase">
-              ⚡ 火力展示＆試打 Boss
+              ⚡ 火力展示
             </button>
             <button type="button" class="secondary-btn" id="btn-launch-2p">
-              👥 雙人同樂 (桌機)
+              👥 雙人同樂
             </button>
           </div>
           <div class="mobile-gesture-hint">
-            ✨ 支援手機直拿單指滑動操控 · 自動連射＋雙僚機已啟用
+            ✨ 支援手機直拿單指滑動操控 · <a href="privacy.html" target="_blank" rel="noopener" style="color:#7fe9ff;text-decoration:none;">隱私權政策</a>
           </div>
         </div>
       </div>

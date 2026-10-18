@@ -126,6 +126,33 @@ class SpriteManager {
   }
 }
 
+// ============================================================================
+// Google Play 原生激勵廣告橋接介面 (window.GAME9527_AD_BRIDGE)
+// 供 Claude 串接 Capacitor AdMob 使用；Web 端預設直接發放獎勵
+// ============================================================================
+window.GAME9527_AD_BRIDGE = window.GAME9527_AD_BRIDGE || {
+  isNativeAdReady: false,
+  showRewardedAd(placement, onReward) {
+    if (typeof window.GAME9527_NATIVE_REWARDED_AD === 'function') {
+      window.GAME9527_NATIVE_REWARDED_AD(placement, onReward);
+      return;
+    }
+    if (typeof onReward === 'function') onReward();
+  }
+};
+
+const META_STORAGE_KEY = '9527_meta_v1';
+const SAVE_STORAGE_KEY = '9527_expedition_save_v1';
+
+const TECH_UPGRADES = [
+  { key: 'armor', name: '🛡 奈米複合裝甲', maxLv: 10, baseCost: 25, costStep: 20, desc: '戰機最大生命值上限 +12% / 級' },
+  { key: 'firepower', name: '🔥 超導主砲增壓', maxLv: 10, baseCost: 30, costStep: 25, desc: '主砲與副武基礎傷害 +10% / 級' },
+  { key: 'escort', name: '🤖 雙僚機協同晶片', maxLv: 10, baseCost: 25, costStep: 20, desc: '雙僚機追蹤彈傷害與射速 +12% / 級' },
+  { key: 'startLv', name: '⚡ 開局火力預熱', maxLv: 3, baseCost: 60, costStep: 65, desc: '出擊起始武器等級 +1 / 級（最高開局 Lv.4）' },
+  { key: 'bombCap', name: '💣 彈藥艙擴充', maxLv: 3, baseCost: 50, costStep: 55, desc: '出擊初始必殺炸彈與上限 +1 / 級' },
+  { key: 'bounty', name: '🧲 星核引力結晶', maxLv: 10, baseCost: 20, costStep: 18, desc: '星核晶體與積分獲取 +15% / 級，擴大吸物範圍' }
+];
+
 class Game9527 {
   constructor() {
     this.canvas = document.getElementById('game-canvas');
@@ -143,6 +170,13 @@ class Game9527 {
     this.escortEnabled = true;
     this.autoFire = true; // 預設開啟自動連射，手機單指滑動即可遊玩
     this.twoPlayer = false;
+
+    this.meta = this.loadMeta();
+    this.stageCoresEarned = 0;
+    this.reviveUsedThisStage = false;
+    this.doubleCoresClaimed = false;
+    this.supplyBoostClaimed = false;
+    this.autoSaveTimer = 0;
 
     this.players = [];
     this.bullets = [];
@@ -202,6 +236,77 @@ class Game9527 {
     requestAnimationFrame((t) => this.loop(t));
   }
 
+  loadMeta() {
+    const def = {
+      cores: 0,
+      unlockedStageIdx: 0,
+      bestScore: 0,
+      upgrades: { armor: 0, firepower: 0, escort: 0, startLv: 0, bombCap: 0, bounty: 0 }
+    };
+    try {
+      const raw = localStorage.getItem(META_STORAGE_KEY);
+      if (!raw) return def;
+      const parsed = JSON.parse(raw);
+      return {
+        cores: Math.max(0, Number(parsed.cores) || 0),
+        unlockedStageIdx: Math.max(0, Math.min(STAGES.length - 1, Number(parsed.unlockedStageIdx) || 0)),
+        bestScore: Math.max(0, Number(parsed.bestScore) || 0),
+        upgrades: { ...def.upgrades, ...(parsed.upgrades || {}) }
+      };
+    } catch (_) {
+      return def;
+    }
+  }
+
+  saveMeta() {
+    try {
+      localStorage.setItem(META_STORAGE_KEY, JSON.stringify(this.meta));
+    } catch (_) {}
+  }
+
+  loadSavedRun() {
+    try {
+      const raw = localStorage.getItem(SAVE_STORAGE_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (typeof data.stageIdx !== 'number' || data.stageIdx < 0 || data.stageIdx >= STAGES.length) return null;
+      return data;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  saveCurrentRun() {
+    if (this.state !== 'playing' && this.state !== 'paused' && this.state !== 'stage_clear') return;
+    const p1 = this.players[0];
+    if (!p1 || !p1.alive) return;
+    const payload = {
+      stageIdx: this.selectedStageIdx,
+      shipIdx: p1.shipIdx,
+      hp: Math.round(p1.hp),
+      weaponLevel: p1.weaponLevel,
+      bombs: p1.bombs,
+      score: Math.floor(this.score),
+      combo: this.combo,
+      timestamp: Date.now()
+    };
+    try {
+      localStorage.setItem(SAVE_STORAGE_KEY, JSON.stringify(payload));
+    } catch (_) {}
+  }
+
+  clearSavedRun() {
+    try {
+      localStorage.removeItem(SAVE_STORAGE_KEY);
+    } catch (_) {}
+  }
+
+  pushBackHistoryGuard() {
+    try {
+      history.pushState({ inGame9527: true }, '');
+    } catch (_) {}
+  }
+
   initStars() {
     this.stars = [];
     for (let i = 0; i < 95; i++) {
@@ -236,6 +341,47 @@ class Game9527 {
       if (e.data?.type === 'tbgofire:9527-return-menu') this.openHangar();
     });
 
+    // Google Play 技術審核合規：切換背景／鎖屏自動靜音、自動存檔與自動暫停
+    const handleAppBackground = () => {
+      this.sound.suspendAudio();
+      this.keys.clear();
+      this.drag.active = false;
+      if (this.state === 'playing') {
+        this.saveCurrentRun();
+        this.togglePause();
+      }
+    };
+
+    const handleAppForeground = () => {
+      if (!document.hidden && this.state !== 'paused') {
+        this.sound.resumeAudio();
+      }
+    };
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) handleAppBackground();
+      else handleAppForeground();
+    });
+    window.addEventListener('pagehide', handleAppBackground);
+    window.addEventListener('blur', handleAppBackground);
+    window.addEventListener('beforeunload', () => this.saveCurrentRun());
+
+    // Google Play 技術審核合規：Android 實體返回鍵／邊緣左滑返回手勢攔截
+    this.pushBackHistoryGuard();
+    window.addEventListener('popstate', () => {
+      this.pushBackHistoryGuard();
+      const overlay = document.getElementById('modal-overlay');
+      if (this.state === 'playing') {
+        this.togglePause();
+      } else if (this.state === 'paused') {
+        this.togglePause();
+      } else if (this.state === 'showcase') {
+        this.openHangar();
+      } else if (overlay && !overlay.classList.contains('hidden')) {
+        if (this.state === 'hangar') overlay.classList.add('hidden');
+      }
+    });
+
     // 鍵盤支援 (桌機單雙人)
     window.addEventListener('keydown', (e) => {
       const code = e.code;
@@ -257,7 +403,10 @@ class Game9527 {
         if (this.state === 'playing' || this.state === 'paused') this.togglePause();
         else if (this.state === 'showcase') this.openHangar();
       } else if (code === 'KeyQ') {
-        if (this.state !== 'hangar') this.openHangar();
+        if (this.state !== 'hangar') {
+          this.saveCurrentRun();
+          this.openHangar();
+        }
       } else if (code === 'KeyR') {
         if (this.state === 'playing' || this.state === 'gameover' || this.state === 'paused') {
           this.startStage(this.selectedStageIdx);
@@ -356,11 +505,16 @@ class Game9527 {
       });
     });
 
-    // 綁定選關彈窗與出擊按鈕
+    // 綁定選關彈窗、科技強化、續戰與出擊按鈕
     document.getElementById('btn-open-stage-modal').addEventListener('click', () => this.showStageSelectModal());
     document.getElementById('btn-launch-1p').addEventListener('click', () => this.startCampaign(false));
     document.getElementById('btn-launch-2p').addEventListener('click', () => this.startCampaign(true));
     document.getElementById('hangar-btn-showcase').addEventListener('click', () => this.startShowcase());
+    document.getElementById('hangar-btn-tech').addEventListener('click', () => this.showTechLabModal());
+    document.getElementById('btn-top-tech').addEventListener('click', () => {
+      if (this.state === 'hangar') this.showTechLabModal();
+    });
+    document.getElementById('btn-resume-saved').addEventListener('click', () => this.resumeSavedCampaign());
 
     // 頂部與右下炸彈按鈕
     document.getElementById('btn-mute-quick').addEventListener('click', () => this.toggleMute());
@@ -405,6 +559,25 @@ class Game9527 {
 
     const st = STAGES[this.selectedStageIdx];
     document.getElementById('hangar-stage-label').textContent = `📍 ${st.zoneTitle}`;
+
+    const topCores = document.getElementById('top-cores-count');
+    if (topCores) topCores.textContent = String(this.meta.cores);
+
+    // 檢查是否有未完成遠征自動存檔
+    const saved = this.loadSavedRun();
+    const banner = document.getElementById('saved-run-banner');
+    const summaryEl = document.getElementById('saved-run-summary');
+    if (banner && summaryEl) {
+      if (saved && saved.stageIdx >= 0 && saved.stageIdx < STAGES.length) {
+        const savedStage = STAGES[saved.stageIdx];
+        const savedShip = SHIPS[saved.shipIdx] || SHIPS[0];
+        const shortStage = savedStage.zoneTitle.split('：')[0] || `第 ${saved.stageIdx + 1} 關`;
+        summaryEl.textContent = `${shortStage} · ${savedShip.name} Lv.${saved.weaponLevel} · HP ${saved.hp}`;
+        banner.classList.remove('hidden');
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
   }
 
   renderMiniStat(label, val, color) {
@@ -526,6 +699,90 @@ class Game9527 {
     });
   }
 
+  showTechLabModal() {
+    const overlay = document.getElementById('modal-overlay');
+    const content = document.getElementById('modal-content');
+
+    const renderModal = () => {
+      let cardsHtml = '';
+      TECH_UPGRADES.forEach((up) => {
+        const curLv = Number(this.meta.upgrades[up.key]) || 0;
+        const isMax = curLv >= up.maxLv;
+        const cost = up.baseCost + curLv * up.costStep;
+        const canAfford = !isMax && this.meta.cores >= cost;
+
+        cardsHtml += `
+          <div class="tech-item-card">
+            <div class="tech-item-meta">
+              <div class="tech-item-title">
+                <span>${up.name}</span>
+                <span class="tech-item-lv">Lv.${curLv}/${up.maxLv}</span>
+              </div>
+              <div class="tech-item-desc">${up.desc}</div>
+            </div>
+            <button type="button" class="tech-buy-btn" data-key="${up.key}" ${!canAfford ? 'disabled' : ''}>
+              ${isMax ? 'MAX' : `💎 ${cost}`}
+            </button>
+          </div>
+        `;
+      });
+
+      content.innerHTML = `
+        <div class="modal-header">
+          <h2>⚙️ 星艦科技中樞</h2>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <span class="icon-btn core-currency-pill" style="cursor:default;">💎 ${this.meta.cores}</span>
+            <button type="button" class="icon-btn" id="modal-close-tech">關閉</button>
+          </div>
+        </div>
+        <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:10px;">
+          擊破敵機與過關可獲得「💎 星核晶體」，永久強化全機體裝甲、火力與起始武裝。
+        </p>
+        <div class="tech-upgrade-grid">${cardsHtml}</div>
+        <div style="display:flex;justify-content:space-between;gap:8px;">
+          <button type="button" class="secondary-btn" id="tech-dev-boost" style="flex:1;font-size:0.74rem;border-color:rgba(255,190,85,0.45);color:#ffe299;">
+            🛠️ 測試：+500 星核晶體
+          </button>
+          <button type="button" class="secondary-btn" id="tech-close-bottom" style="flex:1;">返回機庫</button>
+        </div>
+      `;
+
+      content.querySelectorAll('.tech-buy-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const key = btn.dataset.key;
+          const up = TECH_UPGRADES.find((u) => u.key === key);
+          if (!up) return;
+          const curLv = Number(this.meta.upgrades[key]) || 0;
+          if (curLv >= up.maxLv) return;
+          const cost = up.baseCost + curLv * up.costStep;
+          if (this.meta.cores < cost) return;
+
+          this.meta.cores -= cost;
+          this.meta.upgrades[key] = curLv + 1;
+          this.saveMeta();
+          this.sound.playSfx('power_pickup', { level: curLv + 2 });
+          this.updateHangarUI();
+          renderModal();
+        });
+      });
+
+      document.getElementById('tech-dev-boost').addEventListener('click', () => {
+        this.meta.cores += 500;
+        this.meta.unlockedStageIdx = STAGES.length - 1;
+        this.saveMeta();
+        this.sound.playSfx('power_pickup', { level: 8 });
+        this.updateHangarUI();
+        renderModal();
+      });
+
+      document.getElementById('modal-close-tech').addEventListener('click', () => overlay.classList.add('hidden'));
+      document.getElementById('tech-close-bottom').addEventListener('click', () => overlay.classList.add('hidden'));
+    };
+
+    renderModal();
+    overlay.classList.remove('hidden');
+  }
+
   buildShowcaseUI() {
     const lvGroup = document.getElementById('sc-lv-buttons');
     lvGroup.innerHTML = '';
@@ -613,6 +870,28 @@ class Game9527 {
     this.startStage(this.selectedStageIdx, false);
   }
 
+  resumeSavedCampaign() {
+    const saved = this.loadSavedRun();
+    if (!saved) {
+      this.startCampaign(false);
+      return;
+    }
+    this.twoPlayer = false;
+    this.selectedShips[0] = saved.shipIdx ?? 0;
+    this.selectedStageIdx = saved.stageIdx ?? 0;
+    this.score = saved.score || 0;
+    this.combo = saved.combo || 1.0;
+    this.sound.playSfx('launch');
+    this.startStage(this.selectedStageIdx, false);
+    const p1 = this.players[0];
+    if (p1) {
+      p1.weaponLevel = Math.max(1, Math.min(10, saved.weaponLevel || p1.weaponLevel));
+      p1.bombs = Math.max(0, Math.min(p1.maxBombs, saved.bombs ?? p1.bombs));
+      p1.hp = Math.max(25, Math.min(p1.maxHp, saved.hp || p1.maxHp));
+    }
+    this.updateCombatHUD();
+  }
+
   startShowcase() {
     this.twoPlayer = false;
     this.state = 'showcase';
@@ -642,6 +921,10 @@ class Game9527 {
     this.selectedStageIdx = Math.max(0, Math.min(STAGES.length - 1, stageIdx));
     const st = STAGES[this.selectedStageIdx];
     this.state = 'playing';
+    this.stageCoresEarned = 0;
+    this.reviveUsedThisStage = false;
+    this.doubleCoresClaimed = false;
+    this.supplyBoostClaimed = false;
 
     document.getElementById('hangar-screen').classList.add('hidden');
     document.getElementById('modal-overlay').classList.add('hidden');
@@ -677,6 +960,7 @@ class Game9527 {
       });
     }
 
+    this.saveCurrentRun();
     this.sound.playBgm(st.bgm);
     this.addFloatText(this.width / 2, this.height * 0.38, st.zoneTitle, '#54eaff', 22, 2.0);
     this.updateCombatHUD();
@@ -709,17 +993,22 @@ class Game9527 {
   }
 
   createPlayer(playerIdx, shipIdx, x, y) {
+    const up = this.meta?.upgrades || {};
+    const maxHp = Math.round(100 * (1 + (up.armor || 0) * 0.12));
+    const startLv = Math.min(10, 1 + (up.startLv || 0));
+    const maxBombs = 3 + (up.bombCap || 0);
+    const startBombs = 2 + (up.bombCap || 0);
     return {
       playerIdx,
       shipIdx,
       x,
       y,
       radius: 19,
-      hp: 100,
-      maxHp: 100,
-      weaponLevel: 1,
-      bombs: 2,
-      maxBombs: 3,
+      hp: maxHp,
+      maxHp,
+      weaponLevel: startLv,
+      bombs: startBombs,
+      maxBombs,
       fireCooldown: 0,
       escortCooldown: 0,
       invuln: 2.0,
@@ -734,7 +1023,7 @@ class Game9527 {
     if (this.players.length >= 2) {
       if (!this.players[1].alive) {
         this.players[1].alive = true;
-        this.players[1].hp = 100;
+        this.players[1].hp = this.players[1].maxHp;
         this.players[1].bombs = 2;
         this.players[1].invuln = 2.5;
         this.sound.playSfx('launch');
@@ -751,13 +1040,15 @@ class Game9527 {
 
   firePlayerWeapons(p, dt) {
     const ship = SHIPS[p.shipIdx];
+    const up = this.meta?.upgrades || {};
+    const firepowerMult = 1 + (up.firepower || 0) * 0.1;
     const cooldownMult = p.inSlowField ? 1.25 : 1.0;
     p.fireCooldown -= dt;
     p.escortCooldown -= dt;
 
     if (p.fireCooldown <= 0) {
       const lv = p.weaponLevel;
-      const dmgScale = 1 + (lv - 1) * 0.14;
+      const dmgScale = (1 + (lv - 1) * 0.14) * firepowerMult;
       const baseDmg = ship.shotDamage * dmgScale;
       const spd = ship.shotSpeed;
       p.fireCooldown = ship.fireInterval * cooldownMult;
@@ -894,8 +1185,9 @@ class Game9527 {
     }
 
     if (this.escortEnabled && p.escortCooldown <= 0) {
-      p.escortCooldown = 0.34 * cooldownMult;
-      const dual = p.weaponLevel >= 6;
+      const escortLv = up.escort || 0;
+      p.escortCooldown = 0.34 * cooldownMult * Math.max(0.55, 1 - escortLv * 0.06);
+      const dual = p.weaponLevel >= 6 || escortLv >= 3;
       const orbitAngle = this.stageTime * 3.2;
       [-1, 1].forEach((side) => {
         const ex = p.x + side * 44 + Math.cos(orbitAngle + side) * 5;
@@ -906,14 +1198,14 @@ class Game9527 {
             y: ey - 10,
             vx: side * 35,
             vy: -760,
-            damage: 3.4 + p.weaponLevel * 0.45,
+            damage: (3.4 + p.weaponLevel * 0.45) * (1 + escortLv * 0.12),
             color: '#7fe9ff',
             accent: '#ffffff',
             radius: 4.5,
             style: 'seeker',
             pierces: 0,
             homing: true,
-            turnRate: 5.8
+            turnRate: 5.8 + escortLv * 0.4
           });
         });
       });
@@ -1124,7 +1416,8 @@ class Game9527 {
       this.spawnExplosion(b.x + ox, b.y + oy, i % 2 === 0 ? '#ff9f43' : '#ff2a55', 6, 320);
     }
 
-    this.score += Math.round(5000 * this.combo);
+    const bountyMult = 1 + (this.meta?.upgrades?.bounty || 0) * 0.1;
+    this.score += Math.round(5000 * this.combo * bountyMult);
     document.getElementById('boss-hud').classList.add('hidden');
     document.getElementById('boss-warning-banner').classList.add('hidden');
 
@@ -1133,6 +1426,12 @@ class Game9527 {
       this.boss = null;
       return;
     }
+
+    const bossCores = Math.round((35 + this.selectedStageIdx * 10) * bountyMult);
+    this.stageCoresEarned += bossCores;
+    this.meta.cores += bossCores;
+    this.saveMeta();
+    this.addFloatText(b.x, b.y - 24, `💎 +${bossCores} 星核晶體`, '#54eaff', 18, 1.8);
 
     const st = STAGES[this.selectedStageIdx];
     this.boss = null;
@@ -1164,11 +1463,42 @@ class Game9527 {
       });
     }
 
+    const bountyMult = 1 + (this.meta?.upgrades?.bounty || 0) * 0.1;
+    const clearBonusCores = Math.round((25 + this.selectedStageIdx * 8) * bountyMult);
+    this.stageCoresEarned += clearBonusCores;
+    this.meta.cores += clearBonusCores;
+    this.meta.bestScore = Math.max(this.meta.bestScore || 0, Math.floor(this.score));
+    this.meta.unlockedStage = Math.max(this.meta.unlockedStage || 0, Math.min(STAGES.length - 1, this.selectedStageIdx + 1));
+
     if (this.selectedStageIdx >= STAGES.length - 1) {
+      this.meta.totalClears = (this.meta.totalClears || 0) + 1;
+      this.saveMeta();
+      this.clearSavedRun();
       this.state = 'victory';
       this.showStageClearModal(st, true);
     } else {
+      this.saveMeta();
       this.state = 'stage_clear';
+      // 儲存下一關的進度供隨時繼續遠征
+      const p1 = this.players[0];
+      try {
+        localStorage.setItem(
+          '9527_expedition_save_v1',
+          JSON.stringify({
+            stageIdx: this.selectedStageIdx + 1,
+            shipIdx: this.selectedShipIdx,
+            coopMode: this.coopMode,
+            score: Math.floor(this.score),
+            stageTime: 0,
+            p1Hp: p1 ? p1.hp : 100,
+            p1WeaponLevel: p1 ? p1.weaponLevel : 1,
+            p1Bombs: p1 ? p1.bombs : 3,
+            savedAt: Date.now()
+          })
+        );
+      } catch (_e) {
+        // ignore
+      }
       this.showStageClearModal(st, false);
     }
   }
@@ -1254,6 +1584,14 @@ class Game9527 {
   update(dt) {
     const st = STAGES[this.selectedStageIdx];
     this.stageTime += dt;
+
+    if (this.state === 'playing') {
+      this.autoSaveTimer = (this.autoSaveTimer || 0) + dt;
+      if (this.autoSaveTimer >= 3.0) {
+        this.autoSaveTimer = 0;
+        this.saveCurrentRun();
+      }
+    }
 
     if (this.shakeTime > 0) this.shakeTime = Math.max(0, this.shakeTime - dt);
     if (this.bombFlashTimer > 0) this.bombFlashTimer = Math.max(0, this.bombFlashTimer - dt);
@@ -1503,9 +1841,17 @@ class Game9527 {
         this.spawnExplosion(e.x, e.y, e.color, 15, 230);
         this.combo = Math.min(8.0, +(this.combo + 0.2).toFixed(1));
         this.comboTimer = 4.0;
-        const pts = Math.round(e.score * this.combo);
+        const bountyMult = 1 + (this.meta?.upgrades?.bounty || 0) * 0.1;
+        const pts = Math.round(e.score * this.combo * bountyMult);
         this.score += pts;
         this.addFloatText(e.x, e.y, `+${pts}`, '#ffffff', 13, 0.8);
+
+        if (this.state === 'playing' && e.kind !== 'debris') {
+          const coreGain = Math.max(1, Math.round((e.maxHp >= 500 ? 4 : e.maxHp >= 250 ? 2 : 1) * bountyMult));
+          this.stageCoresEarned += coreGain;
+          this.meta.cores += coreGain;
+        }
+
         this.maybeDropPickup(e.x, e.y, e.guaranteedDrop);
         return false;
       }
@@ -1560,6 +1906,7 @@ class Game9527 {
       return b.y > -50 && b.y < this.height + 50 && b.x > -50 && b.x < this.width + 50;
     });
 
+    const magnetRange = 140 + (this.meta?.upgrades?.bounty || 0) * 16;
     this.pickups = this.pickups.filter((pk) => {
       pk.y += pk.vy * dt;
       pk.angle += dt * 3;
@@ -1567,9 +1914,9 @@ class Game9527 {
       for (const p of this.players) {
         if (!p.alive) continue;
         const d = Math.hypot(p.x - pk.x, p.y - pk.y);
-        if (d < 140) {
-          pk.x += ((p.x - pk.x) / d) * 360 * dt;
-          pk.y += ((p.y - pk.y) / d) * 360 * dt;
+        if (d < magnetRange) {
+          pk.x += ((p.x - pk.x) / d) * 380 * dt;
+          pk.y += ((p.y - pk.y) / d) * 380 * dt;
         }
         if (d < p.radius + pk.radius) {
           if (pk.type === 'P') {
@@ -1728,6 +2075,10 @@ class Game9527 {
     const st = STAGES[this.selectedStageIdx];
     document.getElementById('hud-score').textContent = String(Math.floor(this.score)).padStart(6, '0');
     document.getElementById('hud-combo').textContent = `x${this.combo.toFixed(1)}`;
+    const hudCoresEl = document.getElementById('hud-cores-pill');
+    if (hudCoresEl) hudCoresEl.textContent = `💎 +${this.stageCoresEarned || 0}`;
+    const topCoresEl = document.getElementById('top-cores-count');
+    if (topCoresEl && this.meta) topCoresEl.textContent = String(this.meta.cores || 0);
 
     const prog = this.boss ? 100 : Math.min(100, (this.stageTime / st.bossTime) * 100);
     document.getElementById('hud-stage-progress').style.width = `${prog}%`;
@@ -2153,7 +2504,10 @@ class Game9527 {
     const overlay = document.getElementById('modal-overlay');
     const content = document.getElementById('modal-content');
     if (this.state === 'playing') {
+      this.saveCurrentRun();
+      this.saveMeta();
       this.state = 'paused';
+      this.pushBackHistoryGuard('paused');
       content.innerHTML = `
         <div class="modal-header">
           <h2>⏸ 暫停與設定</h2>
@@ -2181,7 +2535,7 @@ class Game9527 {
           <button type="button" class="hero-start-btn" id="modal-resume-btn" style="padding:12px;">繼續戰鬥</button>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
             <button type="button" class="secondary-btn" id="modal-retry-btn">重試本關</button>
-            <button type="button" class="secondary-btn" id="modal-hangar-btn">返回首頁機庫</button>
+            <button type="button" class="secondary-btn" id="modal-hangar-btn">儲存並返航機庫</button>
           </div>
         </div>
       `;
@@ -2203,6 +2557,8 @@ class Game9527 {
       document.getElementById('modal-hangar-btn').addEventListener('click', () => this.openHangar());
     } else if (this.state === 'paused') {
       this.state = 'playing';
+      this.sound.resumeAudio();
+      this.lastFrameTime = performance.now();
       overlay.classList.add('hidden');
     }
   }
@@ -2210,14 +2566,36 @@ class Game9527 {
   showStageClearModal(st, isFinalVictory) {
     const overlay = document.getElementById('modal-overlay');
     const content = document.getElementById('modal-content');
+    this.pushBackHistoryGuard('stage_clear');
     content.innerHTML = `
       <div class="modal-header">
         <h2 style="color:#42f5aa;">✔ ${st.clearTitle}</h2>
       </div>
-      <p style="font-size:1rem;font-weight:700;color:#fff;margin-bottom:6px;">${st.clearMessage}</p>
-      <p style="color:var(--text-muted);font-size:0.84rem;margin-bottom:14px;">${st.clearDetail}</p>
-      <div style="background:rgba(84,234,255,0.08);border:1px solid rgba(84,234,255,0.28);padding:12px;border-radius:12px;margin-bottom:16px;font-family:var(--font-mono);text-align:center;">
-        戰術總積分：<strong style="color:var(--cyan);font-size:1.3rem;">${Math.floor(this.score)}</strong>
+      <p style="font-size:0.96rem;font-weight:700;color:#fff;margin-bottom:4px;">${st.clearMessage}</p>
+      <p style="color:var(--text-muted);font-size:0.82rem;margin-bottom:12px;">${st.clearDetail}</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+        <div style="background:rgba(84,234,255,0.08);border:1px solid rgba(84,234,255,0.28);padding:10px;border-radius:12px;font-family:var(--font-mono);text-align:center;">
+          <div style="font-size:0.72rem;color:var(--text-muted);">戰術總積分</div>
+          <strong style="color:var(--cyan);font-size:1.15rem;">${Math.floor(this.score)}</strong>
+        </div>
+        <div style="background:rgba(255,190,85,0.1);border:1px solid rgba(255,190,85,0.34);padding:10px;border-radius:12px;font-family:var(--font-mono);text-align:center;">
+          <div style="font-size:0.72rem;color:#ffd995;">本關獲得星核</div>
+          <strong id="stage-clear-cores" style="color:#ffbe55;font-size:1.15rem;">💎 +${this.stageCoresEarned}</strong>
+        </div>
+      </div>
+      <div style="display:grid;gap:8px;margin-bottom:12px;">
+        <button type="button" class="ad-reward-btn" id="btn-ad-double-cores">
+          <span>🎬 雙倍領取本關星核晶體 (+${this.stageCoresEarned} 💎)</span>
+          <span class="ad-badge">免費支援</span>
+        </button>
+        ${
+          !isFinalVictory
+            ? `<button type="button" class="ad-reward-btn" id="btn-ad-supply-boost">
+                <span>🎁 戰前空投：下一關火力 Lv+2 ＆ 護盾全滿</span>
+                <span class="ad-badge">免費支援</span>
+              </button>`
+            : ''
+        }
       </div>
       <div style="display:grid;gap:8px;">
         ${
@@ -2225,39 +2603,159 @@ class Game9527 {
             ? `<button type="button" class="hero-start-btn" id="modal-next-stage">前往第 ${String(st.id + 1).padStart(2, '0')} 關 →</button>`
             : `<button type="button" class="hero-start-btn" id="modal-replay-all">再次從頭挑戰</button>`
         }
-        <button type="button" class="secondary-btn" id="modal-back-hangar">返回機庫首頁</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button type="button" class="secondary-btn" id="modal-open-tech-clear">⚙️ 科技強化</button>
+          <button type="button" class="secondary-btn" id="modal-back-hangar">返回機庫首頁</button>
+        </div>
       </div>
     `;
     overlay.classList.remove('hidden');
+
+    const doubleBtn = document.getElementById('btn-ad-double-cores');
+    if (doubleBtn) {
+      doubleBtn.addEventListener('click', () => {
+        if (this.adDoubleCoresClaimed) return;
+        window.GAME9527_AD_BRIDGE.showRewardedAd('double_cores', {
+          onReward: () => {
+            this.adDoubleCoresClaimed = true;
+            const bonus = this.stageCoresEarned;
+            this.meta.cores += bonus;
+            this.stageCoresEarned += bonus;
+            this.saveMeta();
+            this.updateMetaUI();
+            const el = document.getElementById('stage-clear-cores');
+            if (el) el.textContent = `💎 +${this.stageCoresEarned} (已雙倍!)`;
+            doubleBtn.disabled = true;
+            doubleBtn.innerHTML = '<span>✔ 已領取雙倍星核晶體獎勵</span>';
+            this.sound.playSfx('power_pickup', { level: 9 });
+          }
+        });
+      });
+    }
+
+    const supplyBtn = document.getElementById('btn-ad-supply-boost');
+    if (supplyBtn) {
+      supplyBtn.addEventListener('click', () => {
+        window.GAME9527_AD_BRIDGE.showRewardedAd('supply_boost', {
+          onReward: () => {
+            this.players.forEach((p) => {
+              p.alive = true;
+              p.hp = p.maxHp;
+              p.weaponLevel = Math.min(10, p.weaponLevel + 2);
+              p.bombs = Math.min(p.maxBombs, p.bombs + 1);
+            });
+            supplyBtn.disabled = true;
+            supplyBtn.innerHTML = '<span>✔ 戰前空投已就緒（火力 Lv+2 ＆ 護盾全滿）</span>';
+            this.sound.playSfx('power_pickup', { level: 10 });
+          }
+        });
+      });
+    }
 
     const nextBtn = document.getElementById('modal-next-stage');
     if (nextBtn) nextBtn.addEventListener('click', () => this.startStage(this.selectedStageIdx + 1, true));
     const replayBtn = document.getElementById('modal-replay-all');
     if (replayBtn) replayBtn.addEventListener('click', () => this.startStage(0, false));
+    document.getElementById('modal-open-tech-clear')?.addEventListener('click', () => this.showTechLabModal());
     document.getElementById('modal-back-hangar').addEventListener('click', () => this.openHangar());
   }
 
   showGameOverModal() {
     const st = STAGES[this.selectedStageIdx];
+    this.meta.bestScore = Math.max(this.meta.bestScore || 0, Math.floor(this.score));
+    this.saveMeta();
+    this.clearSavedRun();
+    this.pushBackHistoryGuard('gameover');
+
     const overlay = document.getElementById('modal-overlay');
     const content = document.getElementById('modal-content');
+    const canRevive = !this.reviveUsedThisStage;
+
     content.innerHTML = `
       <div class="modal-header">
         <h2 style="color:#ff4d6d;">✖ 任務中止</h2>
       </div>
-      <p style="color:#ffd8e0;font-size:0.9rem;margin-bottom:12px;">
-        於 <strong>${st.zoneTitle}</strong> 遭受重創，逃生艙已回收。
+      <p style="color:#ffd8e0;font-size:0.88rem;margin-bottom:10px;">
+        於 <strong>${st.zoneTitle}</strong> 遭受重創，逃生艙已回收。本關已收集 <strong style="color:#ffbe55;">💎 +${this.stageCoresEarned}</strong> 星核晶體。
       </p>
-      <div style="background:rgba(255,77,109,0.08);border:1px solid rgba(255,77,109,0.3);padding:12px;border-radius:12px;margin-bottom:16px;font-family:var(--font-mono);text-align:center;">
-        本次得分：<strong style="color:#fff;font-size:1.3rem;">${Math.floor(this.score)}</strong>
+      <div style="background:rgba(255,77,109,0.08);border:1px solid rgba(255,77,109,0.3);padding:10px;border-radius:12px;margin-bottom:12px;font-family:var(--font-mono);text-align:center;">
+        本次得分：<strong style="color:#fff;font-size:1.25rem;">${Math.floor(this.score)}</strong>
+      </div>
+      <div style="display:grid;gap:8px;margin-bottom:12px;">
+        ${
+          canRevive
+            ? `<button type="button" class="ad-reward-btn" id="btn-ad-revive">
+                <span>⚡ 緊急修復：原地滿血復活＋清彈 (每關限 1 次)</span>
+                <span class="ad-badge">免費支援</span>
+              </button>`
+            : ''
+        }
+        ${
+          this.stageCoresEarned > 0 && !this.adDoubleCoresClaimed
+            ? `<button type="button" class="ad-reward-btn" id="btn-ad-gameover-double">
+                <span>🎬 雙倍保留本關星核晶體 (+${this.stageCoresEarned} 💎)</span>
+                <span class="ad-badge">免費支援</span>
+              </button>`
+            : ''
+        }
       </div>
       <div style="display:grid;gap:8px;">
         <button type="button" class="hero-start-btn" id="modal-retry-now">立即重試本關</button>
-        <button type="button" class="secondary-btn" id="modal-go-hangar">返回機庫換機體</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <button type="button" class="secondary-btn" id="modal-open-tech-over">⚙️ 科技強化</button>
+          <button type="button" class="secondary-btn" id="modal-go-hangar">返回機庫首頁</button>
+        </div>
       </div>
     `;
     overlay.classList.remove('hidden');
+
+    const reviveBtn = document.getElementById('btn-ad-revive');
+    if (reviveBtn) {
+      reviveBtn.addEventListener('click', () => {
+        window.GAME9527_AD_BRIDGE.showRewardedAd('revive_in_place', {
+          onReward: () => {
+            this.reviveUsedThisStage = true;
+            this.enemyBullets = [];
+            this.players.forEach((p) => {
+              p.alive = true;
+              p.hp = p.maxHp;
+              p.invuln = 3.5;
+              p.bombs = Math.min(p.maxBombs, p.bombs + 1);
+            });
+            overlay.classList.add('hidden');
+            this.state = 'playing';
+            this.sound.resumeAudio();
+            this.lastFrameTime = performance.now();
+            this.sound.playSfx('power_pickup', { level: 10 });
+            this.addFloatText(this.width / 2, this.height * 0.65, '⚡ 緊急修復完成！護盾全滿 ⚡', '#42f5aa', 18, 1.8);
+            this.updateCombatHUD();
+          }
+        });
+      });
+    }
+
+    const doubleOverBtn = document.getElementById('btn-ad-gameover-double');
+    if (doubleOverBtn) {
+      doubleOverBtn.addEventListener('click', () => {
+        if (this.adDoubleCoresClaimed) return;
+        window.GAME9527_AD_BRIDGE.showRewardedAd('double_cores', {
+          onReward: () => {
+            this.adDoubleCoresClaimed = true;
+            const bonus = this.stageCoresEarned;
+            this.meta.cores += bonus;
+            this.stageCoresEarned += bonus;
+            this.saveMeta();
+            this.updateMetaUI();
+            doubleOverBtn.disabled = true;
+            doubleOverBtn.innerHTML = `<span>✔ 已雙倍入帳 (共 +${this.stageCoresEarned} 💎)</span>`;
+            this.sound.playSfx('power_pickup', { level: 9 });
+          }
+        });
+      });
+    }
+
     document.getElementById('modal-retry-now').addEventListener('click', () => this.startStage(this.selectedStageIdx, false));
+    document.getElementById('modal-open-tech-over')?.addEventListener('click', () => this.showTechLabModal());
     document.getElementById('modal-go-hangar').addEventListener('click', () => this.openHangar());
   }
 
