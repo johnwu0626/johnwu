@@ -2,7 +2,11 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#090807" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>無雙割草：三國奇兵 — 典藏商用版</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -74,8 +78,8 @@
     .hud-top {
       position: absolute;
       top: max(10px, env(safe-area-inset-top));
-      left: 12px;
-      right: 12px;
+      left: max(12px, env(safe-area-inset-left));
+      right: max(12px, env(safe-area-inset-right));
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -230,8 +234,8 @@
     .hud-bottom {
       position: absolute;
       bottom: max(14px, env(safe-area-inset-bottom));
-      left: 12px;
-      right: 12px;
+      left: max(12px, env(safe-area-inset-left));
+      right: max(12px, env(safe-area-inset-right));
       display: flex;
       align-items: flex-end;
       justify-content: space-between;
@@ -1099,6 +1103,100 @@
         padding: 11px 14px;
         font-size: 15px;
       }
+      .talent-grid {
+        grid-template-columns: 1fr 1fr !important;
+      }
+    }
+
+    /* Commercial Meta-Progression: Talent Tree, Hero Unlocks, Pause Modal & Rewarded Buttons */
+    .talent-panel-box {
+      background: linear-gradient(135deg, rgba(28, 22, 42, 0.92) 0%, rgba(16, 13, 24, 0.95) 100%);
+      border: 1.5px solid rgba(192, 132, 252, 0.55);
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin: 10px 0 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+    }
+    .talent-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .talent-card {
+      background: rgba(14, 11, 20, 0.88);
+      border: 1px solid rgba(192, 132, 252, 0.32);
+      border-radius: 10px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 5px;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .talent-card:hover {
+      border-color: rgba(246, 211, 101, 0.75);
+      transform: translateY(-1px);
+    }
+    .talent-btn {
+      background: linear-gradient(135deg, #7e22ce 0%, #581c87 100%);
+      color: #f3e8ff;
+      border: 1px solid #c084fc;
+      border-radius: 7px;
+      padding: 5px 8px;
+      font-size: 11.5px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: filter 0.15s ease, transform 0.1s ease;
+    }
+    .talent-btn:hover:not(:disabled) {
+      filter: brightness(1.15);
+    }
+    .talent-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      background: rgba(45, 38, 58, 0.8);
+      border-color: rgba(140, 130, 160, 0.35);
+      color: #9ca3af;
+    }
+    .btn-reward {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+      color: #fffbeb;
+      border: 1.5px solid #fde68a;
+      border-radius: 10px;
+      padding: 9px 14px;
+      font-size: 13.5px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.38);
+      transition: transform 0.14s ease, filter 0.14s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .btn-reward:hover:not(:disabled) {
+      transform: translateY(-1px);
+      filter: brightness(1.1);
+    }
+    .btn-reward:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+    .hero-card.locked-hero {
+      opacity: 0.82;
+      border-color: rgba(148, 163, 184, 0.4);
+      background: linear-gradient(145deg, rgba(22, 19, 28, 0.92), rgba(14, 12, 18, 0.96));
+    }
+    .hero-lock-bar {
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px dashed rgba(212, 175, 55, 0.28);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      flex-wrap: wrap;
     }
   </style>
 </head>
@@ -1131,6 +1229,7 @@
     </div>
 
     <div class="hud-right">
+      <button class="icon-btn" id="btnPauseHud" type="button" style="border-color:var(--gold-bright);color:var(--gold-bright);font-weight:900;">⏸ 暫停</button>
       <button class="icon-btn active" id="btnAudio" type="button">樂音：開</button>
       <button class="icon-btn" id="btnMotion" type="button">減震：關</button>
       <button class="icon-btn" id="btnSaveExitHud" type="button" style="border-color:var(--jade-bright);color:var(--jade-bright);">💾 存檔暫離</button>
@@ -1197,8 +1296,25 @@
         <span><strong>全程自動存檔</strong>：每陣開戰、營帳合成與戰敗皆自動保存進度</span>
       </div>
 
+      <!-- Permanent Meta-Progression Talent Tree (將星兵法閣) -->
+      <div class="talent-panel-box" id="talentPanelBox">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span style="font-family:'Noto Serif TC',serif;font-weight:900;font-size:15px;color:#e9d5ff;">🌟 將星兵法閣（永久屬性天賦・跨局繼承）</span>
+            <span style="background:rgba(126,34,206,0.35);border:1px solid #c084fc;color:#f3e8ff;padding:2px 10px;border-radius:999px;font-size:12.5px;font-weight:900;">
+              🔮 戰功將魂：<span id="metaSoulCount">30</span>
+            </span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <button class="icon-btn" id="btnDevUnlockAll" type="button" style="padding:3px 9px;font-size:11px;border-color:#c084fc;color:#e9d5ff;" title="開發者測試捷徑：立即解鎖全部 9 位名將、100 陣地圖並獲得 +500 將魂">🛠️ 測試：全解鎖 / +500將魂</button>
+            <button class="icon-btn" id="btnToggleTalentGrid" type="button" style="padding:3px 9px;font-size:11px;">收合兵法 ▲</button>
+          </div>
+        </div>
+        <div class="talent-grid" id="talentGrid"></div>
+      </div>
+
       <div class="camp-section-title">
-        <span>選擇出戰名將（蜀・魏・吳・群 共 9 位傳奇武將，各具專屬無雙奧義）</span>
+        <span>選擇出戰名將（初始 3 大名將，破關或以 🔮 將魂招募全 9 位傳奇武將）</span>
         <div style="display:flex;align-items:center;gap:10px;">
           <button class="icon-btn active" id="btnTitleAudio" type="button" style="padding:4px 10px;font-size:11.5px;">🔊 戰場樂音：開</button>
           <span id="bestWaveBadge" style="font-size:12px;color:var(--jade-bright);font-family:'JetBrains Mono', monospace;">最高突破：第 1 陣 / 100 陣</span>
@@ -1208,7 +1324,7 @@
 
       <div class="campaign-selector-bar">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-width:100%;">
-          <span style="font-weight:800;font-size:13px;color:var(--gold-bright);">五關一圖｜選擇戰區地圖 / 起始陣數：</span>
+          <span style="font-weight:800;font-size:13px;color:var(--gold-bright);">五關一圖｜選擇已解鎖戰區地圖 / 起始陣數：</span>
           <select id="chapterSelect" class="campaign-select-input">
             <option value="1">第 1～5 陣｜地圖01：穎川黃土荒原（管亥・黃天力士軍團）</option>
             <option value="6">第 6～10 陣｜地圖02：廣宗八卦祭壇（張角・太平妖道軍團）</option>
@@ -1236,7 +1352,7 @@
             <input id="customWaveInput" type="number" min="1" max="100" value="1" class="campaign-select-input" style="width:72px;text-align:center;" />
           </label>
         </div>
-        <span style="font-size:11.5px;color:var(--text-muted);">※ 每 5 關自動切換全新戰場地圖與駐守 BOSS 兵團；選擇中後段開局將自動配發對應階級神兵與戰力</span>
+        <span id="stageLockHint" style="font-size:11.5px;color:var(--text-muted);">※ 突破更多陣數即可解鎖後續戰區地圖（或點擊上方「🛠️ 測試：全解鎖」自由體驗全 20 張地圖）</span>
       </div>
 
       <div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:12px;">
@@ -1261,6 +1377,7 @@
             <span class="coin-count" id="shopJadeCount">0</span>
           </div>
           <button class="btn-automerge" id="btnAutoMerge" type="button">⚡ 一鍵全自動合成</button>
+          <button class="btn-reward" id="btnFreeRerollAd" type="button" style="padding:7px 12px;font-size:12.5px;">🎁 免費重鑄補給 (1次)</button>
           <button class="btn-secondary" id="btnReroll" type="button">重鑄補給 (-8 玉)</button>
         </div>
       </div>
@@ -1287,6 +1404,34 @@
     </div>
   </div>
 
+  <!-- In-Battle Pause Modal (Google Play Back-Button & Background Pause Compliance) -->
+  <div class="overlay hidden" id="pauseOverlay" style="z-index:85;">
+    <div class="panel" style="max-width:540px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid rgba(212,175,55,0.3);padding-bottom:10px;margin-bottom:12px;">
+        <div>
+          <h2 class="title-main" style="font-size:22px;text-align:left;">⏸ 軍機暫停・戰況總覽</h2>
+          <div id="pauseWaveSubtitle" style="font-size:12.5px;color:var(--jade-bright);margin-top:2px;">第 1 / 100 陣</div>
+        </div>
+        <span style="background:rgba(246,211,101,0.16);border:1px solid var(--gold-bright);color:var(--gold-bright);padding:4px 10px;border-radius:8px;font-size:12px;font-weight:800;">戰場已安全凍結</span>
+      </div>
+
+      <div id="pauseStatsGrid" class="stats-strip" style="margin-bottom:12px;justify-content:flex-start;"></div>
+
+      <div style="font-size:12.5px;color:var(--gold-bright);font-weight:800;margin-bottom:6px;">隨身裝備神兵：</div>
+      <div id="pauseWeaponList" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:14px;"></div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+        <button class="icon-btn active" id="btnPauseAudio" type="button" style="flex:1;padding:8px;">🔊 樂音：開</button>
+        <button class="icon-btn" id="btnPauseMotion" type="button" style="flex:1;padding:8px;">✨ 減震：關</button>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn-primary" id="btnResumeGame" type="button" style="flex:1 1 200px;">▶ 繼續作戰</button>
+        <button class="btn-secondary" id="btnPauseSaveExit" type="button" style="flex:1 1 180px;border-color:var(--jade-bright);color:var(--jade-bright);">💾 存檔並返回主畫面</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Result Overlay (Victory / Defeat) -->
   <div class="overlay hidden" id="resultOverlay">
     <div class="panel" style="max-width:580px;text-align:center;">
@@ -1296,8 +1441,24 @@
           <h2 class="title-main" id="resultTitle" style="font-size:28px;">威震華夏！破陣大捷</h2>
         </div>
       </div>
-      <p class="title-sub" id="resultSub" style="font-size:14px;margin:10px 0 16px;"></p>
-      <div class="stats-strip" id="resultStats" style="justify-content:center;margin-bottom:20px;"></div>
+      <p class="title-sub" id="resultSub" style="font-size:14px;margin:10px 0 12px;"></p>
+
+      <!-- Earned Souls Banner & Double Souls Reward Hook -->
+      <div id="resultSoulEarnedBox" style="background:rgba(88,28,135,0.35);border:1.5px solid #c084fc;border-radius:12px;padding:10px 14px;margin:0 auto 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;max-width:480px;">
+        <div style="text-align:left;">
+          <div style="font-size:13.5px;font-weight:900;color:#f3e8ff;">🔮 本役結算將魂：<span id="resultSoulEarnedText" style="color:#fde047;font-size:16px;">+15</span></div>
+          <div style="font-size:11.5px;color:#d8b4fe;">可於主畫面【將星兵法閣】永久強化全武將屬性或招募新名將</div>
+        </div>
+        <button class="btn-reward" id="btnDoubleSoulsAd" type="button" style="padding:7px 12px;font-size:12.5px;">✨ 雙倍領取將魂</button>
+      </div>
+
+      <div class="stats-strip" id="resultStats" style="justify-content:center;margin-bottom:16px;"></div>
+
+      <!-- In-Place Revive Golden Hook on Defeat -->
+      <div id="reviveActionRow" style="margin-bottom:12px;display:none;">
+        <button class="btn-reward" id="btnReviveAd" type="button" style="width:100%;max-width:460px;padding:12px 18px;font-size:15px;">⚡ 華佗顯靈・原地滿血復活（震退全軍＋無敵3.5秒）</button>
+      </div>
+
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
         <button class="btn-primary" id="btnRetryWave" type="button">🔥 原陣重整再戰（保留神兵與戰力）</button>
         <button class="btn-continue" id="btnRetryShop" type="button">🏕️ 先回鍛造營帳補給</button>
@@ -1809,6 +1970,22 @@
       this._playTaiko(90, 0.16, 0.28);
       this._playPercNoise(0.09, 0.14, 600);
     }
+
+    suspendAudio() {
+      try {
+        if (this.ctx && this.ctx.state === 'running') {
+          this.ctx.suspend();
+        }
+      } catch (e) {}
+    }
+
+    resumeAudio() {
+      try {
+        if (this.enabled && this.ctx && this.ctx.state === 'suspended' && !document.hidden) {
+          this.ctx.resume();
+        }
+      } catch (e) {}
+    }
   }
 
   const sfx = new SoundEngine();
@@ -1827,6 +2004,8 @@
       faction: '蜀',
       name: '趙雲・子龍',
       title: '常山槍神',
+      unlockWave: 0,
+      unlockSouls: 0,
       portraitKey: 'hero_zhaoyun',
       bodyKey: 'body_zhaoyun',
       bootColor: '#cfd8dc',
@@ -1849,6 +2028,8 @@
       faction: '蜀',
       name: '關羽・雲長',
       title: '美髯武聖',
+      unlockWave: 0,
+      unlockSouls: 0,
       portraitKey: 'hero_guanyu',
       bodyKey: 'body_guanyu',
       bootColor: '#2e7d32',
@@ -1867,32 +2048,12 @@
       mods: { speedMul: 1.02, dmgMul: 1.22, maxHpBonus: 45, pickupBonus: 10, critBonus: 0.10 }
     },
     {
-      id: 'zhugeliang',
-      faction: '蜀',
-      name: '諸葛亮・孔明',
-      title: '臥龍星師',
-      portraitKey: 'hero_zhugeliang',
-      bodyKey: 'body_zhugeliang',
-      bootColor: '#f5f5f5',
-      capeColor: '#b388ff',
-      auraColor: '#f4d06f',
-      imgUrl: ASSET_URLS.hero_zhugeliang,
-      badge: '【蜀】奇門臥龍',
-      badgeColor: '#f4d06f',
-      desc: '羽扇綸巾，呼風喚雷。無雙奧義【奇門八陣天雷】布下太極大陣連續降下 18 道紫金神雷。',
-      perk: '全神兵冷卻 -18%、吸玉範圍 +70%｜起始：【太平落雷符】',
-      color: '#f4d06f',
-      startWeapon: 'thunder',
-      musouName: '奇門遁甲・八陣天雷',
-      musouQuote: '「乾坤八門金鎖開，九天玄雷聽吾號令！」',
-      victoryQuote: '「天命星象早已註定，逆天而行者終歸塵土！」',
-      mods: { speedMul: 1.05, dmgMul: 1.10, maxHpBonus: 0, pickupBonus: 90, cdMul: 0.82 }
-    },
-    {
       id: 'zhangfei',
       faction: '蜀',
       name: '張飛・翼德',
       title: '萬人敵猛虎',
+      unlockWave: 0,
+      unlockSouls: 0,
       portraitKey: 'hero_zhangfei',
       bodyKey: 'body_zhangfei',
       bootColor: '#212121',
@@ -1911,32 +2072,36 @@
       mods: { speedMul: 1.04, dmgMul: 1.28, maxHpBonus: 65, pickupBonus: 15, cdMul: 0.95 }
     },
     {
-      id: 'caocao',
-      faction: '魏',
-      name: '曹操・孟德',
-      title: '亂世奸雄',
-      portraitKey: 'hero_caocao',
-      bodyKey: 'body_caocao',
-      bootColor: '#ffd740',
-      capeColor: '#7c4dff',
-      auraColor: '#b388ff',
-      imgUrl: ASSET_URLS.hero_caocao,
-      badge: '【魏】霸王奸雄',
-      badgeColor: '#b388ff',
-      desc: '寧教我負天下人！每陣額外獲得戰功翠玉，無雙奧義【霸王萬劍歸宗】召喚漫天黃金飛劍轟炸。',
-      perk: '每陣額外 +22 玉、傷害 +18%、冷卻 -10%｜起始：【雌雄雙股劍】',
-      color: '#b388ff',
-      startWeapon: 'twinSwords',
-      musouName: '短歌行・萬劍歸宗',
-      musouQuote: '「周公吐哺，天下歸心！萬劍齊發平四海！」',
-      victoryQuote: '「擋孤霸業者，唯有死路一條！傳令三軍，入營受賞！」',
-      mods: { speedMul: 1.08, dmgMul: 1.18, maxHpBonus: 25, pickupBonus: 50, cdMul: 0.90, bonusJade: 22 }
+      id: 'zhugeliang',
+      faction: '蜀',
+      name: '諸葛亮・孔明',
+      title: '臥龍星師',
+      unlockWave: 10,
+      unlockSouls: 60,
+      portraitKey: 'hero_zhugeliang',
+      bodyKey: 'body_zhugeliang',
+      bootColor: '#f5f5f5',
+      capeColor: '#b388ff',
+      auraColor: '#f4d06f',
+      imgUrl: ASSET_URLS.hero_zhugeliang,
+      badge: '【蜀】奇門臥龍',
+      badgeColor: '#f4d06f',
+      desc: '羽扇綸巾，呼風喚雷。無雙奧義【奇門八陣天雷】布下太極大陣連續降下 18 道紫金神雷。',
+      perk: '全神兵冷卻 -18%、吸玉範圍 +70%｜起始：【太平落雷符】',
+      color: '#f4d06f',
+      startWeapon: 'thunder',
+      musouName: '奇門遁甲・八陣天雷',
+      musouQuote: '「乾坤八門金鎖開，九天玄雷聽吾號令！」',
+      victoryQuote: '「天命星象早已註定，逆天而行者終歸塵土！」',
+      mods: { speedMul: 1.05, dmgMul: 1.10, maxHpBonus: 0, pickupBonus: 90, cdMul: 0.82 }
     },
     {
       id: 'xiahoudun',
       faction: '魏',
       name: '夏侯惇・元讓',
       title: '獨目蒼狼',
+      unlockWave: 20,
+      unlockSouls: 90,
       portraitKey: 'hero_xiahoudun',
       bodyKey: 'body_xiahoudun',
       bootColor: '#263238',
@@ -1955,32 +2120,12 @@
       mods: { speedMul: 1.10, dmgMul: 1.20, maxHpBonus: 55, pickupBonus: 20, critBonus: 0.15 }
     },
     {
-      id: 'zhouyu',
-      faction: '吳',
-      name: '周瑜・公瑾',
-      title: '赤壁美周郎',
-      portraitKey: 'hero_zhouyu',
-      bodyKey: 'body_zhouyu',
-      bootColor: '#b71c1c',
-      capeColor: '#ff5252',
-      auraColor: '#ff6e40',
-      imgUrl: ASSET_URLS.hero_zhouyu,
-      badge: '【吳】業火都督',
-      badgeColor: '#ff6e40',
-      desc: '談笑間檣櫓灰飛煙滅。無雙奧義【火燒連環船】召喚漫天業火流星並在地面鋪滿赤壁火海！',
-      perk: '全神兵傷害 +25%、冷卻 -12%｜起始：【神火朱雀扇】',
-      color: '#ff6e40',
-      startWeapon: 'fireFan',
-      musouName: '赤壁業火・燒連環',
-      musouQuote: '「借東南狂風一用，讓這百萬大軍化為火海！」',
-      victoryQuote: '「談笑間，強敵已灰飛煙滅！此曲名為得勝令！」',
-      mods: { speedMul: 1.08, dmgMul: 1.25, maxHpBonus: 15, pickupBonus: 40, cdMul: 0.88 }
-    },
-    {
       id: 'sunshangxiang',
       faction: '吳',
       name: '孫尚香・梟姬',
       title: '江東弓腰姬',
+      unlockWave: 30,
+      unlockSouls: 120,
       portraitKey: 'hero_sunshangxiang',
       bodyKey: 'body_sunshangxiang',
       bootColor: '#ad1457',
@@ -1999,10 +2144,60 @@
       mods: { speedMul: 1.16, dmgMul: 1.15, maxHpBonus: 5, pickupBonus: 35, cdMul: 0.80, critBonus: 0.12 }
     },
     {
+      id: 'zhouyu',
+      faction: '吳',
+      name: '周瑜・公瑾',
+      title: '赤壁美周郎',
+      unlockWave: 45,
+      unlockSouls: 150,
+      portraitKey: 'hero_zhouyu',
+      bodyKey: 'body_zhouyu',
+      bootColor: '#b71c1c',
+      capeColor: '#ff5252',
+      auraColor: '#ff6e40',
+      imgUrl: ASSET_URLS.hero_zhouyu,
+      badge: '【吳】業火都督',
+      badgeColor: '#ff6e40',
+      desc: '談笑間檣櫓灰飛煙滅。無雙奧義【火燒連環船】召喚漫天業火流星並在地面鋪滿赤壁火海！',
+      perk: '全神兵傷害 +25%、冷卻 -12%｜起始：【神火朱雀扇】',
+      color: '#ff6e40',
+      startWeapon: 'fireFan',
+      musouName: '赤壁業火・燒連環',
+      musouQuote: '「借東南狂風一用，讓這百萬大軍化為火海！」',
+      victoryQuote: '「談笑間，強敵已灰飛煙滅！此曲名為得勝令！」',
+      mods: { speedMul: 1.08, dmgMul: 1.25, maxHpBonus: 15, pickupBonus: 40, cdMul: 0.88 }
+    },
+    {
+      id: 'caocao',
+      faction: '魏',
+      name: '曹操・孟德',
+      title: '亂世奸雄',
+      unlockWave: 50,
+      unlockSouls: 180,
+      portraitKey: 'hero_caocao',
+      bodyKey: 'body_caocao',
+      bootColor: '#ffd740',
+      capeColor: '#7c4dff',
+      auraColor: '#b388ff',
+      imgUrl: ASSET_URLS.hero_caocao,
+      badge: '【魏】霸王奸雄',
+      badgeColor: '#b388ff',
+      desc: '寧教我負天下人！每陣額外獲得戰功翠玉，無雙奧義【霸王萬劍歸宗】召喚漫天黃金飛劍轟炸。',
+      perk: '每陣額外 +22 玉、傷害 +18%、冷卻 -10%｜起始：【雌雄雙股劍】',
+      color: '#b388ff',
+      startWeapon: 'twinSwords',
+      musouName: '短歌行・萬劍歸宗',
+      musouQuote: '「周公吐哺，天下歸心！萬劍齊發平四海！」',
+      victoryQuote: '「擋孤霸業者，唯有死路一條！傳令三軍，入營受賞！」',
+      mods: { speedMul: 1.08, dmgMul: 1.18, maxHpBonus: 25, pickupBonus: 50, cdMul: 0.90, bonusJade: 22 }
+    },
+    {
       id: 'lubu',
       faction: '群',
       name: '呂布・奉先',
       title: '無雙飛將',
+      unlockWave: 60,
+      unlockSouls: 240,
       portraitKey: 'boss_lubu',
       bodyKey: 'body_lubu',
       bootColor: '#d50000',
@@ -2826,6 +3021,75 @@
 
   const SAVE_KEY = 'tk_survivor_save_v1';
   const BEST_WAVE_KEY = 'tk_survivor_best_wave_v1';
+  const META_KEY = 'tk_survivor_meta_v1';
+
+  // Permanent Talent Tree (將星兵法閣 — 6 Major Upgrades, Max Lv.10 each)
+  const TALENT_CATALOG = [
+    {
+      id: 'vitality',
+      name: '❤️ 霸王體魄',
+      maxLv: 10,
+      baseCost: 12,
+      costStep: 8,
+      desc: (lv) => `氣血上限永久 +${lv * 22}（下一階 +22 HP）`
+    },
+    {
+      id: 'might',
+      name: '⚔️ 破軍神力',
+      maxLv: 10,
+      baseCost: 14,
+      costStep: 9,
+      desc: (lv) => `全神兵傷害永久 +${lv * 8}%（下一階 +8%）`
+    },
+    {
+      id: 'haste',
+      name: '⚡ 疾風神行',
+      maxLv: 10,
+      baseCost: 14,
+      costStep: 9,
+      desc: (lv) => `移速與攻速冷卻永久 +${lv * 3}%（下一階 +3%）`
+    },
+    {
+      id: 'wealth',
+      name: '💰 軍資充盈',
+      maxLv: 10,
+      baseCost: 12,
+      costStep: 8,
+      desc: (lv) => `開局翠玉 +${lv * 18}、每陣賞賜 +${lv * 5} 玉`
+    },
+    {
+      id: 'crit',
+      name: '🎯 鷹眼暴擊',
+      maxLv: 10,
+      baseCost: 15,
+      costStep: 10,
+      desc: (lv) => `基礎暴擊率永久 +${(lv * 2.5).toFixed(1)}%（下一階 +2.5%）`
+    },
+    {
+      id: 'musou',
+      name: '🔥 無雙戰意',
+      maxLv: 10,
+      baseCost: 15,
+      costStep: 10,
+      desc: (lv) => `開局無雙 +${lv * 10}%、斬敵怒氣獲取 +${lv * 8}%`
+    }
+  ];
+
+  // Capacitor / AdMob Rewarded Ad Bridge for Step 2 (Claude can override window.TK_AD_BRIDGE.showRewardedAd)
+  window.TK_AD_BRIDGE = window.TK_AD_BRIDGE || {
+    isNativeAdReady: false,
+    showRewardedAd(placement, onReward) {
+      // If Claude attaches a native Capacitor AdMob handler (`window.TK_NATIVE_REWARDED_AD`), delegate to it:
+      if (typeof window.TK_NATIVE_REWARDED_AD === 'function') {
+        window.TK_NATIVE_REWARDED_AD(placement, onReward);
+        return;
+      }
+      // Web / Play Store Instant Blessing Fallback: grant reward immediately with feedback sound
+      sfx.init();
+      sfx.playMergeClang(true);
+      if (typeof onReward === 'function') onReward();
+    }
+  };
 
   // =========================================================================
   // 3. Game State
@@ -2841,6 +3105,7 @@
 
   const state = {
     phase: 'TITLE',
+    paused: false,
     waveIdx: 0,
     waveTimer: 0,
     spawnAccum: 0,
@@ -2853,6 +3118,10 @@
     rerollCost: 8,
     shopOffers: [],
     lastAwakenMsg: '',
+    reviveUsedThisWave: false,
+    freeRerollUsed: false,
+    lastEarnedSouls: 0,
+    doubleSoulsClaimed: false,
 
     hero: HEROES[0],
     x: 0,
@@ -2877,6 +3146,7 @@
     pickupRadius: 135,
     waveBonusJade: 0,
     musouGauge: 0,
+    musouGainMul: 1.0,
     bladeAngle: 0,
 
     // Equipped weapons: [{ id, tier, cdTimer, aimAngle, thrustOffset, swingPhase }]
@@ -2920,7 +3190,7 @@
   };
 
   // =========================================================================
-  // 4. Initialization, Save/Load & UI Binding
+  // 4. Initialization, Save/Load, Meta-Progression & UI Binding
   // =========================================================================
   function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -2928,6 +3198,125 @@
   }
   window.addEventListener('resize', resizeCanvas);
   resizeCanvas();
+
+  function loadMetaState() {
+    const defaultMeta = {
+      souls: 30,
+      unlockedHeroes: ['zhaoyun', 'guanyu', 'zhangfei'],
+      talents: { vitality: 0, might: 0, haste: 0, wealth: 0, crit: 0, musou: 0 },
+      devUnlockAll: false
+    };
+    try {
+      const raw = localStorage.getItem(META_KEY);
+      if (!raw) return defaultMeta;
+      const parsed = JSON.parse(raw);
+      return {
+        souls: typeof parsed.souls === 'number' ? Math.max(0, Math.floor(parsed.souls)) : 30,
+        unlockedHeroes: Array.isArray(parsed.unlockedHeroes)
+          ? Array.from(new Set(['zhaoyun', 'guanyu', 'zhangfei', ...parsed.unlockedHeroes]))
+          : defaultMeta.unlockedHeroes,
+        talents: { ...defaultMeta.talents, ...(parsed.talents || {}) },
+        devUnlockAll: !!parsed.devUnlockAll
+      };
+    } catch (e) {
+      return defaultMeta;
+    }
+  }
+
+  let metaState = loadMetaState();
+
+  function saveMetaState() {
+    try {
+      localStorage.setItem(META_KEY, JSON.stringify(metaState));
+    } catch (e) {}
+  }
+
+  function addMetaSouls(amount) {
+    const gain = Math.max(0, Math.floor(amount || 0));
+    if (gain <= 0) return 0;
+    metaState.souls = (metaState.souls || 0) + gain;
+    saveMetaState();
+    renderTalentPanel();
+    return gain;
+  }
+
+  function getTalentBonuses() {
+    const t = metaState.talents || {};
+    return {
+      hpBonus: (t.vitality || 0) * 22,
+      dmgMulBonus: (t.might || 0) * 0.08,
+      speedBonus: (t.haste || 0) * 0.03,
+      cdReduction: (t.haste || 0) * 0.03,
+      startJadeBonus: (t.wealth || 0) * 18,
+      waveJadeBonus: (t.wealth || 0) * 5,
+      critBonus: (t.crit || 0) * 0.025,
+      startMusouBonus: (t.musou || 0) * 10,
+      musouGainMul: 1 + (t.musou || 0) * 0.08
+    };
+  }
+
+  function isHeroUnlocked(hero) {
+    if (!hero) return false;
+    if (metaState.devUnlockAll) return true;
+    if (!hero.unlockWave || hero.unlockWave <= 0) return true;
+    if (metaState.unlockedHeroes && metaState.unlockedHeroes.includes(hero.id)) return true;
+    if (getBestWave() >= hero.unlockWave) {
+      metaState.unlockedHeroes.push(hero.id);
+      saveMetaState();
+      return true;
+    }
+    return false;
+  }
+
+  function renderTalentPanel() {
+    const soulEl = document.getElementById('metaSoulCount');
+    if (soulEl) soulEl.textContent = metaState.souls || 0;
+    const gridEl = document.getElementById('talentGrid');
+    if (!gridEl) return;
+    gridEl.innerHTML = '';
+
+    TALENT_CATALOG.forEach(item => {
+      const lv = Math.max(0, Math.min(item.maxLv, (metaState.talents && metaState.talents[item.id]) || 0));
+      const isMax = lv >= item.maxLv;
+      const cost = item.baseCost + lv * item.costStep;
+      const canAfford = !isMax && (metaState.souls || 0) >= cost;
+
+      const card = document.createElement('div');
+      card.className = 'talent-card';
+      card.innerHTML = `
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
+            <span style="font-weight:900;font-size:13px;color:var(--gold-bright);">${item.name}</span>
+            <span style="font-size:11px;font-weight:800;color:#d8b4fe;font-family:'JetBrains Mono',monospace;">Lv.${lv}/${item.maxLv}</span>
+          </div>
+          <div style="font-size:11px;color:#cbd5e1;margin-top:3px;line-height:1.35;">${item.desc(lv)}</div>
+        </div>
+        <button class="talent-btn" type="button" ${canAfford ? '' : 'disabled'} data-talent="${item.id}">
+          ${isMax ? '👑 已臻滿級' : `🔮 強化 (${cost} 將魂)`}
+        </button>
+      `;
+      gridEl.appendChild(card);
+    });
+
+    gridEl.querySelectorAll('[data-talent]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tId = btn.dataset.talent;
+        const spec = TALENT_CATALOG.find(item => item.id === tId);
+        if (!spec) return;
+        const lv = (metaState.talents && metaState.talents[tId]) || 0;
+        if (lv >= spec.maxLv) return;
+        const cost = spec.baseCost + lv * spec.costStep;
+        if ((metaState.souls || 0) < cost) return;
+        metaState.souls -= cost;
+        metaState.talents[tId] = lv + 1;
+        saveMetaState();
+        sfx.init();
+        sfx.playMergeClang(lv + 1 === spec.maxLv);
+        renderTalentPanel();
+        renderHeroSelect();
+      });
+    });
+  }
 
   function getBestWave() {
     try {
@@ -2944,6 +3333,8 @@
         localStorage.setItem(BEST_WAVE_KEY, String(Math.min(TOTAL_WAVES, waveNum)));
       }
     } catch (e) {}
+    // Check if any milestone heroes newly unlocked
+    HEROES.forEach(h => isHeroUnlocked(h));
     refreshTitleProgressUI();
   }
 
@@ -3006,12 +3397,55 @@
     refreshTitleProgressUI();
   }
 
+  function getMaxUnlockedWave() {
+    if (metaState.devUnlockAll) return TOTAL_WAVES;
+    const best = getBestWave();
+    // Unlock the entire 5-wave map block that the player has reached, plus the next 5-wave map if they cleared a boss
+    return Math.min(TOTAL_WAVES, Math.max(5, Math.ceil(best / 5) * 5));
+  }
+
+  function renderStageSelectorLocks() {
+    const chapEl = document.getElementById('chapterSelect');
+    const customEl = document.getElementById('customWaveInput');
+    const hintEl = document.getElementById('stageLockHint');
+    if (!chapEl) return;
+
+    const maxWave = getMaxUnlockedWave();
+    Array.from(chapEl.options).forEach(opt => {
+      const startW = Number(opt.value) || 1;
+      if (!opt.dataset.origText) {
+        opt.dataset.origText = opt.textContent;
+      }
+      if (startW > maxWave) {
+        opt.disabled = true;
+        opt.textContent = `🔒 [需突破第 ${startW - 1} 陣解鎖] ${opt.dataset.origText}`;
+      } else {
+        opt.disabled = false;
+        opt.textContent = opt.dataset.origText;
+      }
+    });
+
+    if (customEl) {
+      customEl.max = String(maxWave);
+      if (Number(customEl.value) > maxWave) {
+        customEl.value = String(maxWave);
+      }
+    }
+    if (hintEl) {
+      hintEl.textContent = metaState.devUnlockAll
+        ? '🛠️ 【全解鎖測試模式已啟用】可自由選擇全 1～100 陣與 20 張三國戰場地圖！'
+        : `※ 目前已解鎖至第 ${maxWave} 陣（突破更多陣數自動解鎖新戰區，或點擊上方「🛠️ 測試：全解鎖」自由選關）`;
+    }
+  }
+
   function refreshTitleProgressUI() {
     const best = getBestWave();
     const badgeEl = document.getElementById('bestWaveBadge');
     if (badgeEl) {
       badgeEl.textContent = `最高突破：第 ${best} 陣 / 100 陣`;
     }
+    renderTalentPanel();
+    renderStageSelectorLocks();
 
     const saved = loadCampaignProgress();
     const btnCont = document.getElementById('btnContinueRun');
@@ -3062,16 +3496,25 @@
   function renderHeroSelect() {
     const container = document.getElementById('heroSelectGrid');
     container.innerHTML = '';
+    // Ensure selectedHeroId is an unlocked hero
+    const currentSelectedObj = HEROES.find(h => h.id === selectedHeroId);
+    if (!currentSelectedObj || !isHeroUnlocked(currentSelectedObj)) {
+      selectedHeroId = HEROES[0].id;
+    }
+
     HEROES.forEach((h) => {
+      const unlocked = isHeroUnlocked(h);
       const startWpn = WEAPON_CATALOG[h.startWeapon] || WEAPON_CATALOG.spear;
       const card = document.createElement('div');
-      card.className = 'hero-card' + (h.id === selectedHeroId ? ' selected' : '');
+      card.className = 'hero-card' + (h.id === selectedHeroId ? ' selected' : '') + (unlocked ? '' : ' locked-hero');
+      const canRecruitWithSouls = !unlocked && (metaState.souls || 0) >= (h.unlockSouls || 999);
+
       card.innerHTML = `
         <div class="hero-card-top">
-          <img class="hero-portrait" src="${h.imgUrl}" style="border-color:${h.color};" alt="${h.name}" />
+          <img class="hero-portrait" src="${h.imgUrl}" style="border-color:${unlocked ? h.color : '#64748b'};${unlocked ? '' : 'filter:grayscale(0.55);'}" alt="${h.name}" />
           <div>
             <span class="hero-badge" style="background:${h.badgeColor}22;color:${h.badgeColor};border:1px solid ${h.badgeColor}66;">${h.badge}</span>
-            <div class="hero-name" style="color:${h.color};">${h.name}</div>
+            <div class="hero-name" style="color:${unlocked ? h.color : '#94a3b8'};">${unlocked ? h.name : `🔒 ${h.name}`}</div>
           </div>
         </div>
         <div class="hero-desc">${h.desc}</div>
@@ -3079,8 +3522,38 @@
           <img src="${startWpn.imgUrl}" alt="${startWpn.name}" />
           <span>${h.perk}</span>
         </div>
+        ${unlocked ? '' : `
+          <div class="hero-lock-bar">
+            <span style="font-size:11px;color:#fbbf24;font-weight:800;">🏆 突破第 ${h.unlockWave} 陣免費解鎖</span>
+            <button class="talent-btn" type="button" data-recruit="${h.id}" ${canRecruitWithSouls ? '' : 'disabled'} style="padding:4px 9px;font-size:11px;">
+              🔮 招募 (${h.unlockSouls} 將魂)
+            </button>
+          </div>
+        `}
       `;
-      card.addEventListener('click', () => {
+
+      card.addEventListener('click', (e) => {
+        if (e.target && e.target.dataset && e.target.dataset.recruit) {
+          e.stopPropagation();
+          const recruitId = e.target.dataset.recruit;
+          const targetHero = HEROES.find(item => item.id === recruitId);
+          if (targetHero && !isHeroUnlocked(targetHero) && (metaState.souls || 0) >= targetHero.unlockSouls) {
+            metaState.souls -= targetHero.unlockSouls;
+            metaState.unlockedHeroes.push(targetHero.id);
+            saveMetaState();
+            selectedHeroId = targetHero.id;
+            sfx.init();
+            sfx.playCutInFanfare(false);
+            renderTalentPanel();
+            renderHeroSelect();
+          }
+          return;
+        }
+        if (!unlocked) {
+          sfx.init();
+          sfx.playHurt();
+          return;
+        }
         sfx.init();
         sfx.playGemPickup();
         selectedHeroId = h.id;
@@ -3092,7 +3565,10 @@
   }
   const initialSave = loadCampaignProgress();
   if (initialSave && initialSave.heroId) {
-    selectedHeroId = initialSave.heroId;
+    const savedHeroObj = HEROES.find(h => h.id === initialSave.heroId);
+    if (savedHeroObj && isHeroUnlocked(savedHeroObj)) {
+      selectedHeroId = initialSave.heroId;
+    }
   }
   renderHeroSelect();
 
@@ -3101,7 +3577,11 @@
   const btnStartGameEl = document.getElementById('btnStartGame');
 
   function syncStartWaveButtonText() {
-    const targetWave = Math.max(1, Math.min(TOTAL_WAVES, Number(customWaveInputEl.value) || 1));
+    const maxW = getMaxUnlockedWave();
+    const targetWave = Math.max(1, Math.min(maxW, Number(customWaveInputEl.value) || 1));
+    if (Number(customWaveInputEl.value) > maxW) {
+      customWaveInputEl.value = String(maxW);
+    }
     btnStartGameEl.textContent = `🔄 重新開局（從第 ${targetWave} / 100 陣開始新遠征）`;
   }
   syncStartWaveButtonText();
@@ -3117,7 +3597,8 @@
 
   function startNewRun() {
     const existingSave = loadCampaignProgress();
-    const targetWaveNum = Math.max(1, Math.min(TOTAL_WAVES, Number(customWaveInputEl.value) || 1));
+    const maxW = getMaxUnlockedWave();
+    const targetWaveNum = Math.max(1, Math.min(maxW, Number(customWaveInputEl.value) || 1));
     if (existingSave && (existingSave.nextWaveIdx > 0 || (existingSave.weapons && existingSave.weapons.length > 1) || (existingSave.jade || 0) > 40)) {
       const savedWaveNum = (existingSave.nextWaveIdx || 0) + 1;
       const savedHero = HEROES.find(h => h.id === existingSave.heroId) || HEROES[0];
@@ -3127,11 +3608,13 @@
 
     sfx.init();
     sfx.playWarDrum();
-    const hero = HEROES.find(h => h.id === selectedHeroId) || HEROES[0];
+    const hero = HEROES.find(h => h.id === selectedHeroId && isHeroUnlocked(h)) || HEROES[0];
     const startWaveNum = targetWaveNum;
     const startIdx = startWaveNum - 1;
+    const tBonus = getTalentBonuses();
 
     state.hero = hero;
+    state.paused = false;
     state.waveIdx = startIdx;
     state.kills = 0;
     state.x = 0;
@@ -3142,19 +3625,20 @@
     state.shakeMag = 0;
     state.lastAwakenMsg = '';
 
-    // Balanced power scaling when jumping directly into mid/late waves so enemies still feel intense & dangerous
+    // Balanced power scaling when jumping directly into mid/late waves + Permanent Talent Bonuses!
     const boostWaves = startIdx;
-    state.jade = 28 + boostWaves * 20;
+    state.jade = 28 + boostWaves * 20 + tBonus.startJadeBonus;
     state.totalJadeEarned = state.jade;
-    state.maxHp = Math.round((105 + (hero.mods.maxHpBonus || 0)) + boostWaves * 16);
+    state.maxHp = Math.round((105 + (hero.mods.maxHpBonus || 0) + tBonus.hpBonus) + boostWaves * 16);
     state.hp = state.maxHp;
-    state.speedMul = Math.min(2.2, (hero.mods.speedMul || 1.0) + Math.floor(boostWaves / 12) * 0.07);
-    state.dmgMul = +((hero.mods.dmgMul || 1.0) * Math.pow(1.038, boostWaves)).toFixed(2);
-    state.cdMul = Math.max(0.26, +((hero.mods.cdMul || 1.0) * Math.pow(0.990, boostWaves)).toFixed(2));
-    state.critChance = +(0.12 + (hero.mods.critBonus || 0) + Math.min(0.60, boostWaves * 0.007)).toFixed(2);
+    state.speedMul = Math.min(2.35, (hero.mods.speedMul || 1.0) + tBonus.speedBonus + Math.floor(boostWaves / 12) * 0.07);
+    state.dmgMul = +(((hero.mods.dmgMul || 1.0) + tBonus.dmgMulBonus) * Math.pow(1.038, boostWaves)).toFixed(2);
+    state.cdMul = Math.max(0.24, +(((hero.mods.cdMul || 1.0) * (1 - tBonus.cdReduction)) * Math.pow(0.990, boostWaves)).toFixed(2));
+    state.critChance = +(0.12 + (hero.mods.critBonus || 0) + tBonus.critBonus + Math.min(0.60, boostWaves * 0.007)).toFixed(3);
     state.pickupRadius = 140 + (hero.mods.pickupBonus || 0) + Math.floor(boostWaves / 8) * 18;
-    state.waveBonusJade = (hero.mods.bonusJade || 0) + Math.floor(boostWaves / 5) * 8;
-    state.musouGauge = boostWaves >= 4 ? 100 : 50;
+    state.waveBonusJade = (hero.mods.bonusJade || 0) + tBonus.waveJadeBonus + Math.floor(boostWaves / 5) * 8;
+    state.musouGauge = Math.min(100, (boostWaves >= 4 ? 100 : 50) + tBonus.startMusouBonus);
+    state.musouGainMul = tBonus.musouGainMul || 1.0;
 
     const baseTier = Math.min(MAX_WEAPON_TIER, 1 + Math.floor(boostWaves / 11));
     const subTier = Math.min(MAX_WEAPON_TIER, Math.max(1, baseTier - 1));
@@ -3179,6 +3663,7 @@
     document.getElementById('titleOverlay').classList.add('hidden');
     document.getElementById('resultOverlay').classList.add('hidden');
     document.getElementById('shopOverlay').classList.add('hidden');
+    document.getElementById('pauseOverlay').classList.add('hidden');
     document.getElementById('hudTop').style.display = 'flex';
     document.getElementById('hudBottom').style.display = 'flex';
     document.getElementById('hudHeroLabel').textContent = hero.name.split('・')[0];
@@ -3196,8 +3681,10 @@
     sfx.init();
     sfx.playWarDrum();
     const hero = HEROES.find(h => h.id === saved.heroId) || HEROES[0];
+    const tBonus = getTalentBonuses();
     selectedHeroId = hero.id;
     state.hero = hero;
+    state.paused = false;
     state.waveIdx = Math.max(0, Math.min(TOTAL_WAVES - 1, saved.nextWaveIdx));
     state.jade = typeof saved.jade === 'number' ? saved.jade : 25;
     state.kills = saved.kills || 0;
@@ -3211,6 +3698,7 @@
     state.pickupRadius = saved.pickupRadius || 140;
     state.waveBonusJade = saved.waveBonusJade || 0;
     state.musouGauge = typeof saved.musouGauge === 'number' ? saved.musouGauge : 50;
+    state.musouGainMul = tBonus.musouGainMul || 1.0;
     state.rerollCost = saved.rerollCost || 8;
     state.x = 0;
     state.y = 0;
@@ -3233,6 +3721,7 @@
     document.getElementById('titleOverlay').classList.add('hidden');
     document.getElementById('resultOverlay').classList.add('hidden');
     document.getElementById('shopOverlay').classList.add('hidden');
+    document.getElementById('pauseOverlay').classList.add('hidden');
     document.getElementById('hudTop').style.display = 'flex';
     document.getElementById('hudBottom').style.display = 'flex';
     document.getElementById('hudHeroLabel').textContent = hero.name.split('・')[0];
@@ -3246,6 +3735,8 @@
   }
 
   function returnToTitleWithSave() {
+    state.paused = false;
+    document.getElementById('pauseOverlay').classList.add('hidden');
     if (state.phase === 'SHOP') {
       const nextTarget = typeof state.shopNextWaveIdx === 'number' ? state.shopNextWaveIdx : (state.waveIdx + 1);
       saveCampaignProgress(nextTarget, true);
@@ -3294,6 +3785,8 @@
     const st = w.stageSpec || STAGE_LEGIONS[0];
     const eff = getEffectiveMobScale(w);
     state.phase = 'WAVE';
+    state.paused = false;
+    state.reviveUsedThisWave = false;
     state.waveTimer = w.duration;
     state.autoSaveTimer = 3.0;
     state.spawnAccum = 0;
@@ -3329,9 +3822,17 @@
     // Immediately auto-save upon entering any wave!
     saveCampaignProgress(state.waveIdx, false);
 
+    // Push history entry so Android Back Gesture / Hardware Back Button triggers Pause instead of exiting app
+    try {
+      if (!history.state || !history.state.tkInGame) {
+        history.pushState({ tkInGame: true }, '');
+      }
+    } catch (e) {}
+
     sfx.setBgmMode(w.boss ? 'boss' : 'battle', w.chapIdx);
 
     document.getElementById('shopOverlay').classList.add('hidden');
+    document.getElementById('pauseOverlay').classList.add('hidden');
     document.getElementById('waveTitle').textContent = `第 ${w.wave}/100 陣｜${st.mapName.split('：')[1]}・${st.legionName} (強度×${eff.hpMul})`;
     document.getElementById('bossBanner').classList.toggle('visible', !!w.boss);
 
@@ -4021,7 +4522,8 @@
     if (idx === -1) return;
     state.enemies.splice(idx, 1);
     state.kills++;
-    state.musouGauge = Math.min(100, state.musouGauge + (enemy.isBoss ? 50 : (enemy.isElite ? 18 : 3.2)));
+    const mGain = (enemy.isBoss ? 50 : (enemy.isElite ? 18 : 3.2)) * (state.musouGainMul || 1.0);
+    state.musouGauge = Math.min(100, state.musouGauge + mGain);
 
     // Musou Kill-Streak Callout Stamp (30, 60, 100, 150, 200, 300, 400, 500...)
     if (state.kills === 30 || state.kills === 60 || (state.kills >= 100 && state.kills % 50 === 0)) {
@@ -5431,7 +5933,7 @@
   }
 
   function update(dt) {
-    if (state.phase !== 'WAVE') return;
+    if (state.phase !== 'WAVE' || state.paused) return;
 
     if (state.shakeTime > 0) {
       state.shakeTime = Math.max(0, state.shakeTime - dt);
@@ -7711,6 +8213,11 @@
     }
     state.gems = [];
 
+    const w = WAVES[state.waveIdx] || WAVES[0];
+    const waveSoulGain = 8 + Math.floor(state.waveIdx * 0.8) + (w.boss ? (w.isMajorBoss ? 35 : 20) : 0);
+    addMetaSouls(waveSoulGain);
+    state.lastEarnedSouls = waveSoulGain;
+
     recordBestWave(state.waveIdx + 1);
 
     if (state.waveIdx >= WAVES.length - 1) {
@@ -7724,18 +8231,23 @@
     state.jade += waveClearJade;
     state.totalJadeEarned += waveClearJade;
 
-    openCampShop(state.waveIdx + 1);
+    openCampShop(state.waveIdx + 1, waveSoulGain);
   }
 
-  function openCampShop(targetNextWaveIdx) {
+  function openCampShop(targetNextWaveIdx, earnedSoulsFromWave = 0) {
     state.phase = 'SHOP';
+    state.paused = false;
+    state.freeRerollUsed = false;
+    document.getElementById('pauseOverlay').classList.add('hidden');
     state.shopNextWaveIdx = typeof targetNextWaveIdx === 'number'
       ? Math.max(0, Math.min(TOTAL_WAVES - 1, targetNextWaveIdx))
       : Math.min(TOTAL_WAVES - 1, state.waveIdx + 1);
     const refWave = WAVES[state.shopNextWaveIdx] || WAVES[state.waveIdx];
     sfx.setBgmMode('title', refWave.chapIdx);
     state.rerollCost = 6 + Math.floor(state.shopNextWaveIdx * 1.4);
-    state.lastAwakenMsg = '';
+    state.lastAwakenMsg = earnedSoulsFromWave > 0
+      ? `🔮 破陣戰功賞賜：獲得 +${earnedSoulsFromWave} 將魂（累計 ${metaState.souls} 將魂，可於主畫面將星兵法閣永久升級）！`
+      : '';
     sfx.playMergeClang(false);
     generateShopOffers();
     saveCampaignProgress(state.shopNextWaveIdx, true);
@@ -7835,6 +8347,12 @@
     document.getElementById('shopJadeCount').textContent = state.jade;
     document.getElementById('btnReroll').textContent = `重鑄補給 (-${state.rerollCost} 玉)`;
     document.getElementById('arsenalCountText').textContent = `${state.weapons.length} / 6`;
+
+    const btnFreeRerollEl = document.getElementById('btnFreeRerollAd');
+    if (btnFreeRerollEl) {
+      btnFreeRerollEl.disabled = !!state.freeRerollUsed;
+      btnFreeRerollEl.textContent = state.freeRerollUsed ? '✓ 已領免費重鑄' : '🎁 免費重鑄補給 (1次)';
+    }
 
     const awakenBanner = document.getElementById('awakeningBanner');
     if (awakenBanner) {
@@ -8005,14 +8523,134 @@
       <span>冷卻縮減：<strong>${Math.round(state.cdMul * 100)}%</strong></span>
       <span>移速加成：<strong>${Math.round(state.speedMul * 100)}%</strong></span>
       <span>暴擊機率：<strong>${Math.round(state.critChance * 100)}%</strong></span>
+      <span>持有將魂：<strong>🔮 ${metaState.souls || 0}</strong></span>
     `;
+  }
+
+  function openPauseModal() {
+    if (state.phase !== 'WAVE' || state.paused) return;
+    state.paused = true;
+    pointer.active = false;
+    saveCampaignProgress(state.waveIdx, false);
+
+    const w = WAVES[state.waveIdx] || WAVES[0];
+    const st = w.stageSpec || STAGE_LEGIONS[0];
+    const subEl = document.getElementById('pauseWaveSubtitle');
+    if (subEl) {
+      subEl.textContent = `第 ${w.wave} / 100 陣｜${st.mapName}・${st.legionName}`;
+    }
+
+    const statsEl = document.getElementById('pauseStatsGrid');
+    if (statsEl) {
+      statsEl.innerHTML = `
+        <span>出戰名將：<strong>${state.hero.name}</strong></span>
+        <span>當前氣血：<strong>${Math.ceil(state.hp)} / ${state.maxHp}</strong></span>
+        <span>戰功翠玉：<strong>${state.jade}</strong></span>
+        <span>持有將魂：<strong>🔮 ${metaState.souls || 0}</strong></span>
+        <span>傷害倍率：<strong>${Math.round(state.dmgMul * 100)}%</strong></span>
+        <span>暴擊機率：<strong>${Math.round(state.critChance * 100)}%</strong></span>
+      `;
+    }
+
+    const wpnListEl = document.getElementById('pauseWeaponList');
+    if (wpnListEl) {
+      wpnListEl.innerHTML = '';
+      for (let i = 0; i < 6; i++) {
+        const wSlot = state.weapons[i];
+        const item = document.createElement('div');
+        item.style.cssText = 'background:rgba(18,14,12,0.85);border:1px solid rgba(212,175,55,0.3);border-radius:8px;padding:6px 8px;display:flex;align-items:center;gap:8px;font-size:12px;';
+        if (wSlot) {
+          const spec = WEAPON_CATALOG[wSlot.id];
+          const dispName = getWeaponDisplayName(wSlot.id, wSlot.tier);
+          item.innerHTML = `
+            <img src="${spec.imgUrl}" alt="${dispName}" style="width:26px;height:26px;border-radius:5px;object-fit:cover;" />
+            <div style="min-width:0;flex:1;">
+              <div style="font-weight:800;color:${spec.color};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${dispName}</div>
+              <div style="font-size:10.5px;color:${TIER_COLORS[wSlot.tier]};">${TIER_NAMES[wSlot.tier]}</div>
+            </div>
+          `;
+        } else {
+          item.innerHTML = `<span style="color:#64748b;font-size:11.5px;">空置神兵槽</span>`;
+        }
+        wpnListEl.appendChild(item);
+      }
+    }
+
+    syncAudioButtons();
+    document.getElementById('pauseOverlay').classList.remove('hidden');
+  }
+
+  function closePauseModal() {
+    if (!state.paused) return;
+    state.paused = false;
+    document.getElementById('pauseOverlay').classList.add('hidden');
+    sfx.resumeAudio();
+  }
+
+  function reviveInPlace() {
+    if (state.phase !== 'RESULT' || state.reviveUsedThisWave) return;
+    state.reviveUsedThisWave = true;
+    state.phase = 'WAVE';
+    state.paused = false;
+    state.hp = state.maxHp;
+    state.invulnTimer = 3.8;
+    state.musouGauge = Math.min(100, state.musouGauge + 50);
+    state.enemyProjectiles = [];
+    // Clear hostile ground hazards but keep friendly zones
+    state.groundZones = state.groundZones.filter(gz => gz.kind === 'fire_sea' || gz.kind === 'bagua');
+
+    // Push back all nearby enemies & deal shockwave damage to non-bosses
+    for (const e of state.enemies) {
+      if (!e) continue;
+      const dx = e.x - state.x;
+      const dy = e.y - state.y;
+      const dist = Math.hypot(dx, dy) || 1;
+      if (!e.isBoss && dist < 420) {
+        e.x += (dx / dist) * 240;
+        e.y += (dy / dist) * 240;
+      }
+    }
+
+    document.getElementById('resultOverlay').classList.add('hidden');
+    const w = WAVES[state.waveIdx] || WAVES[0];
+    sfx.setBgmMode(w.boss ? 'boss' : 'battle', w.chapIdx);
+    sfx.playMusouCast();
+    triggerShake(0.32, 10);
+    state.screenFlash = { color: '#69f0ae', life: 0.35, maxLife: 0.35 };
+    state.impactRings.push({
+      x: state.x, y: state.y,
+      radius: 25, maxRadius: 520,
+      color: '#69f0ae', lineWidth: 8,
+      life: 0.55, maxLife: 0.55
+    });
+    state.floatTexts.push({
+      x: state.x,
+      y: state.y - 72,
+      text: '⚡ 華佗顯靈！滿血復活・全軍震退＋無敵 3.8 秒！',
+      color: '#69f0ae',
+      size: 21,
+      life: 1.8,
+      maxLife: 1.8
+    });
+    saveCampaignProgress(state.waveIdx, false);
+    updateHud();
   }
 
   function endGame(victory) {
     state.phase = 'RESULT';
+    state.paused = false;
     pointer.active = false;
+    document.getElementById('pauseOverlay').classList.add('hidden');
     sfx.setBgmMode('title', 0);
     sfx.playWarDrum();
+
+    // Award Souls on Victory or Consolation Souls on Defeat
+    const earnedSouls = victory
+      ? 120
+      : Math.max(6, Math.floor(state.kills * 0.25) + state.waveIdx * 2);
+    addMetaSouls(earnedSouls);
+    state.lastEarnedSouls = earnedSouls;
+    state.doubleSoulsClaimed = false;
 
     if (!victory) {
       for (const g of state.gems) {
@@ -8030,7 +8668,22 @@
     document.getElementById('resultTitle').style.color = victory ? 'var(--gold-bright)' : 'var(--crimson-glow)';
     document.getElementById('resultSub').textContent = victory
       ? `${state.hero.name} 成功突破全 100 陣、擊潰九天無雙魔神呂奉先，威震華夏！`
-      : `於【${WAVES[state.waveIdx].title}】力戰不支！您的神兵、翠玉與戰力已完整自動保存，可直接原陣再戰或先回營帳補給！`;
+      : `於【${WAVES[state.waveIdx].title}】力戰不支！您的神兵、翠玉與戰力已完整自動保存，可立即滿血原地復活或重整再戰！`;
+
+    const soulTextEl = document.getElementById('resultSoulEarnedText');
+    if (soulTextEl) {
+      soulTextEl.textContent = `+${earnedSouls}（總計 ${metaState.souls}）`;
+    }
+    const btnDoubleSoulsEl = document.getElementById('btnDoubleSoulsAd');
+    if (btnDoubleSoulsEl) {
+      btnDoubleSoulsEl.disabled = false;
+      btnDoubleSoulsEl.textContent = `✨ 雙倍領取 (+${earnedSouls} 將魂)`;
+    }
+
+    const reviveRowEl = document.getElementById('reviveActionRow');
+    if (reviveRowEl) {
+      reviveRowEl.style.display = (!victory && !state.reviveUsedThisWave) ? 'block' : 'none';
+    }
 
     const btnRetryWaveEl = document.getElementById('btnRetryWave');
     const btnRetryShopEl = document.getElementById('btnRetryShop');
@@ -8055,10 +8708,18 @@
   }
 
   // =========================================================================
-  // 10. Event Listeners
+  // 10. Event Listeners, Google Play Lifecycle & Back-Button Compliance
   // =========================================================================
   window.addEventListener('keydown', (e) => {
     keys[e.code] = true;
+    if (e.code === 'Escape' || e.code === 'KeyP') {
+      if (state.phase === 'WAVE') {
+        e.preventDefault();
+        if (state.paused) closePauseModal();
+        else openPauseModal();
+        return;
+      }
+    }
     if (state.phase === 'WAVE' && state.bossVictoryCutIn) {
       if (e.code === 'Space' || e.code === 'Enter') {
         e.preventDefault();
@@ -8066,7 +8727,7 @@
       }
       return;
     }
-    if (e.code === 'Space' && state.phase === 'WAVE') {
+    if (e.code === 'Space' && state.phase === 'WAVE' && !state.paused) {
       e.preventDefault();
       triggerMusou();
     }
@@ -8076,9 +8737,25 @@
     keys[e.code] = false;
   });
 
+  // Android Hardware Back Button / Back Swipe Gesture Interception via History API
+  window.addEventListener('popstate', () => {
+    if (state.phase === 'WAVE') {
+      if (!state.paused) {
+        openPauseModal();
+      } else {
+        closePauseModal();
+      }
+      try {
+        history.pushState({ tkInGame: true }, '');
+      } catch (e) {}
+    } else if (state.phase === 'SHOP' || state.phase === 'RESULT') {
+      returnToTitleWithSave();
+    }
+  });
+
   // Global click/tap handler when Boss Victory Cut-In is waiting for player confirmation
   window.addEventListener('pointerdown', (e) => {
-    if (state.phase === 'WAVE' && state.bossVictoryCutIn && state.bossVictoryCutIn.elapsed >= 0.38) {
+    if (state.phase === 'WAVE' && !state.paused && state.bossVictoryCutIn && state.bossVictoryCutIn.elapsed >= 0.38) {
       e.preventDefault();
       e.stopPropagation();
       confirmBossVictoryCutIn();
@@ -8087,7 +8764,7 @@
 
   canvas.addEventListener('pointerdown', (e) => {
     sfx.init();
-    if (state.phase !== 'WAVE' || state.bossVictoryCutIn) return;
+    if (state.phase !== 'WAVE' || state.paused || state.bossVictoryCutIn) return;
     if (pointer.active && pointer.id !== null && pointer.id !== e.pointerId) return;
     pointer.active = true;
     pointer.id = e.pointerId;
@@ -8116,22 +8793,129 @@
   };
   window.addEventListener('pointerup', cancelPointer);
   window.addEventListener('pointercancel', cancelPointer);
-  window.addEventListener('blur', () => cancelPointer());
 
-  // Auto-save whenever player switches tabs, locks phone screen, or closes/refreshes browser
-  const autoSaveOnLeave = () => {
+  // Google Play Store Strict Requirement: Auto-Save + Suspend All Audio + Auto-Pause when app goes to background or screen locks
+  const handleAppBackgrounded = () => {
+    cancelPointer();
+    sfx.suspendAudio();
     if (state.phase === 'WAVE') {
       saveCampaignProgress(state.waveIdx, false);
+      if (!state.paused && !state.bossVictoryCutIn) {
+        openPauseModal();
+      }
     } else if (state.phase === 'SHOP') {
       const nextTarget = typeof state.shopNextWaveIdx === 'number' ? state.shopNextWaveIdx : (state.waveIdx + 1);
       saveCampaignProgress(nextTarget, true);
     }
   };
-  window.addEventListener('beforeunload', autoSaveOnLeave);
-  window.addEventListener('pagehide', autoSaveOnLeave);
+
+  const handleAppForegrounded = () => {
+    if (!state.paused) {
+      sfx.resumeAudio();
+    }
+  };
+
+  window.addEventListener('beforeunload', handleAppBackgrounded);
+  window.addEventListener('pagehide', handleAppBackgrounded);
+  window.addEventListener('blur', handleAppBackgrounded);
+  window.addEventListener('focus', handleAppForegrounded);
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') autoSaveOnLeave();
+    if (document.visibilityState === 'hidden') {
+      handleAppBackgrounded();
+    } else {
+      handleAppForegrounded();
+    }
   });
+
+  // Pause Modal Buttons
+  const btnPauseHudEl = document.getElementById('btnPauseHud');
+  if (btnPauseHudEl) {
+    btnPauseHudEl.addEventListener('click', () => {
+      if (state.paused) closePauseModal();
+      else openPauseModal();
+    });
+  }
+  const btnResumeGameEl = document.getElementById('btnResumeGame');
+  if (btnResumeGameEl) {
+    btnResumeGameEl.addEventListener('click', closePauseModal);
+  }
+  const btnPauseSaveExitEl = document.getElementById('btnPauseSaveExit');
+  if (btnPauseSaveExitEl) {
+    btnPauseSaveExitEl.addEventListener('click', returnToTitleWithSave);
+  }
+
+  // Talent Panel Toggle & Developer Unlock All Button
+  const btnToggleTalentEl = document.getElementById('btnToggleTalentGrid');
+  if (btnToggleTalentEl) {
+    btnToggleTalentEl.addEventListener('click', () => {
+      const g = document.getElementById('talentGrid');
+      if (!g) return;
+      const isHidden = g.style.display === 'none';
+      g.style.display = isHidden ? 'grid' : 'none';
+      btnToggleTalentEl.textContent = isHidden ? '收合兵法 ▲' : '展開兵法 ▼';
+    });
+  }
+  const btnDevUnlockAllEl = document.getElementById('btnDevUnlockAll');
+  if (btnDevUnlockAllEl) {
+    btnDevUnlockAllEl.addEventListener('click', () => {
+      metaState.devUnlockAll = true;
+      metaState.souls = (metaState.souls || 0) + 500;
+      HEROES.forEach(h => {
+        if (!metaState.unlockedHeroes.includes(h.id)) {
+          metaState.unlockedHeroes.push(h.id);
+        }
+      });
+      saveMetaState();
+      recordBestWave(100);
+      sfx.init();
+      sfx.playCutInFanfare(false);
+      renderTalentPanel();
+      renderHeroSelect();
+      syncStartWaveButtonText();
+    });
+  }
+
+  // 3 Golden Rewarded Action Hooks (connected via window.TK_AD_BRIDGE)
+  const btnReviveAdEl = document.getElementById('btnReviveAd');
+  if (btnReviveAdEl) {
+    btnReviveAdEl.addEventListener('click', () => {
+      if (state.reviveUsedThisWave) return;
+      window.TK_AD_BRIDGE.showRewardedAd('revive_in_place', () => {
+        reviveInPlace();
+      });
+    });
+  }
+  const btnFreeRerollAdEl = document.getElementById('btnFreeRerollAd');
+  if (btnFreeRerollAdEl) {
+    btnFreeRerollAdEl.addEventListener('click', () => {
+      if (state.freeRerollUsed) return;
+      window.TK_AD_BRIDGE.showRewardedAd('free_reroll', () => {
+        state.freeRerollUsed = true;
+        sfx.playGemPickup();
+        generateShopOffers();
+        saveCampaignProgress();
+        renderShopUI();
+        updateHud();
+      });
+    });
+  }
+  const btnDoubleSoulsAdEl = document.getElementById('btnDoubleSoulsAd');
+  if (btnDoubleSoulsAdEl) {
+    btnDoubleSoulsAdEl.addEventListener('click', () => {
+      if (state.doubleSoulsClaimed || !state.lastEarnedSouls) return;
+      window.TK_AD_BRIDGE.showRewardedAd('double_souls', () => {
+        state.doubleSoulsClaimed = true;
+        const bonus = state.lastEarnedSouls;
+        addMetaSouls(bonus);
+        const soulTextEl = document.getElementById('resultSoulEarnedText');
+        if (soulTextEl) {
+          soulTextEl.textContent = `+${bonus * 2}（雙倍已入帳！總計 ${metaState.souls}）`;
+        }
+        btnDoubleSoulsAdEl.disabled = true;
+        btnDoubleSoulsAdEl.textContent = '✓ 已雙倍領取將魂';
+      });
+    });
+  }
 
   document.getElementById('btnStartGame').addEventListener('click', startNewRun);
   document.getElementById('btnContinueRun').addEventListener('click', continueSavedRun);
@@ -8205,6 +8989,7 @@
   function syncAudioButtons() {
     const hudBtn = document.getElementById('btnAudio');
     const titleBtn = document.getElementById('btnTitleAudio');
+    const pauseAudioBtn = document.getElementById('btnPauseAudio');
     if (hudBtn) {
       hudBtn.textContent = `樂音：${sfx.enabled ? '開' : '關'}`;
       hudBtn.classList.toggle('active', sfx.enabled);
@@ -8212,6 +8997,23 @@
     if (titleBtn) {
       titleBtn.textContent = `${sfx.enabled ? '🔊' : '🔇'} 戰場樂音：${sfx.enabled ? '開' : '關'}`;
       titleBtn.classList.toggle('active', sfx.enabled);
+    }
+    if (pauseAudioBtn) {
+      pauseAudioBtn.textContent = `${sfx.enabled ? '🔊' : '🔇'} 樂音：${sfx.enabled ? '開' : '關'}`;
+      pauseAudioBtn.classList.toggle('active', sfx.enabled);
+    }
+  }
+
+  function syncMotionButtons() {
+    const hudMotion = document.getElementById('btnMotion');
+    const pauseMotion = document.getElementById('btnPauseMotion');
+    if (hudMotion) {
+      hudMotion.textContent = `減震：${reduceMotion ? '開' : '關'}`;
+      hudMotion.classList.toggle('active', reduceMotion);
+    }
+    if (pauseMotion) {
+      pauseMotion.textContent = `✨ 減震：${reduceMotion ? '開' : '關'}`;
+      pauseMotion.classList.toggle('active', reduceMotion);
     }
   }
 
@@ -8230,14 +9032,30 @@
     });
   }
 
-  document.getElementById('btnMotion').addEventListener('click', (e) => {
+  const btnPauseAudioEl = document.getElementById('btnPauseAudio');
+  if (btnPauseAudioEl) {
+    btnPauseAudioEl.addEventListener('click', () => {
+      sfx.init();
+      sfx.enabled = !sfx.enabled;
+      syncAudioButtons();
+    });
+  }
+
+  document.getElementById('btnMotion').addEventListener('click', () => {
     reduceMotion = !reduceMotion;
-    e.currentTarget.textContent = `減震：${reduceMotion ? '開' : '關'}`;
-    e.currentTarget.classList.toggle('active', reduceMotion);
+    syncMotionButtons();
   });
 
+  const btnPauseMotionEl = document.getElementById('btnPauseMotion');
+  if (btnPauseMotionEl) {
+    btnPauseMotionEl.addEventListener('click', () => {
+      reduceMotion = !reduceMotion;
+      syncMotionButtons();
+    });
+  }
+
   document.getElementById('btnHelp').addEventListener('click', () => {
-    alert('【無雙割草：三國奇兵 — 全面進化版兵法】\n1. 9 大名將：蜀、魏、吳、群共 9 位傳奇名將，各具專屬初始神兵與無雙奧義大招。\n2. 12 種神兵與超武覺醒：神兵升至 V 階解鎖【★鬼神覺醒】、X 階突破【👑神話超武】，彈幕與型態全面進化！營帳提供「⚡一鍵全自動合成」。\n3. 多兵種與戰場機關：小心連弩營紅箭、火藥自爆死士與西涼鐵騎紅線衝鋒；擊破🛢️火藥桶可炸飛敵群，拾取⚒️神鐵砧可當場免費升階神兵！\n4. 十章動態地貌與國樂戰鼓：隨章節切換雪原、赤壁戰艦、竹林、毒沼、五丈原星陣與專屬三國戰曲！');
+    alert('【無雙割草：三國奇兵 — 全面進化版兵法】\n1. 9 大名將與將星兵法閣：突破陣數或消耗「🔮將魂」可招募諸葛亮、夏侯惇、孫尚香、周瑜、曹操、呂布等傳奇名將，並可永久升級 6 大兵法天賦！\n2. 12 種神兵與超武覺醒：神兵升至 V 階解鎖【★鬼神覺醒】、X 階突破【👑神話超武】，彈幕與型態全面進化！營帳提供「⚡一鍵全自動合成」。\n3. 20 張戰場地圖與 BOSS 專屬兵團：每 5 關切換全新三國古戰場地貌與駐守 BOSS 軍團。\n4. 隨時暫停與自動存檔：按 ESC / 暫停鍵或手機返回鍵可隨時凍結戰場檢視戰況，切換背景自動靜音並保存進度！');
   });
 })();
 </script>
