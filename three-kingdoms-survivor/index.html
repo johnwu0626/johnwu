@@ -4421,6 +4421,7 @@
     state.critChance = +(0.12 + (hero.mods.critBonus || 0) + tBonus.critBonus + Math.min(0.60, boostWaves * 0.007)).toFixed(3);
     state.pickupRadius = 140 + (hero.mods.pickupBonus || 0) + Math.floor(earlyBoost / 8) * 18;
     state.waveBonusJade = (hero.mods.bonusJade || 0) + tBonus.waveJadeBonus + Math.floor(boostWaves / 5) * 8;
+    state.rerollCost = getBaseRerollCost(startIdx); // a new run starts from the base price
     state.musouGauge = Math.min(100, (boostWaves >= 4 ? 100 : 50) + tBonus.startMusouBonus);
     state.musouGainMul = tBonus.musouGainMul || 1.0;
 
@@ -9490,7 +9491,8 @@
     const refWave = WAVES[state.shopNextWaveIdx] || WAVES[state.waveIdx];
     preloadUpcomingPortraits(state.shopNextWaveIdx);
     sfx.setBgmMode('title', refWave.chapIdx);
-    state.rerollCost = 6 + Math.floor(state.shopNextWaveIdx * 1.4);
+    // Reroll cost carries over for the whole run (+4 per reroll) and never drops below the wave's base price
+    state.rerollCost = Math.max(state.rerollCost || 0, getBaseRerollCost(state.shopNextWaveIdx));
     state.lastAwakenMsg = earnedSoulsFromWave > 0
       ? `🔮 破陣戰功賞賜：獲得 +${earnedSoulsFromWave} 將魂（累計 ${metaState.souls} 將魂，可於主畫面將星兵法閣永久升級）！`
       : '';
@@ -9499,6 +9501,10 @@
     saveCampaignProgress(state.shopNextWaveIdx, true);
     renderShopUI();
     document.getElementById('shopOverlay').classList.remove('hidden');
+  }
+
+  function getBaseRerollCost(waveIdx) {
+    return 6 + Math.floor(Math.max(0, waveIdx) * 1.4);
   }
 
   function generateShopOffers() {
