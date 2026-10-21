@@ -1223,7 +1223,7 @@
 
     <div class="hud-center">
       <div class="wave-badge">
-        <div class="wave-title" id="waveTitle">第 1 / 100 陣・黃巾前鋒</div>
+        <div class="wave-title" id="waveTitle">第 1 / 500 陣・潁川前哨</div>
         <div class="wave-timer" id="waveTimer">22.0</div>
       </div>
     </div>
@@ -1268,7 +1268,7 @@
         <img class="title-kv-img" src="assets/title_banner.webp" decoding="async" fetchpriority="high" alt="無雙割草：三國奇兵" />
         <div class="title-kv-overlay">
           <h1 class="title-main">無雙割草：三國奇兵</h1>
-          <div class="title-sub">9 大魏蜀吳群名將 × 12 種神兵超武覺醒 × 十章動態地貌與戰鼓國樂（百陣遠征 1～100 關）</div>
+          <div class="title-sub">9 大魏蜀吳群名將 × 12 種神兵超武覺醒 × 十卷五十章三國史詩（五百陣遠征 1～500 關・通關開啟輪迴）</div>
         </div>
       </div>
 
@@ -1280,7 +1280,7 @@
             <div style="min-width:0;flex:1;">
               <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                 <span style="background:rgba(92,230,160,0.22);color:var(--jade-bright);border:1px solid var(--jade-bright);font-size:11px;font-weight:900;padding:2px 8px;border-radius:6px;">💾 自動存檔紀錄</span>
-                <span id="savedWaveTitle" style="font-family:'Noto Serif TC',serif;font-weight:900;font-size:15.5px;color:var(--gold-bright);">第 1 / 100 陣</span>
+                <span id="savedWaveTitle" style="font-family:'Noto Serif TC',serif;font-weight:900;font-size:15.5px;color:var(--gold-bright);">第 1 / 500 陣</span>
               </div>
               <div id="savedStatsSummary" style="font-size:12px;color:#e8dfd1;margin-top:4px;word-break:break-word;"></div>
               <div id="savedWeaponsSummary" style="font-size:11.5px;color:var(--jade-bright);margin-top:3px;font-weight:700;word-break:break-word;"></div>
@@ -1291,8 +1291,9 @@
       </div>
 
       <div class="controls-hint">
-        <span><strong>每 5 關一張全新地圖</strong>：20 座三國古戰場地貌（黃土、祭壇、甕城、血城、冰河、雪原、竹林、當陽橋、連環船、焦土等）</span>
-        <span><strong>20 大 BOSS 專屬兵團</strong>：小兵外觀、手持神兵與戰鬥特性隨鎮關 BOSS 全面變化且逐關強化</span>
+        <span><strong>每 5 關一張全新地圖</strong>：100 座三國古戰場、33 種地貌（黃土、祭壇、甕城、宮闕、關隘、城垣、水鄉、草原、火營、冰原等）</span>
+        <span><strong>100 大 BOSS 專屬兵團</strong>：依史實從黃巾之亂打到三國歸晉，每 5 關換一支軍團（勢力外觀、兵種、神兵與特性全變）</span>
+        <span><strong>輪迴挑戰</strong>：通關第 500 陣開啟下一輪，敵軍強度與將魂收益每輪 ×1.5，不設上限</span>
         <span><strong>全程自動存檔</strong>：每陣開戰、營帳合成與戰敗皆自動保存進度</span>
       </div>
 
@@ -1306,7 +1307,7 @@
             </span>
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <button class="icon-btn" id="btnDevUnlockAll" type="button" style="padding:3px 9px;font-size:11px;border-color:#c084fc;color:#e9d5ff;" title="開發者測試捷徑：立即解鎖全部 9 位名將、100 陣地圖並獲得 +500 將魂">🛠️ 測試：全解鎖 / +500將魂</button>
+            <button class="icon-btn" id="btnDevUnlockAll" type="button" style="padding:3px 9px;font-size:11px;border-color:#c084fc;color:#e9d5ff;" title="開發者測試捷徑：立即解鎖全部 9 位名將、500 陣地圖並獲得 +500 將魂">🛠️ 測試：全解鎖 / +500將魂</button>
             <button class="icon-btn" id="btnToggleTalentGrid" type="button" style="padding:3px 9px;font-size:11px;">收合兵法 ▲</button>
           </div>
         </div>
@@ -1317,47 +1318,38 @@
         <span>選擇出戰名將（初始 3 大名將，破關或以 🔮 將魂招募全 9 位傳奇武將）</span>
         <div style="display:flex;align-items:center;gap:10px;">
           <button class="icon-btn active" id="btnTitleAudio" type="button" style="padding:4px 10px;font-size:11.5px;">🔊 戰場樂音：開</button>
-          <span id="bestWaveBadge" style="font-size:12px;color:var(--jade-bright);font-family:'JetBrains Mono', monospace;">最高突破：第 1 陣 / 100 陣</span>
+          <span id="bestWaveBadge" style="font-size:12px;color:var(--jade-bright);font-family:'JetBrains Mono', monospace;">最高突破：第 1 陣 / 500 陣</span>
         </div>
       </div>
       <div class="hero-grid" id="heroSelectGrid"></div>
 
       <div class="campaign-selector-bar">
+        <div id="ngRoundBar" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;max-width:100%;margin-bottom:6px;">
+          <span style="font-weight:900;font-size:13px;color:#f3e8ff;">🔁 輪迴挑戰：</span>
+          <button class="icon-btn" id="btnNgPrev" type="button" style="padding:3px 10px;font-size:12px;" aria-label="上一輪">◀</button>
+          <span id="ngRoundLabel" style="font-weight:900;font-size:13px;color:var(--gold-bright);font-family:'JetBrains Mono', monospace;">第 1 / 1 輪</span>
+          <button class="icon-btn" id="btnNgNext" type="button" style="padding:3px 10px;font-size:12px;" aria-label="下一輪">▶</button>
+          <span id="ngRoundHint" style="font-size:11.5px;color:#d8b4fe;"></span>
+        </div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-width:100%;">
           <span style="font-weight:800;font-size:13px;color:var(--gold-bright);">五關一圖｜選擇已解鎖戰區地圖 / 起始陣數：</span>
-          <select id="chapterSelect" class="campaign-select-input">
-            <option value="1">第 1～5 陣｜地圖01：穎川黃土荒原（管亥・黃天力士軍團）</option>
-            <option value="6">第 6～10 陣｜地圖02：廣宗八卦祭壇（張角・太平妖道軍團）</option>
-            <option value="11">第 11～15 陣｜地圖03：汜水關黑曜甕城（華雄・西涼斬馬軍團）</option>
-            <option value="16">第 16～20 陣｜地圖04：虎牢關修羅熔岩（呂布・無雙陷陣軍團）</option>
-            <option value="21">第 21～25 陣｜地圖05：白馬津冰封河渡（顏良・河北寒鋒軍團）</option>
-            <option value="26">第 26～30 陣｜地圖06：官渡烏巢凍雪原（文醜・延津蛇矛軍團）</option>
-            <option value="31">第 31～35 陣｜地圖07：當陽幽翠竹林道（夏侯恩・青釭劍衛軍團）</option>
-            <option value="36">第 36～40 陣｜地圖08：長坂坡當陽斷橋（曹純・天下驍銳虎豹騎）</option>
-            <option value="41">第 41～45 陣｜地圖09：赤壁連環巨艦甲板（蔡瑁・荊襄火箭水師）</option>
-            <option value="46">第 46～50 陣｜地圖10：烏林華容道焦土（曹操・許昌倚天禁衛）</option>
-            <option value="51">第 51～55 陣｜地圖11：潼關黃沙風蝕戈壁（龐德・抬櫬死戰軍團）</option>
-            <option value="56">第 56～60 陣｜地圖12：渭水冰城鐵騎營（馬超・西涼銀鎧神騎）</option>
-            <option value="61">第 61～65 陣｜地圖13：合淝護城青石渠（樂進・八百先登敢死營）</option>
-            <option value="66">第 66～70 陣｜地圖14：逍遙津江南水寨橋（張遼・威震逍遙鐵戟軍）</option>
-            <option value="71">第 71～75 陣｜地圖15：葭萌關秋楓懸崖道（張郃・巧變幻影奇兵）</option>
-            <option value="76">第 76～80 陣｜地圖16：定軍山斬將烽火台（夏侯淵・三日千里神射營）</option>
-            <option value="81">第 81～85 陣｜地圖17：瀘水赤焰火神叢林（祝融・南中赤焰飛刀蠻）</option>
-            <option value="86">第 86～90 陣｜地圖18：盤蛇谷劇毒冒泡沼（孟獲・烏戈藤甲巨象軍）</option>
-            <option value="91">第 91～95 陣｜地圖19：子午谷奇門八門陣（魏延・反骨噬血狂軍）</option>
-            <option value="96">第 96～100 陣｜地圖20：五丈原星隕七星壇（魔神呂布・九天修羅魔軍）</option>
-          </select>
+          <!-- 100 stage options (grouped by volume) are generated from STAGE_LEGIONS by populateStageSelect() -->
+          <select id="chapterSelect" class="campaign-select-input" style="max-width:100%;"></select>
           <label style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px;">
-            自訂陣數 (1-100)：
-            <input id="customWaveInput" type="number" min="1" max="100" value="1" class="campaign-select-input" style="width:72px;text-align:center;" />
+            自訂陣數 (1-500)：
+            <input id="customWaveInput" type="number" min="1" max="500" value="1" class="campaign-select-input" style="width:72px;text-align:center;" />
           </label>
         </div>
-        <span id="stageLockHint" style="font-size:11.5px;color:var(--text-muted);">※ 突破更多陣數即可解鎖後續戰區地圖（或點擊上方「🛠️ 測試：全解鎖」自由體驗全 20 張地圖）</span>
+        <span id="stageLockHint" style="font-size:11.5px;color:var(--text-muted);">※ 突破更多陣數即可解鎖後續戰區地圖（或點擊上方「🛠️ 測試：全解鎖」自由體驗全 100 張地圖）</span>
       </div>
 
       <div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:12px;">
         <button class="btn-continue" id="btnContinueRun" type="button" style="display:none;">▶ 繼續上次遠征</button>
         <button class="btn-primary" id="btnStartGame" type="button">擂鼓出征（進入第 1 陣）</button>
+      </div>
+      <!-- Google Play requires an in-app privacy policy link; Capacitor opens external URLs in the system browser. -->
+      <div style="text-align:center;margin-top:14px;font-size:12px;">
+        <a id="linkPrivacyPolicy" href="https://johnwu0626.github.io/johnwu/three-kingdoms-survivor/privacy.html" target="_blank" rel="noopener" style="color:var(--text-muted);">隱私權政策 Privacy Policy</a>
       </div>
     </div>
   </div>
@@ -1410,7 +1402,7 @@
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid rgba(212,175,55,0.3);padding-bottom:10px;margin-bottom:12px;">
         <div>
           <h2 class="title-main" style="font-size:22px;text-align:left;">⏸ 軍機暫停・戰況總覽</h2>
-          <div id="pauseWaveSubtitle" style="font-size:12.5px;color:var(--jade-bright);margin-top:2px;">第 1 / 100 陣</div>
+          <div id="pauseWaveSubtitle" style="font-size:12.5px;color:var(--jade-bright);margin-top:2px;">第 1 / 500 陣</div>
         </div>
         <span style="background:rgba(246,211,101,0.16);border:1px solid var(--gold-bright);color:var(--gold-bright);padding:4px 10px;border-radius:8px;font-size:12px;font-weight:800;">戰場已安全凍結</span>
       </div>
@@ -1503,6 +1495,45 @@
     title_banner: 'assets/title_banner.webp'
   };
 
+  // 30 boss-exclusive portraits for the 500-wave campaign, loaded on demand (see ensureImage) so the
+  // title screen does not download ~5 MB of portraits up front.
+  const BOSS_PORTRAIT_URLS = {
+    boss_zhangjiao: 'assets/boss_zhangjiao.webp',
+    boss_huaxiong: 'assets/boss_huaxiong.webp',
+    boss_dongzhuo: 'assets/boss_dongzhuo.webp',
+    boss_lijue: 'assets/boss_lijue.webp',
+    boss_gongsunzan: 'assets/boss_gongsunzan.webp',
+    boss_chengong: 'assets/boss_chengong.webp',
+    boss_sunce: 'assets/boss_sunce.webp',
+    boss_zhangxiu: 'assets/boss_zhangxiu.webp',
+    boss_yuanshu: 'assets/boss_yuanshu.webp',
+    boss_yanliang: 'assets/boss_yanliang.webp',
+    boss_wenchou: 'assets/boss_wenchou.webp',
+    boss_yuanshao: 'assets/boss_yuanshao.webp',
+    boss_tadun: 'assets/boss_tadun.webp',
+    boss_caimao: 'assets/boss_caimao.webp',
+    boss_caoren: 'assets/boss_caoren.webp',
+    boss_huangzhong: 'assets/boss_huangzhong.webp',
+    boss_machao: 'assets/boss_machao.webp',
+    boss_zhangren: 'assets/boss_zhangren.webp',
+    boss_zhangliao: 'assets/boss_zhangliao.webp',
+    boss_ganning: 'assets/boss_ganning.webp',
+    boss_xiahouyuan: 'assets/boss_xiahouyuan.webp',
+    boss_lvmeng: 'assets/boss_lvmeng.webp',
+    boss_luxun: 'assets/boss_luxun.webp',
+    boss_zhurong: 'assets/boss_zhurong.webp',
+    boss_menghuo: 'assets/boss_menghuo.webp',
+    boss_zhanghe: 'assets/boss_zhanghe.webp',
+    boss_simayi: 'assets/boss_simayi.webp',
+    boss_dengai: 'assets/boss_dengai.webp',
+    boss_jiangwei: 'assets/boss_jiangwei.webp',
+    boss_demonlubu: 'assets/boss_demonlubu.webp'
+  };
+
+  function getAssetUrl(key) {
+    return ASSET_URLS[key] || BOSS_PORTRAIT_URLS[key] || '';
+  }
+
   // Pre-trimmed lossless RGBA WebP sprites for instant loading & zero CPU keying lag
   const RIG_URLS = {
     body_zhaoyun: 'assets/body_zhaoyun.webp',
@@ -1517,6 +1548,17 @@
     body_shield: 'assets/body_shield.webp',
     body_charger: 'assets/body_charger.webp',
     body_lubu: 'assets/body_lubu.webp',
+    // Faction troop bodies for the 500-wave campaign
+    body_xiliang: 'assets/body_xiliang.webp',
+    body_hebei: 'assets/body_hebei.webp',
+    body_jingzhou: 'assets/body_jingzhou.webp',
+    body_wu: 'assets/body_wu.webp',
+    body_shu: 'assets/body_shu.webp',
+    body_nanman: 'assets/body_nanman.webp',
+    body_wuhuan: 'assets/body_wuhuan.webp',
+    body_wei: 'assets/body_wei.webp',
+    body_jin: 'assets/body_jin.webp',
+    body_hanguard: 'assets/body_hanguard.webp',
     rig_spear: 'assets/rig_spear.webp',
     rig_halberd: 'assets/rig_halberd.webp',
     rig_bow: 'assets/rig_bow.webp',
@@ -1537,6 +1579,18 @@
     img.src = url;
     IMAGES[key] = img;
   });
+
+  function ensureImage(key) {
+    if (!key) return null;
+    if (IMAGES[key]) return IMAGES[key];
+    const url = BOSS_PORTRAIT_URLS[key];
+    if (!url) return null;
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = url;
+    IMAGES[key] = img;
+    return img;
+  }
 
   const CUTOUT_RIGS = {};
 
@@ -2044,7 +2098,7 @@
       startWeapon: 'halberd',
       musouName: '水淹七軍・青龍斬',
       musouQuote: '「青龍偃月再起，爾等插標賣首之徒休走！」',
-      victoryQuote: '「酒且斟下，關某去去便來——敵將已斬於青龍刀下！」',
+      victoryQuote: '「關某去去便來——敵將已斬於青龍刀下！」',
       mods: { speedMul: 1.02, dmgMul: 1.22, maxHpBonus: 45, pickupBonus: 10, critBonus: 0.10 }
     },
     {
@@ -2427,9 +2481,9 @@
   ];
 
   // =========================================================================
-  // 2B. 100-Wave Campaign Generator & 10 Distinct Battlefield Biomes
+  // 2B. Classic 10 Chapters (v1.0 bosses, reused at their historical slots by the 500-wave campaign)
   // =========================================================================
-  const CHAPTERS = [
+  const CLASSIC_CHAPTERS = [
     {
       chap: 1,
       name: '第一章・黃巾起義',
@@ -2675,7 +2729,7 @@
   // =========================================================================
   // 2C. 20 Five-Wave Battlefield Maps & Boss-Specific Enemy Legions ("五關一張地圖 × 20大BOSS專屬兵團")
   // =========================================================================
-  const STAGE_LEGIONS = [
+  const CLASSIC_LEGIONS = [
     {
       stageIdx: 0, waves: '1～5', mapStyle: 'ochre_steppe', mapName: '地圖01：穎川黃土荒原',
       legionName: '【管亥麾下】黃天力士軍', bossLeader: '黃巾猛將・管亥',
@@ -2938,23 +2992,509 @@
     }
   ];
 
-  const TOTAL_WAVES = 100;
+  // =========================================================================
+  // 2D. 500-Wave Historical Campaign（十卷・五十章・百張地圖・百大 BOSS）
+  //     One boss per 5-wave stage (wave x5 = vanguard, wave x10 = commander). The 20 classic bosses keep their
+  //     ultimates at their historical slots; the other 80 reuse the 20 ultimate patterns with their own names.
+  // =========================================================================
+  const TOTAL_WAVES = 500;
+  const STAGE_WAVES = 5;
+  const CLASSIC_CURVE_END = 99; // waves 1–100 keep the v1.0 tuning exactly
+  const LATE_HP_EXP = 1.8;      // mob HP after wave 100 grows ((idx+1)/100)^1.8 → ×18 at wave 500
+  const LATE_DMG_EXP = 0.75;    // mob damage after wave 100 → ×3.3 at wave 500
+  const LATE_PLAYER_DMG_EXP = 1.6; // jump-in start boost after wave 100 → ×13 at wave 500
+  const NG_STRENGTH_STEP = 1.5; // every cleared 500-wave round: enemy HP/damage and souls ×1.5, uncapped
+  const BOSS_MAX_COMBAT_SECONDS = { major: 60, mid: 40 }; // boss HP cap in seconds of estimated player DPS
+
+  function lateGrowth(idx, exponent) {
+    return idx <= CLASSIC_CURVE_END ? 1 : Math.pow((idx + 1) / (CLASSIC_CURVE_END + 1), exponent);
+  }
+
+  // Enemy-side damage that used to be `base * k^waveIdx` (barrels, bomb zones, musou, counters):
+  // the classic exponential up to wave 100, then the same growth as mob HP, times the NG+ multiplier.
+  function waveDamageScale(k, idx) {
+    const i = Math.max(0, Math.floor(idx || 0));
+    return Math.pow(k, Math.min(i, CLASSIC_CURVE_END)) * lateGrowth(i, LATE_HP_EXP) * getNgMul();
+  }
+
+  function getNgMul(round) {
+    const r = Math.max(1, Math.floor(round || state.ngRound || 1));
+    return Math.pow(NG_STRENGTH_STEP, r - 1);
+  }
+
+  function formatBigNumber(n) {
+    const v = Number(n) || 0;
+    const abs = Math.abs(v);
+    const trim = (x) => String(+x.toFixed(x >= 100 ? 0 : (x >= 10 ? 1 : 2)));
+    if (abs < 1e4) return trim(v);
+    if (abs < 1e8) return trim(v / 1e4) + '萬';
+    if (abs < 1e12) return trim(v / 1e8) + '億';
+    if (abs < 1e16) return trim(v / 1e12) + '兆';
+    return trim(v / 1e16) + '京';
+  }
+
+  function toChineseNumber(n) {
+    const digits = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+    if (n <= 10) return n === 10 ? '十' : digits[n];
+    const tens = Math.floor(n / 10);
+    const ones = n % 10;
+    return (tens === 1 ? '' : digits[tens]) + '十' + digits[ones];
+  }
+
+  function mixHex(a, b, t) {
+    const pa = parseInt(a.slice(1), 16);
+    const pb = parseInt(b.slice(1), 16);
+    const ch = (sh) => Math.round(((pa >> sh) & 255) * (1 - t) + ((pb >> sh) & 255) * t);
+    return '#' + ((1 << 24) | (ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).slice(1);
+  }
+
+  const CAMPAIGN_VOLUMES = [
+    '卷一・黃巾之亂', '卷二・董卓亂政', '卷三・群雄逐鹿', '卷四・官渡之戰', '卷五・赤壁之戰',
+    '卷六・三分天下', '卷七・漢中與荊州', '卷八・夷陵與南征', '卷九・北伐中原', '卷十・三國歸晉'
+  ];
+
+  const CAMPAIGN_CHAPTER_TITLES = [
+    '潁川長社', '南陽宛城', '廣宗決戰', '倉亭下曲陽', '黑山北海',
+    '陽人汜水關', '汴水虎牢關', '函谷郿塢', '長安之亂', '界橋易京',
+    '鉅野濮陽', '神亭曲阿', '宛城之變', '淮南仲氏', '下邳白門樓',
+    '故市白馬', '延津之戰', '烏巢奇襲', '官渡決戰', '鄴城白狼山',
+    '博望坡', '長坂坡', '赤壁水寨', '赤壁火海', '南郡江陵',
+    '荊南四郡', '潼關之戰', '渭南決戰', '巴郡落鳳坡', '雒城成都',
+    '合肥逍遙津', '陽平關漢中', '濡須口', '下辨定軍山', '白衣渡江',
+    '夷陵之戰', '南中三叛', '五月渡瀘', '盤蛇谷', '石亭之戰',
+    '列柳城街亭', '陳倉之戰', '子午谷', '合肥新城', '五丈原',
+    '遼東之役', '高平陵之變', '淮南三叛', '陰平劍閣', '天下歸一'
+  ];
+
+  const TRAIT_DESC = {
+    bull_rush: '狂牛突進（步騎移速提升・衝騎加快）',
+    thunder_cult: '妖術雷咒（遠程術士彈幕強化）',
+    whirlwind_step: '疾風步法（全軍移速提升）',
+    unstoppable: '霸體重甲（擊退抗性・血量提升）',
+    frost_arrow: '寒鋒冰原（冰天雪地中鏖戰）',
+    serpent_thrust: '長兵列陣（長槍重甲列陣推進）',
+    sword_dash: '疾影突襲（刺客高速突擊）',
+    tiger_cavalry: '鐵騎奔襲（騎兵衝鋒頻率大增）',
+    fire_marine: '連環火箭（水軍火箭密集齊射）',
+    imperial_guard: '禁衛死士（攻防全面強化）',
+    coffin_rage: '死戰不退（半血以下狂暴加速）',
+    lightning_spear: '奔雷錦騎（全員高速突進）',
+    vanguard_burst: '先登破陣（破甲連矢與爆破死士倍增）',
+    terror_aura: '威震敵膽（菁英提早出陣）',
+    mirage_flank: '奇兵包抄（斜角包抄走位）',
+    rapid_volley: '箭雨齊射（遠程射速提升）',
+    fire_venom: '火攻淬毒（火焰暗器齊發）',
+    rattan_armor: '藤甲護身（物理減傷・畏懼火雷）',
+    blood_frenzy: '噬血狂軍（高攻高跑速突襲）',
+    demon_apocalypse: '九天修羅（全軍魔神化・全屬性極限暴走）'
+  };
+
+  const WEATHER_COLORS = {
+    talisman: 'rgba(244, 208, 111, 0.55)',
+    ember: 'rgba(255, 112, 67, 0.62)',
+    snow: 'rgba(232, 244, 255, 0.72)',
+    leaves: 'rgba(156, 204, 101, 0.50)',
+    sandstorm: 'rgba(222, 184, 135, 0.55)',
+    mist: 'rgba(178, 212, 232, 0.42)',
+    spores: 'rgba(174, 213, 129, 0.55)',
+    starlight: 'rgba(206, 147, 216, 0.62)'
+  };
+
+  // [bgPrimary, bgSecondary, roadColor] for the 13 terrain styles added in the 500-wave expansion
+  // (the 20 classic styles take their colours from CLASSIC_LEGIONS).
+  const MAP_STYLE_PALETTES = {
+    palace_court: ['#2a2320', '#3a302a', '#5b4a3c'],
+    mountain_pass: ['#1f2420', '#2b322c', '#3f4a40'],
+    frozen_tundra: ['#26323d', '#33424f', '#4a5d6b'],
+    flooded_city: ['#14262e', '#1c3640', '#2f4b52'],
+    canal_town: ['#1c2b26', '#253a33', '#3b5249'],
+    black_mountain: ['#17181b', '#222428', '#2f3236'],
+    imperial_tomb: ['#221f24', '#2f2a33', '#4a4350'],
+    city_wall: ['#29241d', '#372f26', '#4d4336'],
+    steppe_grassland: ['#26301b', '#334024', '#4a5434'],
+    salt_marsh: ['#1f2a28', '#2b3936', '#40524c'],
+    golden_palace: ['#2e2412', '#3d301a', '#6b4f1f'],
+    river_ford: ['#22281f', '#2c3529', '#3d4a3a'],
+    burning_camp: ['#2a1610', '#3a1e14', '#51291a']
+  };
+  CLASSIC_LEGIONS.forEach(l => {
+    if (!MAP_STYLE_PALETTES[l.mapStyle]) MAP_STYLE_PALETTES[l.mapStyle] = [l.bgPrimary, l.bgSecondary, l.roadColor];
+  });
+
+  // Faction troop templates. Role order: grunt, shield, charger, archer, shaman, elite.
+  const LEGION_ROLES = ['grunt', 'shield', 'charger', 'archer', 'shaman', 'elite'];
+  const FACTION_TROOPS = {
+    yellow:   { boot: '#5d4037', alt: '#6a1b9a', roles: ['黃巾力士', '黃天盾衛', '黃巾突騎', '竹弓手', '符水祭酒', '渠帥'],
+      bodies: ['body_grunt', 'body_shield', 'body_charger', 'body_grunt', 'body_zhugeliang', 'body_zhangfei'],
+      wpns: ['rig_halberd', 'rig_halberd', 'rig_spear', 'rig_bow', 'rig_thunder', 'rig_halberd'] },
+    xiliang:  { boot: '#3e2723', alt: '#ff7043', roles: ['西涼刀卒', '鐵甲盾兵', '西涼鐵騎', '羌胡騎射', '西涼巫祝', '校尉'],
+      bodies: ['body_xiliang', 'body_shield', 'body_xiliang', 'body_wuhuan', 'body_zhouyu', 'body_xiahoudun'],
+      wpns: ['rig_halberd', 'rig_halberd', 'rig_spear', 'rig_bow', 'rig_firefan', 'rig_halberd'] },
+    hanguard: { boot: '#4e342e', alt: '#ffd54f', roles: ['羽林郎', '虎賁盾衛', '北軍驍騎', '禁軍弩手', '太常方士', '中郎將'],
+      bodies: ['body_hanguard', 'body_shield', 'body_hanguard', 'body_hanguard', 'body_zhugeliang', 'body_caocao'],
+      wpns: ['rig_spear', 'rig_halberd', 'rig_spear', 'rig_bow', 'rig_thunder', 'rig_twinswords'] },
+    hebei:    { boot: '#1b5e20', alt: '#fdd835', roles: ['冀州步卒', '大戟士', '河北突騎', '強弩手', '軍師祭酒', '上將'],
+      bodies: ['body_hebei', 'body_shield', 'body_hebei', 'body_hebei', 'body_zhouyu', 'body_guanyu'],
+      wpns: ['rig_spear', 'rig_halberd', 'rig_spear', 'rig_bow', 'rig_firefan', 'rig_halberd'] },
+    youzhou:  { boot: '#37474f', alt: '#90caf9', roles: ['幽州胡兵', '皮盾兵', '塞外突騎', '騎射手', '薩滿巫', '大人'],
+      bodies: ['body_wuhuan', 'body_shield', 'body_wuhuan', 'body_wuhuan', 'body_zhugeliang', 'body_zhaoyun'],
+      wpns: ['rig_halberd', 'rig_halberd', 'rig_spear', 'rig_bow', 'rig_thunder', 'rig_spear'] },
+    lubu:     { boot: '#263238', alt: '#ff1744', roles: ['并州狼兵', '陷陣盾士', '并州狼騎', '徐州弩手', '謀士', '陷陣都伯'],
+      bodies: ['body_xiliang', 'body_shield', 'body_charger', 'body_hanguard', 'body_zhouyu', 'body_xiahoudun'],
+      wpns: ['rig_halberd', 'rig_halberd', 'rig_fangtian', 'rig_bow', 'rig_firefan', 'rig_fangtian'] },
+    wu:       { boot: '#b71c1c', alt: '#ffb300', roles: ['解煩兵', '丹陽盾兵', '江東輕騎', '水寨弓手', '火攻術士', '都尉'],
+      bodies: ['body_wu', 'body_shield', 'body_wu', 'body_wu', 'body_zhouyu', 'body_sunshangxiang'],
+      wpns: ['rig_twinswords', 'rig_halberd', 'rig_spear', 'rig_bow', 'rig_firefan', 'rig_twinswords'] },
+    jingzhou: { boot: '#01579b', alt: '#4fc3f7', roles: ['荊州水卒', '樓船盾兵', '江陵騎兵', '艨艟弩手', '水祭巫', '水軍校尉'],
+      bodies: ['body_jingzhou', 'body_shield', 'body_jingzhou', 'body_jingzhou', 'body_zhouyu', 'body_zhaoyun'],
+      wpns: ['rig_spear', 'rig_halberd', 'rig_spear', 'rig_bow', 'rig_firefan', 'rig_spear'] },
+    wei:      { boot: '#1a237e', alt: '#90caf9', roles: ['青州兵', '虎衛盾軍', '虎豹騎', '魏軍強弩', '參軍謀士', '牙門將'],
+      bodies: ['body_wei', 'body_shield', 'body_wei', 'body_wei', 'body_caocao', 'body_xiahoudun'],
+      wpns: ['rig_halberd', 'rig_halberd', 'rig_spear', 'rig_bow', 'rig_thunder', 'rig_fangtian'] },
+    shu:      { boot: '#1b5e20', alt: '#c5e1a5', roles: ['蜀中槍兵', '藤牌盾衛', '巴蜀輕騎', '連弩手', '巴蜀巫師', '牙門將'],
+      bodies: ['body_shu', 'body_shield', 'body_shu', 'body_shu', 'body_zhugeliang', 'body_zhaoyun'],
+      wpns: ['rig_spear', 'rig_halberd', 'rig_spear', 'rig_bow', 'rig_bladering', 'rig_spear'] },
+    nanman:   { boot: '#3e2723', alt: '#ff7043', roles: ['南蠻刀兵', '藤牌蠻兵', '猛獸騎', '毒箭手', '洞巫', '洞主'],
+      bodies: ['body_nanman', 'body_shield', 'body_nanman', 'body_nanman', 'body_nanman', 'body_zhangfei'],
+      wpns: ['rig_twinswords', 'rig_halberd', 'rig_spear', 'rig_bow', 'rig_needles', 'rig_halberd'] },
+    jin:      { boot: '#212121', alt: '#b0bec5', roles: ['晉軍步卒', '中壘盾衛', '晉軍驍騎', '武衛弩手', '司馬府謀士', '護軍'],
+      bodies: ['body_jin', 'body_shield', 'body_jin', 'body_wei', 'body_zhugeliang', 'body_caocao'],
+      wpns: ['rig_spear', 'rig_halberd', 'rig_spear', 'rig_bow', 'rig_thunder', 'rig_fangtian'] },
+    wudou:    { boot: '#4e342e', alt: '#ffd740', roles: ['五斗鬼卒', '祭酒盾衛', '巴賨騎', '板楯弓手', '五斗米祭酒', '治頭大祭酒'],
+      bodies: ['body_shu', 'body_shield', 'body_charger', 'body_shu', 'body_zhugeliang', 'body_zhugeliang'],
+      wpns: ['rig_spear', 'rig_halberd', 'rig_spear', 'rig_bow', 'rig_thunder', 'rig_thunder'] }
+  };
+
+  // B(name, ultType, ultName, ultQuote, portraitKey, bodyKey, wpnKey, color, bootColor)
+  function B(name, ultType, ultName, ultQuote, portraitKey, bodyKey, wpnKey, color, bootColor) {
+    return { name, ultType, ultName, ultQuote, portraitKey, bodyKey, wpnKey, color, bootColor, ultTag: ultName.split('・')[0] };
+  }
+
+  // Stage rows: m mapStyle, p map name, f faction, t trait, w weather, a accent, s four wave subtitles,
+  // l legion name, u troop-name overrides, b boss. k = classic legion index (troops, trait and boss reused), bp = portrait override.
+  const CAMPAIGN_STAGES = [
+    // 卷一・黃巾之亂（184–193）
+    { m: 'ochre_steppe', p: '潁川黃土荒原', f: 'yellow', t: 'bull_rush', w: 'talisman', a: '#f5b041', s: '潁川前哨|蒼天死士|黃巾遊騎|長社伏兵', l: '【彭脫麾下】潁川黃巾軍',
+      b: B('潁川渠帥・彭脫', 'guanhai_cross', '長社狂刀・黃天亂刃', '「蒼天已死！潁川弟兄，隨俺殺盡官軍！」', 'hero_zhangfei', 'body_grunt', 'rig_halberd', '#ffb74d', '#5d4037') },
+    { m: 'burning_camp', p: '長社草營火海', f: 'yellow', t: 'vanguard_burst', w: 'ember', a: '#ff8f00', s: '依草結營|夜風驟起|火燒連營|波才親軍', l: '【波才麾下】長社黃巾大營',
+      b: B('潁川大帥・波才', 'caimao_firearrows', '依草連營・燎原火雨', '「十萬黃巾在此，區區長社，一鼓可下！」', 'boss_wenchou', 'body_zhangfei', 'rig_firefan', '#ff8f00', '#4e342e') },
+    { m: 'river_ford', p: '南陽淯水渡口', f: 'yellow', t: 'thunder_cult', w: 'talisman', a: '#ffca28', s: '南陽告急|淯水渡口|神上使旗|太守殞命', l: '【張曼成麾下】神上使軍',
+      b: B('神上使・張曼成', 'zhangjiao_thunder', '神上使令・黃天降雷', '「吾乃神上使！黃天之雷，必誅漢廷鷹犬！」', 'hero_zhugeliang', 'body_zhugeliang', 'rig_thunder', '#ffca28', '#6d4c41') },
+    { m: 'city_wall', p: '宛城黃土城垣', f: 'yellow', t: 'unstoppable', w: 'talisman', a: '#e6b422', s: '朱儁圍城|宛城城下|據城死守|南陽黃巾', l: '【趙弘麾下】南陽黃巾軍',
+      b: B('南陽渠帥・趙弘', 'wenchou_spears', '宛城死守・亂槍穿陣', '「宛城在我手，朱儁老兒休想踏進半步！」', 'boss_huaxiong', 'body_grunt', 'rig_spear', '#e6b422', '#5d4037') },
+    { m: 'ochre_steppe', p: '廣宗城外黃塵', f: 'yellow', t: 'blood_frenzy', w: 'talisman', a: '#e0a526', s: '盧植圍城|廣宗城外|黃巾死戰|人公將軍', l: '【張梁麾下】人公將軍軍',
+      b: B('人公將軍・張梁', 'huaxiong_whirlwind', '人公怒濤・黃巾旋風斬', '「人公將軍在此！誰敢犯我廣宗！」', 'boss_lijue', 'body_grunt', 'rig_twinswords', '#e0a526', '#4e342e') },
+    { k: 1, p: '廣宗八卦祭壇', s: '天公祭壇|黃天禁衛|太平符陣|蒼天已死', bp: 'boss_zhangjiao' },
+    { m: 'salt_marsh', p: '倉亭黃河灘', f: 'yellow', t: 'whirlwind_step', w: 'mist', a: '#c9a227', s: '東郡黃巾|倉亭渡口|河灘夜戰|卜巳本陣', l: '【卜巳麾下】東郡黃巾軍',
+      b: B('東郡渠帥・卜巳', 'yuejin_barrage', '倉亭亂箭・黃河怒濤', '「倉亭渡口，便是爾等官軍葬身之地！」', 'boss_huaxiong', 'body_charger', 'rig_bow', '#c9a227', '#3e2723') },
+    { m: 'qimen_monolith', p: '下曲陽妖霧石陣', f: 'yellow', t: 'thunder_cult', w: 'mist', a: '#b39ddb', s: '曲陽妖霧|地公法壇|撒豆成兵|皇甫嵩至', l: '【張寶麾下】地公妖術軍',
+      b: B('地公將軍・張寶', 'zhangjiao_thunder', '地公妖術・撒豆成兵雷', '「風雲雷雨，聽吾號令！地公妖術，誰能破之！」', 'hero_zhugeliang', 'body_zhugeliang', 'rig_thunder', '#b39ddb', '#4a148c') },
+    { m: 'black_mountain', p: '太行黑山群峰', f: 'yellow', t: 'sword_dash', w: 'leaves', a: '#78909c', s: '太行山道|黑山伏兵|飛燕夜襲|百萬黑山', l: '【張燕麾下】黑山飛燕軍',
+      b: B('黑山飛燕・張燕', 'zhanghe_mirage', '飛燕掠影・太行千刃', '「黑山百萬之眾，來去如風，你追得上麼？」', 'boss_ganning', 'body_charger', 'rig_twinswords', '#78909c', '#263238') },
+    { k: 0, m: 'city_wall', p: '北海都昌城下', s: '都昌被圍|孔融求援|太史慈突圍|黃天力士' },
+
+    // 卷二・董卓亂政（189–199）
+    { m: 'mountain_pass', p: '陽人山道關隘', f: 'xiliang', t: 'whirlwind_step', w: 'ember', a: '#e57373', s: '孫堅北上|陽人夜驚|西涼前鋒|胡軫督軍', l: '【胡軫麾下】西涼步騎',
+      b: B('西涼督軍・胡軫', 'wenchou_spears', '陽人急襲・西涼槍陣', '「孫堅匹夫！今夜便取你項上人頭！」', 'boss_lijue', 'body_xiliang', 'rig_spear', '#e57373', '#3e2723') },
+    { k: 2, p: '汜水關黑曜甕城', s: '汜水關前哨|董卓鐵甲軍|西涼狼騎|飛熊重步', bp: 'boss_huaxiong' },
+    { m: 'river_ford', p: '汴水滎陽渡口', f: 'xiliang', t: 'vanguard_burst', w: 'ember', a: '#ef5350', s: '曹操追擊|汴水伏兵|滎陽夜戰|徐榮破敵', l: '【徐榮麾下】汴水伏軍',
+      b: B('中郎將・徐榮', 'yuejin_barrage', '汴水伏擊・萬弩齊發', '「曹孟德輕兵冒進，此處便是汴水墳場！」', 'hero_xiahoudun', 'body_xiliang', 'rig_bow', '#ef5350', '#4e342e') },
+    { k: 3, p: '虎牢關修羅熔岩', s: '虎牢關下|三英戰呂布|赤兔掠影|方天血陣' },
+    { m: 'mountain_pass', p: '函谷陝縣古道', f: 'xiliang', t: 'bull_rush', w: 'sandstorm', a: '#d84315', s: '函谷東出|陝縣屯兵|牛輔夜驚|西涼亂兵', l: '【牛輔麾下】陝縣西涼軍',
+      b: B('董卓女婿・牛輔', 'huaxiong_whirlwind', '函谷亂刃・西涼狂風', '「岳父大人的天下，豈容爾等染指！」', 'boss_zhangxiu', 'body_xiliang', 'rig_halberd', '#d84315', '#3e2723') },
+    { m: 'golden_palace', p: '郿塢萬歲金殿', f: 'hanguard', t: 'imperial_guard', w: 'ember', a: '#ab47bc', s: '長安遷都|未央宮變|郿塢金庫|太師親衛', l: '【董卓麾下】飛熊親衛軍',
+      b: B('太師・董卓', 'caocao_imperial', '焚都暴政・太師天威', '「天下之事，盡在吾手！誰敢不從，滿門抄斬！」', 'boss_dongzhuo', 'body_hanguard', 'rig_twinswords', '#ab47bc', '#4a148c') },
+    { m: 'palace_court', p: '長安宣平門', f: 'xiliang', t: 'blood_frenzy', w: 'ember', a: '#c62828', s: '李郭反攻|長安城破|宣平門血戰|郭汜劫駕', l: '【郭汜麾下】西涼亂軍',
+      b: B('後將軍・郭汜', 'weiyan_bloodmoon', '長安血雨・狂刃劫駕', '「長安已是我西涼的天下，天子也得聽我號令！」', 'boss_huaxiong', 'body_xiliang', 'rig_halberd', '#c62828', '#212121') },
+    { m: 'scorched_forest', p: '弘農曹陽焦野', f: 'xiliang', t: 'unstoppable', w: 'ember', a: '#b71c1c', s: '天子東歸|曹陽追兵|弘農血戰|李傕狂騎', l: '【李傕麾下】飛熊狂騎',
+      b: B('車騎將軍・李傕', 'caochun_cavalry', '弘農追天・西涼狂騎', '「天子休走！西涼鐵騎，隨我追！」', 'boss_lijue', 'body_xiliang', 'rig_fangtian', '#b71c1c', '#3e2723') },
+    { m: 'changban_bridge', p: '界橋磐河古橋', f: 'youzhou', t: 'tiger_cavalry', w: 'leaves', a: '#eceff1', s: '磐河兩岸|白馬義從|麴義先登|嚴綱陷陣', l: '【嚴綱麾下】白馬義從先鋒',
+      u: { charger: '白馬義從', elite: '★白馬義從都伯' },
+      b: B('騎都尉・嚴綱', 'caochun_cavalry', '白馬衝陣・義從奔雷', '「白馬義從，衝鋒！踏碎袁紹的步卒！」', 'boss_machao', 'body_zhaoyun', 'rig_spear', '#eceff1', '#546e7a') },
+    { m: 'frozen_tundra', p: '幽州易京雪原', f: 'youzhou', t: 'tiger_cavalry', w: 'snow', a: '#b0bec5', s: '易京高樓|白馬悲鳴|幽州鐵騎|白馬將軍', l: '【公孫瓚麾下】白馬義從',
+      u: { charger: '白馬義從', archer: '白馬騎射手', elite: '★白馬義從統領' },
+      b: B('白馬將軍・公孫瓚', 'machao_lightning', '白馬銀槍・幽州奔雷', '「白馬義從，所向披靡！袁紹小兒，來受死！」', 'boss_gongsunzan', 'body_zhaoyun', 'rig_serpent', '#cfd8dc', '#37474f') },
+
+    // 卷三・群雄逐鹿（194–199）
+    { m: 'salt_marsh', p: '鉅野大澤', f: 'lubu', t: 'whirlwind_step', w: 'mist', a: '#80cbc4', s: '兗州叛亂|鉅野澤畔|呂布別部|薛蘭固守', l: '【薛蘭麾下】兗州叛軍',
+      b: B('兗州別駕・薛蘭', 'yuejin_barrage', '鉅野亂箭・澤畔伏弩', '「兗州已歸溫侯，曹賊休想奪回！」', 'boss_caimao', 'body_hanguard', 'rig_bow', '#80cbc4', '#004d40') },
+    { m: 'city_wall', p: '濮陽東門火城', f: 'lubu', t: 'fire_venom', w: 'ember', a: '#26a69a', s: '濮陽城門|田氏內應|火燒東門|陳宮妙計', l: '【陳宮麾下】濮陽伏兵',
+      b: B('謀主・陳宮', 'caimao_firearrows', '濮陽火計・東門焚天', '「曹操！你中我陳公台之計了！」', 'boss_chengong', 'body_zhouyu', 'rig_firefan', '#26a69a', '#004d40') },
+    { m: 'maple_cliff', p: '神亭嶺秋楓', f: 'jingzhou', t: 'sword_dash', w: 'leaves', a: '#42a5f5', s: '曲阿渡江|神亭嶺上|單騎鬥將|東萊神射', l: '【太史慈麾下】劉繇揚州軍',
+      b: B('東萊神射・太史慈', 'xiahouyuan_meteor', '神亭鬥將・東萊神射', '「我乃東萊太史慈！特來捉拿孫策！」', 'boss_zhangren', 'body_jingzhou', 'rig_bow', '#42a5f5', '#0d47a1') },
+    { m: 'canal_town', p: '曲阿江東水鄉', f: 'wu', t: 'vanguard_burst', w: 'mist', a: '#e53935', s: '渡江東征|曲阿水鄉|小霸王至|江東猛虎', l: '【孫策麾下】江東猛虎軍',
+      b: B('小霸王・孫策', 'huaxiong_whirlwind', '小霸王・江東猛虎衝', '「江東子弟，隨我孫伯符橫掃天下！」', 'boss_sunce', 'body_wu', 'rig_twinswords', '#e53935', '#b71c1c') },
+    { m: 'burning_camp', p: '宛城夜火營帳', f: 'xiliang', t: 'terror_aura', w: 'ember', a: '#ff7043', s: '宛城降而復叛|夜盜雙戟|典韋死戰|胡車兒奔襲', l: '【胡車兒麾下】宛城夜襲軍',
+      b: B('宛城猛士・胡車兒', 'zhanghe_mirage', '夜盜雙戟・宛城奔襲', '「典韋的雙戟已在俺手，曹營今夜必亂！」', 'boss_wenchou', 'body_xiliang', 'rig_twinswords', '#ff7043', '#3e2723') },
+    { m: 'river_ford', p: '淯水夜渡', f: 'xiliang', t: 'lightning_spear', w: 'ember', a: '#ff5722', s: '淯水夜戰|曹昂讓馬|賈詡奇謀|北地槍王', l: '【張繡麾下】西涼槍騎',
+      b: B('北地槍王・張繡', 'wenchou_spears', '淯水奔槍・百鳥朝鳳', '「賈先生之計果然神妙！曹賊受死！」', 'boss_zhangxiu', 'body_xiliang', 'rig_spear', '#ff5722', '#4e342e') },
+    { m: 'steppe_grassland', p: '小沛轅門', f: 'hanguard', t: 'unstoppable', w: 'leaves', a: '#ffd54f', s: '淮南出兵|轅門射戟|三尖兩刃|仲氏前軍', l: '【紀靈麾下】仲氏前軍',
+      b: B('仲氏大將・紀靈', 'guanhai_cross', '三尖兩刃・淮南裂地', '「我紀靈手中三尖刀，斬將如割草！」', 'boss_yanliang', 'body_hanguard', 'rig_halberd', '#ffd54f', '#6d4c41') },
+    { m: 'golden_palace', p: '壽春仲氏偽宮', f: 'hanguard', t: 'imperial_guard', w: 'talisman', a: '#ffc107', s: '仲氏僭號|玉璽在手|壽春金殿|偽帝親衛', l: '【袁術麾下】仲氏禁軍',
+      b: B('仲氏偽帝・袁術', 'caocao_imperial', '傳國玉璽・仲家天命', '「玉璽在我手中，天命歸我袁公路！」', 'boss_yuanshu', 'body_hanguard', 'rig_bladering', '#ffc107', '#ff6f00') },
+    { m: 'flooded_city', p: '下邳水淹城垣', f: 'lubu', t: 'unstoppable', w: 'mist', a: '#90a4ae', s: '下邳被圍|泗沂決堤|陷陣營出|高順死守', l: '【高順麾下】陷陣營',
+      u: { grunt: '陷陣營死士', shield: '陷陣營盾士', elite: '★陷陣營都伯' },
+      b: B('陷陣都督・高順', 'zhangliao_terror', '陷陣無前・所攻必破', '「陷陣之志，有死無生！」', 'boss_caoren', 'body_xiahoudun', 'rig_halberd', '#90a4ae', '#263238') },
+    { m: 'obsidian_fort', p: '下邳白門樓', f: 'lubu', t: 'unstoppable', w: 'mist', a: '#ff1744', s: '白門樓上|赤兔嘶鳴|并州狼騎|飛將末路', l: '【呂布麾下】并州狼騎',
+      b: B('白門飛將・呂奉先', 'lubu_halberd', '白門絕唱・方天無雙', '「縛虎不得不急！誰能擋我呂奉先！」', 'boss_lubu', 'body_lubu', 'rig_fangtian', '#ff1744', '#b71c1c') },
+
+    // 卷四・官渡之戰（200–207）
+    { m: 'steppe_grassland', p: '故市糧道草原', f: 'hebei', t: 'bull_rush', w: 'leaves', a: '#66bb6a', s: '河北南下|故市糧道|徐晃劫糧|韓猛護運', l: '【韓猛麾下】河北運糧軍',
+      b: B('河北驍將・韓猛', 'guanhai_cross', '故市護糧・河北重擊', '「誰敢動我河北軍糧，韓某叫他有來無回！」', 'boss_wenchou', 'body_hebei', 'rig_halberd', '#66bb6a', '#1b5e20') },
+    { k: 4, p: '白馬津冰封河渡', s: '白馬津渡口|河北大戟士|高櫓連弩營|顏良大纛', bp: 'boss_yanliang' },
+    { m: 'river_ford', p: '延津黃河南岸', f: 'hebei', t: 'vanguard_burst', w: 'leaves', a: '#43a047', s: '延津渡河|輜重誘敵|河北輕騎|高覽突擊', l: '【高覽麾下】河北突騎',
+      b: B('河北名將・高覽', 'wenchou_spears', '延津突陣・河北長槍', '「河北四庭柱，高覽在此！」', 'hero_guanyu', 'body_hebei', 'rig_spear', '#43a047', '#1b5e20') },
+    { k: 5, p: '延津雪野輜重營', s: '延津伏兵|先登死士|袁軍重鎧陣|黃河朔風', bp: 'boss_wenchou' },
+    { m: 'burning_camp', p: '烏巢糧倉火海', f: 'hebei', t: 'fire_venom', w: 'ember', a: '#ff9800', s: '許攸夜奔|烏巢屯糧|曹操夜襲|蔣奇援軍', l: '【蔣奇麾下】烏巢援軍',
+      b: B('河北援將・蔣奇', 'caimao_firearrows', '烏巢烈焰・救糧火箭', '「烏巢有失，河北全軍皆亡，死守！」', 'boss_huaxiong', 'body_hebei', 'rig_bow', '#ff9800', '#3e2723') },
+    { m: 'scorched_forest', p: '烏巢焦土糧營', f: 'hebei', t: 'unstoppable', w: 'ember', a: '#e65100', s: '糧倉大火|河北震動|淳于瓊出|烏巢死守', l: '【淳于瓊麾下】烏巢守軍',
+      b: B('烏巢守將・淳于瓊', 'weiyan_bloodmoon', '烏巢狂怒・焚糧血戰', '「誰燒我糧草！淳于仲簡與你拼了！」', 'boss_lijue', 'body_hebei', 'rig_halberd', '#e65100', '#3e2723') },
+    { m: 'city_wall', p: '官渡土山箭樓', f: 'hebei', t: 'thunder_cult', w: 'leaves', a: '#26a69a', s: '官渡相持|土山箭樓|霹靂車陣|沮授獻策', l: '【沮授麾下】河北謀軍',
+      b: B('河北監軍・沮授', 'zhanghe_mirage', '持重之策・官渡迷陣', '「主公不聽良言，河北危矣……然沮某寧死不降！」', 'boss_chengong', 'body_zhouyu', 'rig_thunder', '#26a69a', '#004d40') },
+    { m: 'palace_court', p: '官渡袁紹大營', f: 'hebei', t: 'imperial_guard', w: 'leaves', a: '#2e7d32', s: '河北大軍|霹靂車響|官渡決戰|四世三公', l: '【袁紹麾下】河北大戟士',
+      u: { shield: '河北大戟士', elite: '★河北上將' },
+      b: B('四世三公・袁紹', 'caocao_imperial', '四世三公・河北天威', '「我袁本初四世三公，豈會敗於閹宦之後！」', 'boss_yuanshao', 'body_hebei', 'rig_twinswords', '#2e7d32', '#f9a825') },
+    { m: 'flooded_city', p: '鄴城漳水灌城', f: 'hebei', t: 'unstoppable', w: 'mist', a: '#558b2f', s: '圍攻鄴城|漳水灌城|審配死守|河北遺臣', l: '【審配麾下】鄴城守軍',
+      b: B('鄴城守將・審配', 'yuejin_barrage', '鄴城死守・萬箭穿雲', '「我君在北，審配生為袁臣，死為袁鬼！」', 'boss_caoren', 'body_hebei', 'rig_bow', '#558b2f', '#33691e') },
+    { m: 'steppe_grassland', p: '白狼山烏桓草原', f: 'youzhou', t: 'tiger_cavalry', w: 'sandstorm', a: '#8d6e63', s: '出塞北征|盧龍古塞|白狼山下|烏桓單于', l: '【蹋頓麾下】烏桓突騎',
+      b: B('烏桓單于・蹋頓', 'caochun_cavalry', '白狼奔騎・塞外狂風', '「漢人也敢深入塞外？烏桓鐵騎，踏平他們！」', 'boss_tadun', 'body_wuhuan', 'rig_bow', '#8d6e63', '#3e2723') },
+
+    // 卷五・赤壁之戰（202–209）
+    { m: 'maple_cliff', p: '博望坡狹谷', f: 'wei', t: 'vanguard_burst', w: 'leaves', a: '#1e88e5', s: '南征新野|博望坡道|伏兵四起|于禁斷後', l: '【于禁麾下】曹軍前部',
+      b: B('曹軍大將・于禁', 'yuejin_barrage', '毅重軍令・博望箭雨', '「軍令如山，退者斬！」', 'boss_xiahouyuan', 'body_wei', 'rig_bow', '#1e88e5', '#0d47a1') },
+    { m: 'scorched_forest', p: '博望坡焦林', f: 'wei', t: 'blood_frenzy', w: 'ember', a: '#1565c0', s: '火起博望|獨眼將軍|曹軍潰退|夏侯死戰', l: '【夏侯惇麾下】曹軍先鋒',
+      b: B('獨眼將軍・夏侯惇', 'weiyan_bloodmoon', '剛烈獨眼・博望狂刀', '「區區火計，豈能擋我夏侯元讓！」', 'hero_xiahoudun', 'body_xiahoudun', 'rig_halberd', '#1565c0', '#0d47a1') },
+    { k: 6, p: '當陽幽翠竹林道', s: '新野火陣|曹軍追擊營|當陽迷霧|青釭掠影' },
+    { k: 7, p: '長坂坡當陽斷橋', s: '景山重圍|虎豹精騎|七進七出|長坂橋頭' },
+    { m: 'xiaoyao_waterfort', p: '赤壁北岸水寨', f: 'jingzhou', t: 'fire_marine', w: 'mist', a: '#4fc3f7', s: '荊州降曹|北岸水寨|張允操練|水軍前哨', l: '【張允麾下】荊州水軍',
+      b: B('水軍副督・張允', 'yuejin_barrage', '水寨連弩・江面封鎖', '「荊州水軍在此，東吳小舟休想靠近！」', 'hero_zhouyu', 'body_jingzhou', 'rig_bow', '#4fc3f7', '#01579b') },
+    { k: 8, p: '赤壁連環巨艦甲板', s: '三江口水寨|鐵索連舟|東南風起|火船衝陣', bp: 'boss_caimao' },
+    { m: 'burning_camp', p: '赤壁北岸焚營', f: 'wei', t: 'blood_frenzy', w: 'ember', a: '#ff6d00', s: '東風驟起|黃蓋詐降|連環火起|虎痴護主', l: '【許褚麾下】虎衛軍',
+      u: { grunt: '虎衛軍', shield: '虎衛盾軍', elite: '★虎衛軍統領' },
+      b: B('虎痴・許褚', 'guanhai_cross', '虎痴裸衣・護主狂擊', '「誰敢傷我主公！許褚在此！」', 'hero_zhangfei', 'body_zhangfei', 'rig_halberd', '#ff6d00', '#3e2723') },
+    { k: 9, p: '烏林華容道焦土', s: '烏林烈焰|荊州降卒|華容道伏擊|烈火張天' },
+    { m: 'canal_town', p: '江陵城外水網', f: 'wei', t: 'unstoppable', w: 'leaves', a: '#5c6bc0', s: '南郡對峙|周瑜攻城|牛金被圍|曹仁救將', l: '【牛金麾下】江陵前軍',
+      b: B('曹營驍將・牛金', 'xiahouen_swords', '江陵突圍・亂刃血路', '「區區數百人，也敢困我牛金！」', 'boss_dengai', 'body_wei', 'rig_twinswords', '#5c6bc0', '#1a237e') },
+    { m: 'obsidian_fort', p: '江陵鐵壁堅城', f: 'wei', t: 'unstoppable', w: 'mist', a: '#3949ab', s: '江陵堅城|毒箭傷瑜|曹仁死守|天人將軍', l: '【曹仁麾下】江陵鐵壁軍',
+      b: B('天人將軍・曹仁', 'yanliang_frost', '江陵鐵壁・天人不動', '「有我曹子孝在，江陵固若金湯！」', 'boss_caoren', 'body_wei', 'rig_halberd', '#3949ab', '#1a237e') },
+
+    // 卷六・三分天下（209–214）
+    { m: 'river_ford', p: '零陵湘水', f: 'jingzhou', t: 'whirlwind_step', w: 'leaves', a: '#ffb300', s: '南征四郡|零陵城外|開山大斧|邢道榮出陣', l: '【邢道榮麾下】零陵郡兵',
+      b: B('零陵上將・邢道榮', 'guanhai_cross', '開山大斧・零陵震地', '「零陵上將邢道榮在此，誰敢與我一戰！」', 'boss_huaxiong', 'body_jingzhou', 'rig_halberd', '#ffb300', '#5d4037') },
+    { m: 'maple_cliff', p: '長沙秋楓山道', f: 'jingzhou', t: 'rapid_volley', w: 'leaves', a: '#ff8f00', s: '長沙城下|老將出陣|百步穿楊|刀下留情', l: '【黃忠麾下】長沙神射營',
+      b: B('長沙老將・黃忠', 'xiahouyuan_meteor', '百步穿楊・落日神箭', '「莫欺老夫年邁，手中寶弓尚能百步穿楊！」', 'boss_huangzhong', 'body_guanyu', 'rig_bow', '#ff8f00', '#e65100') },
+    { k: 10, p: '潼關黃沙風蝕戈壁', s: '潼關風沙|西涼長標營|抬櫬出戰|割鬚棄袍' },
+    { m: 'mountain_pass', p: '潼關天險', f: 'xiliang', t: 'lightning_spear', w: 'sandstorm', a: '#a1887f', s: '西涼聯軍|潼關天險|抹書間計|九曲黃河', l: '【韓遂麾下】西涼聯軍',
+      b: B('西涼宿將・韓遂', 'pangde_sandstorm', '黃河九曲・西涼沙暴', '「西涼十部同心戮力，潼關天險豈容曹賊踏過！」', 'boss_tadun', 'body_xiliang', 'rig_serpent', '#a1887f', '#4e342e') },
+    { m: 'desert_dunes', p: '渭南沙苑', f: 'xiliang', t: 'tiger_cavalry', w: 'sandstorm', a: '#ce93d8', s: '渭水之南|沙苑奔騎|馬岱輕騎|西涼少將', l: '【馬岱麾下】西涼輕騎',
+      b: B('西涼少將・馬岱', 'caochun_cavalry', '渭南奔騎・沙苑旋風', '「兄長在後，馬岱為前鋒，殺！」', 'boss_zhangxiu', 'body_xiliang', 'rig_spear', '#ce93d8', '#4a148c') },
+    { k: 11, p: '渭水冰城鐵騎營', s: '渭水渡口|冰城防線|羌族狼騎|銀鎧獅盔', bp: 'boss_machao' },
+    { m: 'bamboo_grove', p: '巴郡竹山', f: 'shu', t: 'unstoppable', w: 'leaves', a: '#7cb342', s: '巴郡城下|老將嚴顏|義釋嚴顏|斷頭將軍', l: '【嚴顏麾下】巴郡守軍',
+      b: B('巴郡老將・嚴顏', 'yuejin_barrage', '斷頭將軍・巴郡箭陣', '「我州但有斷頭將軍，無降將軍也！」', 'boss_huangzhong', 'body_shu', 'rig_halberd', '#7cb342', '#33691e') },
+    { m: 'mountain_pass', p: '落鳳坡山道', f: 'shu', t: 'rapid_volley', w: 'leaves', a: '#558b2f', s: '雒城以西|落鳳坡下|萬箭伏擊|鳳雛隕落', l: '【張任麾下】雒城伏弩軍',
+      b: B('益州名將・張任', 'caimao_firearrows', '落鳳伏擊・萬箭齊發', '「忠臣不事二主，張任寧死不降！」', 'boss_zhangren', 'body_shu', 'rig_bow', '#558b2f', '#1b5e20') },
+    { m: 'city_wall', p: '雒城城頭', f: 'shu', t: 'vanguard_burst', w: 'leaves', a: '#9ccc65', s: '雒城攻防|劉璝固守|益州精兵|雒城陷落', l: '【劉璝麾下】雒城守軍',
+      b: B('雒城守將・劉璝', 'wenchou_spears', '雒城死守・益州槍陣', '「雒城一日不破，成都一日無憂！」', 'boss_jiangwei', 'body_shu', 'rig_spear', '#9ccc65', '#33691e') },
+    { m: 'golden_palace', p: '成都益州宮', f: 'shu', t: 'imperial_guard', w: 'mist', a: '#cddc39', s: '圍困成都|錦官城下|東州兵|益州之主', l: '【劉璋麾下】東州兵',
+      u: { grunt: '東州兵', elite: '★東州兵統領' },
+      b: B('益州牧・劉璋', 'caocao_imperial', '天府之國・益州天威', '「吾父子在州二十餘年，豈可輕棄成都！」', 'boss_yuanshu', 'body_hanguard', 'rig_bladering', '#cddc39', '#827717') },
+
+    // 卷七・漢中與荊州（215–219）
+    { k: 12, p: '合淝護城青石渠', s: '合淝城外|八百敢死營|藏舟渡河|先登陷陣' },
+    { k: 13, p: '逍遙津江南水寨橋', s: '小師橋斷|虎步江南|陷陣重戟|江東驚魂', bp: 'boss_zhangliao' },
+    { m: 'mountain_pass', p: '陽平關棧道', f: 'wudou', t: 'thunder_cult', w: 'mist', a: '#ffa000', s: '漢中門戶|陽平關下|夜霧迷營|楊昂據險', l: '【楊昂麾下】漢中鬼卒',
+      b: B('漢中大將・楊昂', 'wenchou_spears', '陽平據險・關隘槍林', '「陽平關天險，曹軍插翅難飛！」', 'boss_lijue', 'body_shu', 'rig_spear', '#ffa000', '#5d4037') },
+    { m: 'bagua_altar', p: '漢中五斗米祭壇', f: 'wudou', t: 'thunder_cult', w: 'talisman', a: '#ffd740', s: '五斗米道|義舍米肉|鬼道教化|師君降臨', l: '【張魯麾下】五斗米道軍',
+      b: B('漢中師君・張魯', 'zhangjiao_thunder', '五斗米道・天師符雷', '「鬼道教民，天師在上，邪祟退散！」', 'hero_zhugeliang', 'body_zhugeliang', 'rig_thunder', '#ffd740', '#4a148c') },
+    { m: 'canal_town', p: '濡須塢水口', f: 'wu', t: 'fire_marine', w: 'mist', a: '#ef5350', s: '濡須塢|江東水軍|凌統奮戰|斷橋血路', l: '【凌統麾下】江東水軍',
+      b: B('偏將軍・凌統', 'xiahouen_swords', '濡須奮戰・雙刃斷流', '「家父之仇未報，凌統豈能退後半步！」', 'boss_luxun', 'body_wu', 'rig_twinswords', '#ef5350', '#b71c1c') },
+    { m: 'burning_camp', p: '曹營夜襲火海', f: 'wu', t: 'terror_aura', w: 'ember', a: '#d32f2f', s: '百騎劫營|銀鈴聲響|夜襲曹營|錦帆賊至', l: '【甘寧麾下】錦帆百騎',
+      u: { charger: '錦帆夜騎', elite: '★錦帆百騎' },
+      b: B('錦帆遊俠・甘寧', 'huaxiong_whirlwind', '百騎劫營・錦帆鈴響', '「聽見鈴聲了麼？錦帆甘興霸來也！」', 'boss_ganning', 'body_wu', 'rig_halberd', '#d32f2f', '#212121') },
+    { m: 'black_mountain', p: '下辨山林', f: 'wei', t: 'vanguard_burst', w: 'leaves', a: '#3f51b5', s: '武都出兵|下辨山林|曹洪迎擊|吳蘭敗走', l: '【曹洪麾下】武都曹軍',
+      b: B('曹氏宗將・曹洪', 'xiahouen_swords', '下辨突擊・宗將雙刃', '「今日誰也休想從曹洪面前過去！」', 'boss_caoren', 'body_wei', 'rig_twinswords', '#3f51b5', '#1a237e') },
+    { k: 15, p: '定軍山斬將烽火台', s: '定軍山麓|鹿角重圍|法正奇謀|黃忠老當益壯', bp: 'boss_xiahouyuan' },
+    { m: 'snow_depot', p: '麥城雪夜山道', f: 'wu', t: 'mirage_flank', w: 'snow', a: '#e57373', s: '荊州失守|麥城孤城|臨沮小道|潘璋伏兵', l: '【潘璋麾下】臨沮伏兵',
+      b: B('臨沮伏將・潘璋', 'zhanghe_mirage', '臨沮伏擊・雪夜絆索', '「此路已斷，留下赤兔與青龍刀吧！」', 'boss_wenchou', 'body_wu', 'rig_halberd', '#e57373', '#4e342e') },
+    { m: 'river_ford', p: '白衣渡江烽燧', f: 'wu', t: 'mirage_flank', w: 'mist', a: '#c62828', s: '白衣渡江|烽燧盡失|吳下阿蒙|刮目相待', l: '【呂蒙麾下】白衣渡江軍',
+      b: B('吳下阿蒙・呂蒙', 'caimao_firearrows', '白衣渡江・烽燧奇襲', '「士別三日，當刮目相待！」', 'boss_lvmeng', 'body_wu', 'rig_twinswords', '#c62828', '#424242') },
+
+    // 卷八・夷陵與南征（221–228）
+    { m: 'maple_cliff', p: '巫峽秋楓', f: 'wu', t: 'vanguard_burst', w: 'leaves', a: '#ff7043', s: '蜀軍東征|巫峽建平|江東宿將|韓當拒敵', l: '【韓當麾下】江東宿衛',
+      b: B('江東宿將・韓當', 'yuejin_barrage', '江東老將・巫峽箭雨', '「三代老臣韓當在此，蜀軍休想東進！」', 'boss_huangzhong', 'body_wu', 'rig_bow', '#ff7043', '#4e342e') },
+    { m: 'burning_camp', p: '夷陵七百里連營', f: 'wu', t: 'fire_venom', w: 'ember', a: '#ff3d00', s: '七百里連營|按兵不動|火燒連營|書生拜將', l: '【陸遜麾下】江東火攻軍',
+      b: B('書生都督・陸遜', 'caimao_firearrows', '火燒連營・七百里焚天', '「蜀軍連營七百里，此乃兵家大忌——放火！」', 'boss_luxun', 'body_zhouyu', 'rig_twinswords', '#ff3d00', '#b71c1c') },
+    { m: 'black_mountain', p: '南中瘴氣山林', f: 'nanman', t: 'whirlwind_step', w: 'spores', a: '#8bc34a', s: '南中叛亂|益州郡|雍闓起兵|瘴氣山林', l: '【雍闓麾下】南中叛軍',
+      b: B('南中豪強・雍闓', 'huaxiong_whirlwind', '南中叛旗・山林狂刃', '「南中天高地遠，只聽我雍闓號令！」', 'boss_wenchou', 'body_nanman', 'rig_twinswords', '#8bc34a', '#33691e') },
+    { m: 'poison_swamp', p: '越嶲瘴氣谷', f: 'nanman', t: 'bull_rush', w: 'spores', a: '#689f38', s: '越嶲夷王|山寨連營|丞相南征|高定反覆', l: '【高定麾下】越嶲夷兵',
+      b: B('越嶲夷王・高定', 'guanhai_cross', '夷王震山・裂地重擊', '「越嶲山高路遠，丞相大軍來得，回不得！」', 'boss_huaxiong', 'body_nanman', 'rig_halberd', '#689f38', '#33691e') },
+    { m: 'river_ford', p: '瀘水瘴氣渡口', f: 'nanman', t: 'fire_venom', w: 'spores', a: '#ff7043', s: '五月渡瀘|瘴氣蒸騰|第一洞兵|金環三結', l: '【金環三結麾下】第一洞蠻兵',
+      b: B('第一洞主・金環三結', 'xiahouen_swords', '金環亂刃・瀘水毒瘴', '「漢人敢渡瀘水？叫你們有來無回！」', 'hero_zhangfei', 'body_nanman', 'rig_twinswords', '#ff7043', '#4e342e') },
+    { k: 16, p: '瀘水赤焰火神叢林', s: '三洞蠻兵|朵思毒泉|木鹿狂象營|赤焰飛刀', bp: 'boss_zhurong' },
+    { m: 'salt_marsh', p: '桃葉渡毒泉', f: 'nanman', t: 'rattan_armor', w: 'spores', a: '#a1887f', s: '烏戈國|桃葉渡|藤甲刀槍不入|兀突骨', l: '【兀突骨麾下】烏戈藤甲軍',
+      u: { grunt: '烏戈藤甲兵', shield: '藤甲巨盾兵', elite: '★烏戈藤甲王衛' },
+      b: B('烏戈國主・兀突骨', 'menghuo_stampede', '藤甲無敵・烏戈蠻踏', '「刀槍不入的藤甲，你們拿什麼破？」', 'boss_tadun', 'body_nanman', 'rig_halberd', '#a1887f', '#3e2723') },
+    { k: 17, p: '盤蛇谷劇毒冒泡沼', s: '盤蛇谷口|火攻地雷|南中歸心|七擒七縱', bp: 'boss_menghuo' },
+    { m: 'bamboo_grove', p: '皖城石亭山林', f: 'wu', t: 'mirage_flank', w: 'mist', a: '#ff8a65', s: '斷髮詐降|曹休中計|石亭山林|周魴誘敵', l: '【周魴麾下】鄱陽詐降軍',
+      b: B('鄱陽太守・周魴', 'zhanghe_mirage', '斷髮詐降・石亭奇謀', '「斷髮為誓，曹休已入我彀中！」', 'hero_zhouyu', 'body_wu', 'rig_firefan', '#ff8a65', '#4e342e') },
+    { m: 'mountain_pass', p: '石亭夾石險道', f: 'wei', t: 'tiger_cavalry', w: 'leaves', a: '#283593', s: '夾石山道|虎豹舊騎|伏兵三路|千里駒', l: '【曹休麾下】揚州虎豹騎',
+      u: { charger: '虎豹騎' },
+      b: B('千里駒・曹休', 'caochun_cavalry', '千里駒・虎豹奔騎', '「虎豹騎何在？全軍隨我衝！」', 'hero_caocao', 'body_wei', 'rig_spear', '#283593', '#1a237e') },
+
+    // 卷九・北伐中原（228–234）
+    { m: 'steppe_grassland', p: '隴右列柳城', f: 'wei', t: 'vanguard_burst', w: 'sandstorm', a: '#5c6bc0', s: '隴右震動|列柳城|郭淮援軍|天水三郡', l: '【郭淮麾下】隴右魏軍',
+      b: B('雍州刺史・郭淮', 'yuejin_barrage', '隴右連弩・列柳箭陣', '「蜀軍遠來疲憊，隴右之地寸土不讓！」', 'boss_dengai', 'body_wei', 'rig_bow', '#5c6bc0', '#1a237e') },
+    { k: 14, p: '街亭孤山秋楓', s: '街亭當道|孤山紮營|斷水絕道|巧變奇兵', bp: 'boss_zhanghe' },
+    { m: 'frozen_tundra', p: '陳倉道雪野', f: 'wei', t: 'blood_frenzy', w: 'snow', a: '#7986cb', s: '散關出兵|陳倉道|王雙來援|流星飛錘', l: '【王雙麾下】陳倉援軍',
+      b: B('魏軍猛將・王雙', 'xiahouyuan_meteor', '流星飛錘・陳倉追殺', '「蜀軍糧盡退兵？追上去，一個不留！」', 'boss_wenchou', 'body_wei', 'rig_bladering', '#7986cb', '#283593') },
+    { m: 'city_wall', p: '陳倉孤城', f: 'wei', t: 'unstoppable', w: 'snow', a: '#9fa8da', s: '陳倉孤城|雲梯衝車|地道攻防|千人守城', l: '【郝昭麾下】陳倉千人守軍',
+      b: B('陳倉守將・郝昭', 'yanliang_frost', '陳倉鐵壁・孤城寒霜', '「我郝昭在此，陳倉城一磚一瓦都不給你！」', 'boss_caoren', 'body_wei', 'rig_bow', '#9fa8da', '#283593') },
+    { m: 'black_mountain', p: '子午谷棧道', f: 'wei', t: 'mirage_flank', w: 'mist', a: '#3f51b5', s: '子午棧道|連月大雨|夏侯先鋒|興勢山下', l: '【夏侯霸麾下】子午道前鋒',
+      b: B('魏軍先鋒・夏侯霸', 'wenchou_spears', '子午突進・棧道槍陣', '「棧道雖險，夏侯霸照樣殺過去！」', 'boss_xiahouyuan', 'body_wei', 'rig_spear', '#3f51b5', '#1a237e') },
+    { m: 'flooded_city', p: '子午谷連月大雨', f: 'wei', t: 'imperial_guard', w: 'mist', a: '#1a237e', s: '三路伐蜀|大雨三旬|大司馬至|曹氏柱石', l: '【曹真麾下】中軍虎賁',
+      b: B('大司馬・曹真', 'caocao_imperial', '大司馬令・三路伐蜀', '「三路大軍並進，蜀漢必亡於今日！」', 'boss_yuanshao', 'body_wei', 'rig_fangtian', '#3949ab', '#ffd54f') },
+    { m: 'hefei_canal', p: '合肥新城外渠', f: 'wei', t: 'rapid_volley', w: 'mist', a: '#64b5f6', s: '吳軍北伐|新城外渠|田豫拒敵|堅壁不出', l: '【田豫麾下】合肥守軍',
+      b: B('汝南太守・田豫', 'yuejin_barrage', '堅壁清野・新城箭雨', '「吳軍銳氣正盛，避其鋒芒，待其自退！」', 'boss_chengong', 'body_wei', 'rig_bow', '#64b5f6', '#0d47a1') },
+    { m: 'city_wall', p: '合肥新城', f: 'wei', t: 'unstoppable', w: 'mist', a: '#1976d2', s: '移城新址|吳帝親征|焚燒攻具|滿寵夜襲', l: '【滿寵麾下】新城魏軍',
+      b: B('征東將軍・滿寵', 'caimao_firearrows', '夜焚攻具・新城烈火', '「孫權親征又如何？今夜就燒光他的攻城器械！」', 'boss_zhangliao', 'body_wei', 'rig_firefan', '#1976d2', '#0d47a1') },
+    { k: 18, m: 'lava_hell', p: '五丈原血月營', s: '祁山六出|上方谷火雨|木牛流馬|反骨狂軍' },
+    { m: 'qimen_monolith', p: '五丈原七星奇門', f: 'wei', t: 'mirage_flank', w: 'starlight', a: '#7e57c2', s: '渭南對峙|堅壁不戰|七星燈滅|死諸葛走生仲達', l: '【司馬懿麾下】魏國中軍',
+      b: B('冢虎・司馬懿', 'zhanghe_mirage', '鷹視狼顧・冢虎幻陣', '「諸葛孔明已逝，天下再無人能擋我司馬仲達！」', 'boss_simayi', 'body_zhugeliang', 'rig_firefan', '#7e57c2', '#311b92') },
+
+    // 卷十・三國歸晉（238–280）
+    { m: 'frozen_tundra', p: '遼水冰原', f: 'youzhou', t: 'frost_arrow', w: 'snow', a: '#90caf9', s: '渡遼水|遼隧圍壘|卑衍拒敵|遼東鐵騎', l: '【卑衍麾下】遼東軍',
+      b: B('遼東大將・卑衍', 'yanliang_frost', '遼水寒冰・冰原箭陣', '「遼東天寒地凍，魏軍遠來必亡！」', 'boss_gongsunzan', 'body_wuhuan', 'rig_spear', '#90caf9', '#263238') },
+    { m: 'snow_depot', p: '襄平冰封城', f: 'youzhou', t: 'imperial_guard', w: 'snow', a: '#64b5f6', s: '自立燕王|大雨圍城|襄平糧盡|遼東之主', l: '【公孫淵麾下】燕國禁衛',
+      b: B('燕王・公孫淵', 'caocao_imperial', '燕王僭號・遼東霸業', '「遼東萬里，我公孫淵便是天子！」', 'boss_yuanshu', 'body_hanguard', 'rig_fangtian', '#64b5f6', '#0d47a1') },
+    { m: 'imperial_tomb', p: '高平陵神道', f: 'wei', t: 'mirage_flank', w: 'mist', a: '#8d6e63', s: '天子謁陵|洛陽閉門|智囊出奔|桓範獻策', l: '【桓範麾下】曹爽親軍',
+      b: B('大司農・桓範', 'yuejin_barrage', '智囊之策・許昌勤王', '「挾天子至許昌，號令天下，何愁不勝！」', 'boss_chengong', 'body_zhugeliang', 'rig_thunder', '#8d6e63', '#3e2723') },
+    { m: 'palace_court', p: '洛陽宮城', f: 'hanguard', t: 'imperial_guard', w: 'mist', a: '#6d4c41', s: '洛陽兵變|司馬奪權|曹爽遲疑|富家翁夢', l: '【曹爽麾下】中壘禁軍',
+      b: B('大將軍・曹爽', 'xiahouen_swords', '大將軍令・洛陽禁刃', '「我只求作富家翁，誰想逼我至此！」', 'hero_caocao', 'body_hanguard', 'rig_twinswords', '#6d4c41', '#3e2723') },
+    { m: 'salt_marsh', p: '淮南項城澤', f: 'wei', t: 'vanguard_burst', w: 'mist', a: '#81c784', s: '淮南一叛|項城舉兵|毌丘儉誓師|文欽父子', l: '【毌丘儉麾下】淮南義軍',
+      b: B('鎮東將軍・毌丘儉', 'wenchou_spears', '淮南舉義・項城槍陣', '「司馬師廢主專權，淮南將士隨我討賊！」', 'boss_dengai', 'body_wei', 'rig_spear', '#81c784', '#1b5e20') },
+    { m: 'flooded_city', p: '壽春大水孤城', f: 'wei', t: 'coffin_rage', w: 'mist', a: '#4db6ac', s: '淮南三叛|壽春被圍|吳援斷絕|數百死士', l: '【諸葛誕麾下】淮南死士',
+      u: { elite: '★諸葛誕麾下死士' },
+      b: B('征東大將軍・諸葛誕', 'machao_lightning', '淮南死士・壽春雷霆', '「司馬昭欺君罔上，我諸葛公休寧死不從！」', 'boss_luxun', 'body_wei', 'rig_serpent', '#4db6ac', '#004d40') },
+    { m: 'mountain_pass', p: '陰平古道懸崖', f: 'jin', t: 'mirage_flank', w: 'mist', a: '#607d8b', s: '陰平小道|裹氈而下|江油不戰|綿竹決戰', l: '【鄧艾麾下】陰平奇兵',
+      b: B('征西將軍・鄧艾', 'zhanghe_mirage', '裹氈而下・陰平奇襲', '「七百里無人之地，我鄧艾照樣走得過！」', 'boss_dengai', 'body_jin', 'rig_spear', '#607d8b', '#263238') },
+    { m: 'dingjun_summit', p: '劍閣烽火關', f: 'shu', t: 'lightning_spear', w: 'leaves', a: '#43a047', s: '劍閣關樓|十萬鍾會軍|成都已降|麒麟兒', l: '【姜維麾下】蜀漢最後之軍',
+      b: B('麒麟兒・姜維', 'wenchou_spears', '麒麟長槍・劍閣絕守', '「臣欲使社稷危而復安，日月幽而復明！」', 'boss_jiangwei', 'body_shu', 'rig_spear', '#43a047', '#1b5e20') },
+    { m: 'chibi_warship', p: '益州樓船東下', f: 'jin', t: 'fire_marine', w: 'mist', a: '#546e7a', s: '樓船東下|鐵鎖橫江|火炬燒鎖|石頭城降', l: '【王濬麾下】晉國樓船軍',
+      b: B('龍驤將軍・王濬', 'caimao_firearrows', '火炬燒鎖・樓船東下', '「千尋鐵鎖沉江底，晉國樓船直下金陵！」', 'boss_caimao', 'body_jin', 'rig_firefan', '#546e7a', '#263238') },
+    { k: 19, p: '九天星隕終焉魔域', s: '天下歸一|八門金鎖破|九天修羅陣|煉獄虎牢再現', bp: 'boss_demonlubu' }
+  ];
+
+  function classicBoss(k, portraitOverride) {
+    const chap = CLASSIC_CHAPTERS[Math.floor(k / 2)];
+    const spec = k % 2 === 0 ? chap.midBoss : chap.finalBoss;
+    return { ...spec, portraitKey: portraitOverride || spec.portraitKey };
+  }
+
+  const STAGE_LEGIONS = CAMPAIGN_STAGES.map((row, stageIdx) => {
+    const classic = typeof row.k === 'number' ? CLASSIC_LEGIONS[row.k] : null;
+    const mapStyle = row.m || classic.mapStyle;
+    const keepClassicColours = classic && classic.mapStyle === mapStyle;
+    const pal = MAP_STYLE_PALETTES[mapStyle] || MAP_STYLE_PALETTES.ochre_steppe;
+    const accent = row.a || classic.accentColor;
+    const boss = classic ? classicBoss(row.k, row.bp) : row.b;
+    const weatherType = row.w || classic.weatherType;
+    const trait = row.t || classic.trait;
+    const spec = {
+      stageIdx,
+      waves: `${stageIdx * STAGE_WAVES + 1}～${stageIdx * STAGE_WAVES + STAGE_WAVES}`,
+      mapStyle,
+      mapName: `地圖${String(stageIdx + 1).padStart(3, '0')}：${row.p}`,
+      legionName: row.l || classic.legionName,
+      bossLeader: boss.name,
+      bgPrimary: keepClassicColours ? classic.bgPrimary : mixHex(pal[0], accent, 0.05),
+      bgSecondary: keepClassicColours ? classic.bgSecondary : mixHex(pal[1], accent, 0.07),
+      roadColor: keepClassicColours ? classic.roadColor : pal[2],
+      accentColor: accent,
+      weatherType,
+      weatherColor: (classic && !row.w) ? classic.weatherColor : WEATHER_COLORS[weatherType],
+      trait,
+      traitDesc: (classic && !row.t) ? classic.traitDesc : TRAIT_DESC[trait],
+      boss,
+      subTitles: row.s.split('|')
+    };
+    if (classic) {
+      LEGION_ROLES.forEach(role => { spec[role] = classic[role]; });
+    } else {
+      const fac = FACTION_TROOPS[row.f] || FACTION_TROOPS.yellow;
+      const leader = boss.name.split('・').pop();
+      const capes = [
+        accent,
+        mixHex(accent, '#000000', 0.2),
+        mixHex(accent, '#ffffff', 0.12),
+        mixHex(accent, '#ffffff', 0.3),
+        mixHex(accent, fac.alt, 0.45),
+        mixHex(accent, '#ffffff', 0.2)
+      ];
+      LEGION_ROLES.forEach((role, i) => {
+        const generated = role === 'elite' ? `★${leader}麾下${fac.roles[i]}` : `${leader}${fac.roles[i]}`;
+        spec[role] = {
+          name: (row.u && row.u[role]) || generated,
+          bodyKey: fac.bodies[i],
+          wpnKey: fac.wpns[i],
+          capeColor: capes[i],
+          bootColor: role === 'elite' ? mixHex(fac.boot, accent, 0.35) : fac.boot
+        };
+      });
+    }
+    return spec;
+  });
+
+  const CHAPTERS = CAMPAIGN_CHAPTER_TITLES.map((title, c) => {
+    const vanguard = STAGE_LEGIONS[c * 2];
+    const commander = STAGE_LEGIONS[c * 2 + 1];
+    const isFinale = c === CAMPAIGN_CHAPTER_TITLES.length - 1;
+    return {
+      chap: c + 1,
+      name: `第${toChineseNumber(c + 1)}章・${title}`,
+      volumeName: CAMPAIGN_VOLUMES[Math.floor(c / 5)],
+      weatherColor: vanguard.weatherColor,
+      weatherType: vanguard.weatherType,
+      subTitles: [
+        ...vanguard.subTitles, `【先鋒】${vanguard.boss.name}`,
+        ...commander.subTitles, `${isFinale ? '【終焉魔神】' : '【主帥】'}${commander.boss.name}`
+      ],
+      midBoss: vanguard.boss,
+      finalBoss: commander.boss
+    };
+  });
+
+  (function checkCampaignData() {
+    const problems = [];
+    if (STAGE_LEGIONS.length * STAGE_WAVES !== TOTAL_WAVES) problems.push(`stages=${STAGE_LEGIONS.length}`);
+    if (CHAPTERS.length * 10 !== TOTAL_WAVES) problems.push(`chapters=${CHAPTERS.length}`);
+    STAGE_LEGIONS.forEach(st => {
+      if (st.subTitles.length !== 4) problems.push(`${st.mapName} subtitles=${st.subTitles.length}`);
+      if (!st.traitDesc) problems.push(`${st.mapName} trait=${st.trait}`);
+      if (st.boss.name.indexOf('・') < 0) problems.push(`${st.mapName} boss name`);
+    });
+    if (problems.length) console.error('[campaign] data problems:', problems);
+  })();
+
   const WAVES = Array.from({ length: TOTAL_WAVES }, (_, idx) => {
     const waveNum = idx + 1;
     const chapIdx = Math.floor(idx / 10);
     const subIdx = idx % 10;
-    const stageIdx = Math.floor(idx / 5); // Changes every 5 waves! (0..19 -> 20 distinct maps & Boss legions)
-    const stageSubIdx = idx % 5;         // 0..4 within the 5-wave stage
-    const chap = CHAPTERS[chapIdx];
+    const stageIdx = Math.floor(idx / STAGE_WAVES); // a new map, legion and boss every 5 waves (100 stages)
+    const stageSubIdx = idx % STAGE_WAVES;
+    const chap = CHAPTERS[chapIdx] || CHAPTERS[CHAPTERS.length - 1];
     const stageSpec = STAGE_LEGIONS[stageIdx] || STAGE_LEGIONS[0];
     const isMajorBoss = waveNum % 10 === 0;
     const isMidBoss = !isMajorBoss && waveNum % 5 === 0;
     const isBoss = isMajorBoss || isMidBoss;
 
-    // Continuous escalating intensity EVERY wave + step-up EVERY 5-wave stage!
-    const hpMul = +(Math.pow(1.118, idx) * (1 + stageIdx * 0.26) * (1 + stageSubIdx * 0.08)).toFixed(2);
+    // Waves 1–100: the original curve (continuous growth + a step every 5-wave stage).
+    // Waves 101–500: smooth polynomial growth from the wave-100 values so the numbers stay finite and beatable.
+    const curveIdx = Math.min(idx, CLASSIC_CURVE_END);
+    const curveStage = Math.floor(curveIdx / STAGE_WAVES);
+    const curveSub = curveIdx % STAGE_WAVES;
+    const hpMul = +(Math.pow(1.118, curveIdx) * (1 + curveStage * 0.26) * (1 + curveSub * 0.08) * lateGrowth(idx, LATE_HP_EXP)).toFixed(2);
     const speedMul = +(1.0 + Math.min(1.25, idx * 0.012 + stageIdx * 0.025 + stageSubIdx * 0.02)).toFixed(2);
-    const dmgMul = +(1.0 + idx * 0.08 + stageIdx * 0.14 + stageSubIdx * 0.05).toFixed(2);
+    const dmgMul = +((1.0 + curveIdx * 0.08 + curveStage * 0.14 + curveSub * 0.05) * lateGrowth(idx, LATE_DMG_EXP)).toFixed(2);
     const spawnInterval = Math.max(0.085, +(0.54 * Math.pow(0.978, idx) * (1 - stageSubIdx * 0.025)).toFixed(3));
     const maxEnemies = Math.min(195, 86 + Math.floor(idx * 1.25) + stageSubIdx * 4);
     const duration = isMajorBoss ? 60 : (isMidBoss ? 45 : Math.min(28, 20 + stageSubIdx * 2));
@@ -2969,12 +3509,10 @@
       mapName: stageSpec.mapName,
       legionName: stageSpec.legionName,
       chapterName: chap.name,
-      biome: chap.biome,
-      groundTint: chap.groundTint,
-      gridColor: chap.gridColor,
+      volumeName: chap.volumeName,
       weatherColor: stageSpec.weatherColor || chap.weatherColor,
       weatherType: stageSpec.weatherType || chap.weatherType,
-      title: `第 ${waveNum} / 100 陣｜${stageSpec.mapName.split('：')[1]}・${chap.subTitles[subIdx]}`,
+      title: `第 ${waveNum} / ${TOTAL_WAVES} 陣｜${stageSpec.mapName.split('：')[1]}・${chap.subTitles[subIdx]}`,
       shortTitle: chap.subTitles[subIdx],
       duration,
       spawnInterval,
@@ -2984,9 +3522,7 @@
       dmgMul,
       boss: isBoss,
       isMajorBoss,
-      bossSpec: isMajorBoss ? chap.finalBoss : (isMidBoss ? chap.midBoss : null),
-      ringTint: chap.ringTint,
-      torchTint: chap.torchTint
+      bossSpec: isMajorBoss ? chap.finalBoss : (isMidBoss ? chap.midBoss : null)
     };
   });
 
@@ -3023,55 +3559,64 @@
   const BEST_WAVE_KEY = 'tk_survivor_best_wave_v1';
   const META_KEY = 'tk_survivor_meta_v1';
 
-  // Permanent Talent Tree (將星兵法閣 — 6 Major Upgrades, Max Lv.10 each)
+  // Permanent Talent Tree (將星兵法閣 — 6 Major Upgrades, Max Lv.100 each).
+  // Lv.1–10 keep the v1.0 values; every level after that adds a smaller step (see talentValue).
+  const TALENT_SOFT_CAP = 10;
+  function talentValue(lv, early, late) {
+    const l = Math.max(0, lv || 0);
+    return Math.min(l, TALENT_SOFT_CAP) * early + Math.max(0, l - TALENT_SOFT_CAP) * late;
+  }
+  const talentStep = (lv, early, late) => (lv < TALENT_SOFT_CAP ? early : late);
+  const fmtPct = (x) => String(+x.toFixed(2));
+
   const TALENT_CATALOG = [
     {
       id: 'vitality',
       name: '❤️ 霸王體魄',
-      maxLv: 10,
+      maxLv: 100,
       baseCost: 12,
       costStep: 8,
-      desc: (lv) => `氣血上限永久 +${lv * 22}（下一階 +22 HP）`
+      desc: (lv) => `氣血上限永久 +${talentValue(lv, 22, 6)}（下一階 +${talentStep(lv, 22, 6)} HP）`
     },
     {
       id: 'might',
       name: '⚔️ 破軍神力',
-      maxLv: 10,
+      maxLv: 100,
       baseCost: 14,
       costStep: 9,
-      desc: (lv) => `全神兵傷害永久 +${lv * 8}%（下一階 +8%）`
+      desc: (lv) => `全神兵傷害永久 +${talentValue(lv, 8, 2)}%（下一階 +${talentStep(lv, 8, 2)}%）`
     },
     {
       id: 'haste',
       name: '⚡ 疾風神行',
-      maxLv: 10,
+      maxLv: 100,
       baseCost: 14,
       costStep: 9,
-      desc: (lv) => `移速與攻速冷卻永久 +${lv * 3}%（下一階 +3%）`
+      desc: (lv) => `移速 +${fmtPct(talentValue(lv, 3, 0.4))}%、攻速冷卻 -${fmtPct(talentValue(lv, 3, 0.3))}%（下一階 +${talentStep(lv, 3, 0.4)}% / -${talentStep(lv, 3, 0.3)}%）`
     },
     {
       id: 'wealth',
       name: '💰 軍資充盈',
-      maxLv: 10,
+      maxLv: 100,
       baseCost: 12,
       costStep: 8,
-      desc: (lv) => `開局翠玉 +${lv * 18}、每陣賞賜 +${lv * 5} 玉`
+      desc: (lv) => `開局翠玉 +${talentValue(lv, 18, 6)}、每陣賞賜 +${talentValue(lv, 5, 2)} 玉`
     },
     {
       id: 'crit',
       name: '🎯 鷹眼暴擊',
-      maxLv: 10,
+      maxLv: 100,
       baseCost: 15,
       costStep: 10,
-      desc: (lv) => `基礎暴擊率永久 +${(lv * 2.5).toFixed(1)}%（下一階 +2.5%）`
+      desc: (lv) => `基礎暴擊率永久 +${fmtPct(talentValue(lv, 2.5, 0.25))}%（下一階 +${talentStep(lv, 2.5, 0.25)}%）`
     },
     {
       id: 'musou',
       name: '🔥 無雙戰意',
-      maxLv: 10,
+      maxLv: 100,
       baseCost: 15,
       costStep: 10,
-      desc: (lv) => `開局無雙 +${lv * 10}%、斬敵怒氣獲取 +${lv * 8}%`
+      desc: (lv) => `開局無雙 +${Math.min(100, talentValue(lv, 10, 0))}%、斬敵怒氣獲取 +${talentValue(lv, 8, 2)}%`
     }
   ];
 
@@ -3105,6 +3650,7 @@
 
   const state = {
     phase: 'TITLE',
+    ngRound: 1,
     paused: false,
     waveIdx: 0,
     waveTimer: 0,
@@ -3204,7 +3750,10 @@
       souls: 30,
       unlockedHeroes: ['zhaoyun', 'guanyu', 'zhangfei'],
       talents: { vitality: 0, might: 0, haste: 0, wealth: 0, crit: 0, musou: 0 },
-      devUnlockAll: false
+      devUnlockAll: false,
+      ngMaxRound: 1,   // highest NG+ round unlocked (clear wave 500 of round N to unlock N+1)
+      ngRound: 1,      // round selected on the title screen
+      roundBest: {}    // best wave per round >= 2 (round 1 keeps BEST_WAVE_KEY)
     };
     try {
       const raw = localStorage.getItem(META_KEY);
@@ -3216,7 +3765,10 @@
           ? Array.from(new Set(['zhaoyun', 'guanyu', 'zhangfei', ...parsed.unlockedHeroes]))
           : defaultMeta.unlockedHeroes,
         talents: { ...defaultMeta.talents, ...(parsed.talents || {}) },
-        devUnlockAll: !!parsed.devUnlockAll
+        devUnlockAll: !!parsed.devUnlockAll,
+        ngMaxRound: Math.max(1, Math.floor(Number(parsed.ngMaxRound) || 1)),
+        ngRound: Math.max(1, Math.floor(Number(parsed.ngRound) || 1)),
+        roundBest: (parsed.roundBest && typeof parsed.roundBest === 'object') ? parsed.roundBest : {}
       };
     } catch (e) {
       return defaultMeta;
@@ -3243,15 +3795,15 @@
   function getTalentBonuses() {
     const t = metaState.talents || {};
     return {
-      hpBonus: (t.vitality || 0) * 22,
-      dmgMulBonus: (t.might || 0) * 0.08,
-      speedBonus: (t.haste || 0) * 0.03,
-      cdReduction: (t.haste || 0) * 0.03,
-      startJadeBonus: (t.wealth || 0) * 18,
-      waveJadeBonus: (t.wealth || 0) * 5,
-      critBonus: (t.crit || 0) * 0.025,
-      startMusouBonus: (t.musou || 0) * 10,
-      musouGainMul: 1 + (t.musou || 0) * 0.08
+      hpBonus: talentValue(t.vitality, 22, 6),
+      dmgMulBonus: talentValue(t.might, 0.08, 0.02),
+      speedBonus: talentValue(t.haste, 0.03, 0.004),
+      cdReduction: talentValue(t.haste, 0.03, 0.003),
+      startJadeBonus: talentValue(t.wealth, 18, 6),
+      waveJadeBonus: talentValue(t.wealth, 5, 2),
+      critBonus: talentValue(t.crit, 0.025, 0.0025),
+      startMusouBonus: talentValue(t.musou, 10, 0),
+      musouGainMul: 1 + talentValue(t.musou, 0.08, 0.02)
     };
   }
 
@@ -3260,7 +3812,7 @@
     if (metaState.devUnlockAll) return true;
     if (!hero.unlockWave || hero.unlockWave <= 0) return true;
     if (metaState.unlockedHeroes && metaState.unlockedHeroes.includes(hero.id)) return true;
-    if (getBestWave() >= hero.unlockWave) {
+    if (getBestWave(1) >= hero.unlockWave) {
       metaState.unlockedHeroes.push(hero.id);
       saveMetaState();
       return true;
@@ -3291,9 +3843,12 @@
           </div>
           <div style="font-size:11px;color:#cbd5e1;margin-top:3px;line-height:1.35;">${item.desc(lv)}</div>
         </div>
-        <button class="talent-btn" type="button" ${canAfford ? '' : 'disabled'} data-talent="${item.id}">
-          ${isMax ? '👑 已臻滿級' : `🔮 強化 (${cost} 將魂)`}
-        </button>
+        <div style="display:flex;gap:6px;">
+          <button class="talent-btn" type="button" ${canAfford ? '' : 'disabled'} data-talent="${item.id}" style="flex:1 1 auto;">
+            ${isMax ? '👑 已臻滿級' : `🔮 強化 (${cost} 將魂)`}
+          </button>
+          ${isMax ? '' : `<button class="talent-btn" type="button" ${canAfford ? '' : 'disabled'} data-talent="${item.id}" data-bulk="10" style="flex:0 0 auto;" title="連續強化最多 10 階（將魂不足時自動停止）">×10</button>`}
+        </div>
       `;
       gridEl.appendChild(card);
     });
@@ -3303,22 +3858,36 @@
         const tId = btn.dataset.talent;
         const spec = TALENT_CATALOG.find(item => item.id === tId);
         if (!spec) return;
-        const lv = (metaState.talents && metaState.talents[tId]) || 0;
-        if (lv >= spec.maxLv) return;
-        const cost = spec.baseCost + lv * spec.costStep;
-        if ((metaState.souls || 0) < cost) return;
-        metaState.souls -= cost;
-        metaState.talents[tId] = lv + 1;
+        const steps = Math.max(1, Number(btn.dataset.bulk) || 1);
+        let lv = (metaState.talents && metaState.talents[tId]) || 0;
+        let bought = 0;
+        while (bought < steps && lv < spec.maxLv) {
+          const cost = spec.baseCost + lv * spec.costStep;
+          if ((metaState.souls || 0) < cost) break;
+          metaState.souls -= cost;
+          lv += 1;
+          bought += 1;
+        }
+        if (!bought) return;
+        metaState.talents[tId] = lv;
         saveMetaState();
         sfx.init();
-        sfx.playMergeClang(lv + 1 === spec.maxLv);
+        sfx.playMergeClang(lv === spec.maxLv);
         renderTalentPanel();
         renderHeroSelect();
       });
     });
   }
 
-  function getBestWave() {
+  function getSelectedRound() {
+    return Math.max(1, Math.min(metaState.ngMaxRound || 1, metaState.ngRound || 1));
+  }
+
+  function getBestWave(round) {
+    const r = round || getSelectedRound();
+    if (r > 1) {
+      return Math.max(1, Math.min(TOTAL_WAVES, Number((metaState.roundBest || {})[r]) || 1));
+    }
     try {
       return Math.max(1, Math.min(TOTAL_WAVES, Number(localStorage.getItem(BEST_WAVE_KEY)) || 1));
     } catch (e) {
@@ -3326,13 +3895,22 @@
     }
   }
 
-  function recordBestWave(waveNum) {
-    try {
-      const prev = getBestWave();
-      if (waveNum > prev) {
-        localStorage.setItem(BEST_WAVE_KEY, String(Math.min(TOTAL_WAVES, waveNum)));
+  function recordBestWave(waveNum, round) {
+    const r = round || state.ngRound || 1;
+    const capped = Math.min(TOTAL_WAVES, waveNum);
+    if (r > 1) {
+      if (capped > getBestWave(r)) {
+        metaState.roundBest = { ...(metaState.roundBest || {}), [r]: capped };
+        saveMetaState();
       }
-    } catch (e) {}
+    } else {
+      try {
+        const prev = getBestWave(1);
+        if (capped > prev) {
+          localStorage.setItem(BEST_WAVE_KEY, String(capped));
+        }
+      } catch (e) {}
+    }
     // Check if any milestone heroes newly unlocked
     HEROES.forEach(h => isHeroUnlocked(h));
     refreshTitleProgressUI();
@@ -3351,6 +3929,7 @@
       const shopWaveIdx = Math.max(0, targetWaveIdx - 1);
 
       const payload = {
+        round: state.ngRound || 1,
         heroId: state.hero.id,
         nextWaveIdx: targetWaveIdx,
         shopWaveIdx,
@@ -3433,18 +4012,68 @@
     }
     if (hintEl) {
       hintEl.textContent = metaState.devUnlockAll
-        ? '🛠️ 【全解鎖測試模式已啟用】可自由選擇全 1～100 陣與 20 張三國戰場地圖！'
-        : `※ 目前已解鎖至第 ${maxWave} 陣（突破更多陣數自動解鎖新戰區，或點擊上方「🛠️ 測試：全解鎖」自由選關）`;
+        ? `🛠️ 【全解鎖測試模式已啟用】可自由選擇全 1～${TOTAL_WAVES} 陣與 ${STAGE_LEGIONS.length} 張三國戰場地圖！`
+        : `※ ${getSelectedRound() > 1 ? `第${getSelectedRound()}輪` : '目前'}已解鎖至第 ${maxWave} 陣（突破更多陣數自動解鎖新戰區，或點擊上方「🛠️ 測試：全解鎖」自由選關）`;
     }
   }
 
+  function renderNgRoundBar() {
+    const bar = document.getElementById('ngRoundBar');
+    if (!bar) return;
+    const maxRound = metaState.ngMaxRound || 1;
+    bar.style.display = maxRound > 1 ? 'flex' : 'none';
+    const r = getSelectedRound();
+    const labelEl = document.getElementById('ngRoundLabel');
+    if (labelEl) labelEl.textContent = `第 ${r} / ${maxRound} 輪`;
+    const hintEl = document.getElementById('ngRoundHint');
+    if (hintEl) hintEl.textContent = `敵軍強度 ×${formatBigNumber(getNgMul(r))}・將魂收益 ×${formatBigNumber(getNgMul(r))}`;
+    const prevEl = document.getElementById('btnNgPrev');
+    const nextEl = document.getElementById('btnNgNext');
+    if (prevEl) prevEl.disabled = r <= 1;
+    if (nextEl) nextEl.disabled = r >= maxRound;
+  }
+
+  function changeNgRound(delta) {
+    metaState.ngRound = Math.max(1, Math.min(metaState.ngMaxRound || 1, getSelectedRound() + delta));
+    saveMetaState();
+    sfx.init();
+    sfx.playGemPickup();
+    refreshTitleProgressUI();
+    syncStartWaveButtonText();
+  }
+
+  function populateStageSelect() {
+    const chapEl = document.getElementById('chapterSelect');
+    if (!chapEl) return;
+    chapEl.innerHTML = '';
+    let group = null;
+    STAGE_LEGIONS.forEach((st, i) => {
+      const volume = CHAPTERS[Math.floor(i / 2)].volumeName;
+      if (!group || group.dataset.volume !== volume) {
+        const v = Math.floor(i / 10);
+        group = document.createElement('optgroup');
+        group.dataset.volume = volume;
+        group.label = `${volume}（第 ${v * 50 + 1}～${v * 50 + 50} 陣）`;
+        chapEl.appendChild(group);
+      }
+      const startW = i * STAGE_WAVES + 1;
+      const opt = document.createElement('option');
+      opt.value = String(startW);
+      opt.textContent = `第 ${startW}～${startW + STAGE_WAVES - 1} 陣｜${st.mapName}（${st.boss.name.split('・').pop()}・${st.legionName.replace(/【.*?】/, '')}）`;
+      group.appendChild(opt);
+    });
+  }
+  populateStageSelect();
+
   function refreshTitleProgressUI() {
     const best = getBestWave();
+    const selRound = getSelectedRound();
     const badgeEl = document.getElementById('bestWaveBadge');
     if (badgeEl) {
-      badgeEl.textContent = `最高突破：第 ${best} 陣 / 100 陣`;
+      badgeEl.textContent = `${selRound > 1 ? `第${selRound}輪 ` : ''}最高突破：第 ${best} 陣 / ${TOTAL_WAVES} 陣`;
     }
     renderTalentPanel();
+    renderNgRoundBar();
     renderStageSelectorLocks();
 
     const saved = loadCampaignProgress();
@@ -3457,7 +4086,9 @@
       const waveNum = Math.max(1, Math.min(TOTAL_WAVES, (saved.nextWaveIdx || 0) + 1));
       const wInfo = WAVES[waveNum - 1] || WAVES[0];
       const phaseTag = saved.inShop ? '🏕️ 營帳補給備戰中' : '⚔️ 戰陣進行中';
-      const btnLabel = `▶ 繼續上次遠征（第 ${waveNum} / 100 陣・${h.name.split('・')[0]}）`;
+      const savedRound = Math.max(1, Math.floor(saved.round || 1));
+      const roundTag = savedRound > 1 ? `第${savedRound}輪・` : '';
+      const btnLabel = `▶ 繼續上次遠征（${roundTag}第 ${waveNum} / ${TOTAL_WAVES} 陣・${h.name.split('・')[0]}）`;
 
       if (btnCont) {
         btnCont.style.display = 'inline-block';
@@ -3472,7 +4103,7 @@
         if (avatarEl) avatarEl.src = h.imgUrl;
         const titleEl = document.getElementById('savedWaveTitle');
         if (titleEl) {
-          titleEl.textContent = `第 ${waveNum} / 100 陣｜${wInfo.chapterName.split('・')[1]}（${phaseTag}）`;
+          titleEl.textContent = `${roundTag}第 ${waveNum} / ${TOTAL_WAVES} 陣｜${wInfo.chapterName.split('・')[1]}（${phaseTag}）`;
         }
         const statsEl = document.getElementById('savedStatsSummary');
         if (statsEl) {
@@ -3582,9 +4213,15 @@
     if (Number(customWaveInputEl.value) > maxW) {
       customWaveInputEl.value = String(maxW);
     }
-    btnStartGameEl.textContent = `🔄 重新開局（從第 ${targetWave} / 100 陣開始新遠征）`;
+    const r = getSelectedRound();
+    btnStartGameEl.textContent = `🔄 重新開局（${r > 1 ? `第${r}輪・` : ''}從第 ${targetWave} / ${TOTAL_WAVES} 陣開始新遠征）`;
   }
   syncStartWaveButtonText();
+
+  const btnNgPrevEl = document.getElementById('btnNgPrev');
+  const btnNgNextEl = document.getElementById('btnNgNext');
+  if (btnNgPrevEl) btnNgPrevEl.addEventListener('click', () => changeNgRound(-1));
+  if (btnNgNextEl) btnNgNextEl.addEventListener('click', () => changeNgRound(1));
 
   chapterSelectEl.addEventListener('change', () => {
     customWaveInputEl.value = chapterSelectEl.value;
@@ -3614,6 +4251,7 @@
     const tBonus = getTalentBonuses();
 
     state.hero = hero;
+    state.ngRound = getSelectedRound();
     state.paused = false;
     state.waveIdx = startIdx;
     state.kills = 0;
@@ -3626,16 +4264,20 @@
     state.lastAwakenMsg = '';
 
     // Balanced power scaling when jumping directly into mid/late waves + Permanent Talent Bonuses!
+    // Up to wave 100 this is the v1.0 formula; after that damage follows the late campaign curve
+    // (slightly slower than mob HP) and HP grows with mob damage, instead of compounding 1.038^wave.
     const boostWaves = startIdx;
+    const earlyBoost = Math.min(boostWaves, CLASSIC_CURVE_END);
+    const lateBoost = Math.max(0, boostWaves - CLASSIC_CURVE_END);
     state.jade = 28 + boostWaves * 20 + tBonus.startJadeBonus;
     state.totalJadeEarned = state.jade;
-    state.maxHp = Math.round((105 + (hero.mods.maxHpBonus || 0) + tBonus.hpBonus) + boostWaves * 16);
+    state.maxHp = Math.round((105 + (hero.mods.maxHpBonus || 0) + tBonus.hpBonus) + earlyBoost * 16 + lateBoost * 12);
     state.hp = state.maxHp;
-    state.speedMul = Math.min(2.35, (hero.mods.speedMul || 1.0) + tBonus.speedBonus + Math.floor(boostWaves / 12) * 0.07);
-    state.dmgMul = +(((hero.mods.dmgMul || 1.0) + tBonus.dmgMulBonus) * Math.pow(1.038, boostWaves)).toFixed(2);
-    state.cdMul = Math.max(0.24, +(((hero.mods.cdMul || 1.0) * (1 - tBonus.cdReduction)) * Math.pow(0.990, boostWaves)).toFixed(2));
+    state.speedMul = Math.min(2.35, (hero.mods.speedMul || 1.0) + tBonus.speedBonus + Math.floor(earlyBoost / 12) * 0.07);
+    state.dmgMul = +(((hero.mods.dmgMul || 1.0) + tBonus.dmgMulBonus) * Math.pow(1.038, earlyBoost) * lateGrowth(boostWaves, LATE_PLAYER_DMG_EXP)).toFixed(2);
+    state.cdMul = Math.max(0.24, +(((hero.mods.cdMul || 1.0) * (1 - tBonus.cdReduction)) * Math.pow(0.990, earlyBoost)).toFixed(2));
     state.critChance = +(0.12 + (hero.mods.critBonus || 0) + tBonus.critBonus + Math.min(0.60, boostWaves * 0.007)).toFixed(3);
-    state.pickupRadius = 140 + (hero.mods.pickupBonus || 0) + Math.floor(boostWaves / 8) * 18;
+    state.pickupRadius = 140 + (hero.mods.pickupBonus || 0) + Math.floor(earlyBoost / 8) * 18;
     state.waveBonusJade = (hero.mods.bonusJade || 0) + tBonus.waveJadeBonus + Math.floor(boostWaves / 5) * 8;
     state.musouGauge = Math.min(100, (boostWaves >= 4 ? 100 : 50) + tBonus.startMusouBonus);
     state.musouGainMul = tBonus.musouGainMul || 1.0;
@@ -3684,6 +4326,7 @@
     const tBonus = getTalentBonuses();
     selectedHeroId = hero.id;
     state.hero = hero;
+    state.ngRound = Math.max(1, Math.floor(saved.round || 1));
     state.paused = false;
     state.waveIdx = Math.max(0, Math.min(TOTAL_WAVES - 1, saved.nextWaveIdx));
     state.jade = typeof saved.jade === 'number' ? saved.jade : 25;
@@ -3770,16 +4413,33 @@
     // Adaptive Player-DPS floor so mobs continuously feel tougher every wave even when player merges high-tier weapons!
     const playerDps = estimatePlayerDps();
     const dpsRatio = Math.max(1.0, playerDps / 115);
-    const adaptiveHpFloor = dpsRatio * (0.78 + waveIdx * 0.055 + Math.floor(waveIdx / 5) * 0.18);
-    const hpMul = +(Math.max(baseHpMul, adaptiveHpFloor)).toFixed(2);
-    const dmgMul = +(baseDmgMul * (1 + Math.min(0.45, Math.max(0, dpsRatio - 1.5) * 0.08))).toFixed(2);
+    // The DPS floor stops growing at wave 100 so waves 101–500 are driven by the campaign curve (and talents matter).
+    const floorIdx = Math.min(waveIdx, CLASSIC_CURVE_END);
+    const adaptiveHpFloor = dpsRatio * (0.78 + floorIdx * 0.055 + Math.floor(floorIdx / 5) * 0.18);
+    // NG+ scales the campaign HP, not the DPS floor: a stronger build (talents, weapons) can outgrow later rounds.
+    const ngMul = getNgMul();
+    const hpMul = +(Math.max(baseHpMul * ngMul, adaptiveHpFloor)).toFixed(2);
+    const dmgMul = +(baseDmgMul * (1 + Math.min(0.45, Math.max(0, dpsRatio - 1.5) * 0.08)) * ngMul).toFixed(2);
     const speedMul = baseSpdMul;
     return { hpMul, dmgMul, speedMul };
+  }
+
+  function getRoundLabel() {
+    const r = state.ngRound || 1;
+    return r > 1 ? `第${r}輪・` : '';
+  }
+
+  function preloadUpcomingPortraits(fromIdx) {
+    for (let i = Math.max(0, fromIdx); i < Math.min(TOTAL_WAVES, fromIdx + 10); i++) {
+      const spec = WAVES[i] && WAVES[i].bossSpec;
+      if (spec) ensureImage(spec.portraitKey);
+    }
   }
 
   function startWave(idx) {
     state.waveIdx = Math.max(0, Math.min(TOTAL_WAVES - 1, idx));
     recordBestWave(state.waveIdx + 1);
+    preloadUpcomingPortraits(state.waveIdx);
 
     const w = WAVES[state.waveIdx];
     const st = w.stageSpec || STAGE_LEGIONS[0];
@@ -3833,7 +4493,7 @@
 
     document.getElementById('shopOverlay').classList.add('hidden');
     document.getElementById('pauseOverlay').classList.add('hidden');
-    document.getElementById('waveTitle').textContent = `第 ${w.wave}/100 陣｜${st.mapName.split('：')[1]}・${st.legionName} (強度×${eff.hpMul})`;
+    document.getElementById('waveTitle').textContent = `${getRoundLabel()}第 ${w.wave}/${TOTAL_WAVES} 陣｜${st.mapName.split('：')[1]}・${st.legionName} (強度×${formatBigNumber(eff.hpMul)})`;
     document.getElementById('bossBanner').classList.toggle('visible', !!w.boss);
 
     // Initialize ambient weather particles for this 5-wave biome
@@ -3866,7 +4526,7 @@
     state.floatTexts.push({
       x: state.x,
       y: state.y - 76,
-      text: `🗺️ ${st.mapName}｜👾 ${st.legionName}（敵軍戰力 ×${eff.hpMul}）`,
+      text: `🗺️ ${st.mapName}｜👾 ${st.legionName}（敵軍戰力 ×${formatBigNumber(eff.hpMul)}）`,
       color: st.accentColor || '#ffd740',
       size: 19,
       life: 2.1,
@@ -4024,8 +4684,8 @@
         else if (r < 0.86) type = 'shield';
         else type = 'grunt';
       } else {
-        // Balanced progressive scaling across all waves
-        const stage = w.stageIdx || 0;
+        // Balanced progressive scaling; the mix stops shifting after stage 20 so every troop type keeps appearing
+        const stage = Math.min(19, w.stageIdx || 0);
         if (r < 0.16 + stage * 0.006) type = 'archer';
         else if (state.waveIdx >= 1 && r < 0.28 + stage * 0.006) type = 'bomber';
         else if (r < 0.44 + stage * 0.006) type = 'charger';
@@ -4278,10 +4938,14 @@
     const isMajor = !!w.isMajorBoss;
 
     // 1. Massive Boss HP + Dynamic Player-DPS Adaptive Floor so Boss NEVER melts before engaging!
-    const baseBossHp = (isMajor ? 9800 : 4800) * w.hpMul;
+    // Raw HP is capped at BOSS_MAX_COMBAT_SECONDS of the player's estimated DPS (×NG+ round) so late bosses
+    // stay beatable: uncapped, a jump-in start needed ~900 s of full DPS at wave 100 and more after that.
+    const ngMul = getNgMul();
+    const baseBossHp = (isMajor ? 9800 : 4800) * w.hpMul * ngMul;
     const playerDps = estimatePlayerDps();
     const minCombatSeconds = isMajor ? 22 : 13;
-    const bossHp = Math.round(Math.max(baseBossHp, playerDps * minCombatSeconds));
+    const maxCombatSeconds = (isMajor ? BOSS_MAX_COMBAT_SECONDS.major : BOSS_MAX_COMBAT_SECONDS.mid) * ngMul;
+    const bossHp = Math.round(Math.max(playerDps * minCombatSeconds, Math.min(baseBossHp, playerDps * maxCombatSeconds)));
     const jadeScale = 1 + Math.floor(state.waveIdx / 4);
 
     // Spawn at 340px and immediately gap-close charge into melee range!
@@ -4305,6 +4969,7 @@
       ultName: spec.ultName || '無雙魔神・破軍滅世斬',
       ultQuote: spec.ultQuote || '「螻蟻之輩，受死吧！」',
       ultType: spec.ultType || 'lubu_halberd',
+      ultTag: spec.ultTag || '',
       x: bx,
       y: by,
       radius: isMajor ? 92 : 68,
@@ -4312,7 +4977,7 @@
       hp: bossHp,
       maxHp: bossHp,
       speed: (isMajor ? 172 : 158) * Math.min(1.55, 1.0 + state.waveIdx * 0.006),
-      dmg: Math.round((isMajor ? 32 : 24) * w.dmgMul),
+      dmg: Math.round((isMajor ? 32 : 24) * w.dmgMul * getNgMul()),
       color: spec.color || '#ff3d00',
       jadeValue: (isMajor ? 75 : 42) * jadeScale,
       hitFlash: 0,
@@ -4353,9 +5018,10 @@
       maxLife: 2.4
     });
 
+    ensureImage(boss.portraitKey);
     const avatarEl = document.getElementById('bossAvatarImg');
-    if (avatarEl && ASSET_URLS[boss.portraitKey]) {
-      avatarEl.src = ASSET_URLS[boss.portraitKey];
+    if (avatarEl && getAssetUrl(boss.portraitKey)) {
+      avatarEl.src = getAssetUrl(boss.portraitKey);
     }
     const titleEl = document.getElementById('bossNameTitle');
     if (titleEl) {
@@ -4509,7 +5175,7 @@
       }
     }
     if (!isFriendly && Math.hypot(state.x - x, state.y - y) <= radius + state.radius - 6 && state.invulnTimer <= 0) {
-      const pDmg = Math.round(16 * WAVES[state.waveIdx].dmgMul);
+      const pDmg = Math.round(16 * WAVES[state.waveIdx].dmgMul * getNgMul());
       state.hp = Math.max(0, state.hp - pDmg);
       state.invulnTimer = 0.6;
       sfx.playHurt();
@@ -4562,7 +5228,7 @@
         radius: 105,
         life: 0.65,
         maxLife: 0.65,
-        dmg: 45 * Math.pow(1.12, state.waveIdx)
+        dmg: 45 * waveDamageScale(1.12, state.waveIdx)
       });
     }
 
@@ -5164,7 +5830,7 @@
     state.musouDomainTimer = 3.6;
     state.screenFlash = { color: h.color || '#ffd740', life: 0.36, maxLife: 0.36 };
 
-    const musouBase = 215 * Math.pow(1.07, state.waveIdx);
+    const musouBase = 215 * waveDamageScale(1.07, state.waveIdx);
     state.invulnTimer = Math.max(state.invulnTimer, 3.6);
 
     // Double shockwave impact rings
@@ -5360,8 +6026,17 @@
       maxLife: delay || 0.88,
       dmg: dmg || 28,
       color: color || '#ff1744',
-      label: label || '⚠️魔將大招'
+      label: relabelHazard(label || '⚠️魔將大招')
     });
+  }
+
+  // Bosses that reuse a classic ultimate pattern show their own skill name on its hazard zones
+  // (icon kept, e.g. '⚡黃天裂地' → '⚡長社狂刀'). Set only while executeBossUltimate runs.
+  let activeUltTag = '';
+  function relabelHazard(label) {
+    if (!activeUltTag) return label;
+    const icon = (label.match(/^\p{Extended_Pictographic}\uFE0F?/u) || [''])[0];
+    return icon + activeUltTag;
   }
 
   function triggerBossUltimate(e) {
@@ -5382,6 +6057,15 @@
   }
 
   function executeBossUltimate(e) {
+    activeUltTag = (e && e.ultTag) || '';
+    try {
+      executeBossUltimatePattern(e);
+    } finally {
+      activeUltTag = '';
+    }
+  }
+
+  function executeBossUltimatePattern(e) {
     if (!e || e.hp <= 0 || !state.enemies.includes(e)) return;
     sfx.playMusouCast();
     triggerShake(0.52, 18);
@@ -6197,7 +6881,7 @@
         if (pr && pr.kind === 'barrel' && Math.hypot(pr.x - p.x, pr.y - p.y) <= pr.radius + p.radius) {
           const bx = pr.x, by = pr.y;
           state.props.splice(b, 1);
-          triggerExplosion(bx, by, 170, 95 * Math.pow(1.12, state.waveIdx), true, '#ff9100');
+          triggerExplosion(bx, by, 170, 95 * waveDamageScale(1.12, state.waveIdx), true, '#ff9100');
           state.floatTexts.push({ x: bx, y: by - 24, text: '💥火藥桶引爆！', color: '#ff9100', size: 18, life: 0.85, maxLife: 0.85 });
           break;
         }
@@ -6505,7 +7189,7 @@
         triggerShake(0.25, 10);
         // Xiahou Dun counter-shockwave on hit!
         if (state.hero.id === 'xiahoudun') {
-          triggerExplosion(state.x, state.y, 150, 48 * Math.pow(1.08, state.waveIdx), true, '#8c9eff');
+          triggerExplosion(state.x, state.y, 150, 48 * waveDamageScale(1.08, state.waveIdx), true, '#8c9eff');
         }
         state.floatTexts.push({
           x: state.x,
@@ -6602,6 +7286,11 @@
   function tileHash(c, r, seed) {
     const n = Math.sin(c * 127.1 + r * 311.7 + seed * 74.7) * 43758.5453;
     return n - Math.floor(n);
+  }
+
+  function hexToRgba(hex, a) {
+    const v = parseInt(String(hex || '#3a3a3a').slice(1), 16);
+    return `rgba(${(v >> 16) & 255}, ${(v >> 8) & 255}, ${v & 255}, ${a})`;
   }
 
   function drawSoftHorizontalRoad(tx, cy, width, centerColor, edgeColor) {
@@ -6861,6 +7550,197 @@
         });
         ctx.stroke();
       }
+    } else if (style === 'palace_court') {
+      // 宮闕：漢白玉十字御道、兩側朱紅廊柱（柱位固定，跨格無縫）
+      drawSoftHorizontalRoad(tx, cy, 190, st.roadColor, hexToRgba(st.roadColor, 0.5));
+      drawSoftVerticalRoad(cx, ty, 150, st.roadColor, hexToRgba(st.roadColor, 0.45));
+      ctx.fillStyle = 'rgba(160, 40, 32, 0.26)';
+      for (let k = 0; k < 4; k++) {
+        const px = tx + 140 + k * 280;
+        if (Math.abs(px - cx) < 110) continue;
+        ctx.fillRect(px - 9, cy - 130, 18, 30);
+        ctx.fillRect(px - 9, cy + 100, 18, 30);
+      }
+      if ((c + r) % 2 === 0) {
+        ctx.strokeStyle = 'rgba(212, 175, 85, 0.12)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(cx - 62, cy - 62, 124, 124);
+      }
+    } else if (style === 'mountain_pass') {
+      // 關隘：縱向窄棧道、兩側暗色山岩
+      drawSoftVerticalRoad(cx, ty, 120, st.roadColor, hexToRgba(st.roadColor, 0.5));
+      ctx.fillStyle = 'rgba(10, 12, 10, 0.30)';
+      for (let i = 0; i < 6; i++) {
+        const side = i % 2 === 0 ? -1 : 1;
+        const rx = cx + side * (190 + tileHash(c, r, 30 + i) * 170);
+        const ry = ty + 140 + tileHash(c, r, 40 + i) * (TILE_H - 280);
+        ctx.beginPath();
+        ctx.ellipse(rx, ry, 80 + tileHash(c, r, 50 + i) * 60, 40 + tileHash(c, r, 60 + i) * 28, tileHash(c, r, 70 + i) * 0.6 - 0.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else if (style === 'frozen_tundra') {
+      // 冰原：積雪丘與兩道固定高度的淡風痕
+      drawSoftHorizontalRoad(tx, cy, 130, st.roadColor, hexToRgba(st.roadColor, 0.45));
+      ctx.fillStyle = 'rgba(220, 235, 245, 0.09)';
+      for (let i = 0; i < 5; i++) {
+        const gx = tx + 180 + tileHash(c, r, 80 + i) * (TILE_W - 360);
+        const gy = ty + 150 + tileHash(c, r, 90 + i) * (TILE_H - 300);
+        if (Math.abs(gy - cy) < 100) continue;
+        ctx.beginPath();
+        ctx.ellipse(gx, gy, 90, 34, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.strokeStyle = 'rgba(230, 242, 255, 0.07)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(tx, ty + 150); ctx.lineTo(tx + TILE_W, ty + 150);
+      ctx.moveTo(tx, ty + TILE_H - 170); ctx.lineTo(tx + TILE_W, ty + TILE_H - 170);
+      ctx.stroke();
+    } else if (style === 'flooded_city') {
+      // 水淹城：橫貫洪流、半沒水中的城牆殘段與漣漪
+      drawSoftHorizontalRoad(tx, cy, 230, 'rgba(40, 92, 110, 0.50)', 'rgba(30, 70, 86, 0.32)');
+      ctx.fillStyle = 'rgba(70, 66, 58, 0.30)';
+      for (let k = 0; k < 3; k++) {
+        ctx.fillRect(tx + 110 + k * 340, cy - 168, 210, 22);
+      }
+      ctx.strokeStyle = 'rgba(160, 210, 225, 0.11)';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 3; i++) {
+        const gx = tx + 200 + tileHash(c, r, 100 + i) * (TILE_W - 400);
+        const gy = cy - 70 + tileHash(c, r, 110 + i) * 140;
+        ctx.beginPath();
+        ctx.ellipse(gx, gy, 46, 16, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    } else if (style === 'canal_town') {
+      // 江南水鄉：橫向河渠、縱向石橋道與岸邊垂柳
+      drawSoftHorizontalRoad(tx, cy, 120, 'rgba(46, 96, 104, 0.52)', 'rgba(36, 76, 84, 0.32)');
+      drawSoftVerticalRoad(cx, ty, 110, st.roadColor, hexToRgba(st.roadColor, 0.45));
+      ctx.fillStyle = 'rgba(96, 140, 72, 0.20)';
+      for (let i = 0; i < 4; i++) {
+        const gx = tx + 160 + i * 250 + tileHash(c, r, 120 + i) * 60;
+        if (Math.abs(gx - cx) < 120) continue;
+        ctx.beginPath();
+        ctx.ellipse(gx, cy + (i % 2 === 0 ? -100 : 100), 44, 30, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else if (style === 'black_mountain') {
+      // 黑山：暗色山道與松林
+      drawSoftHorizontalRoad(tx, cy, 120, st.roadColor, hexToRgba(st.roadColor, 0.5));
+      ctx.fillStyle = 'rgba(30, 52, 38, 0.32)';
+      for (let i = 0; i < 7; i++) {
+        const gx = tx + 150 + tileHash(c, r, 130 + i) * (TILE_W - 300);
+        const gy = ty + 150 + tileHash(c, r, 140 + i) * (TILE_H - 300);
+        if (Math.abs(gy - cy) < 105) continue;
+        ctx.beginPath();
+        ctx.moveTo(gx, gy - 42);
+        ctx.lineTo(gx - 26, gy + 22);
+        ctx.lineTo(gx + 26, gy + 22);
+        ctx.closePath();
+        ctx.fill();
+      }
+    } else if (style === 'imperial_tomb') {
+      // 陵寢：縱向神道、兩側石像生與封土
+      drawSoftVerticalRoad(cx, ty, 130, st.roadColor, hexToRgba(st.roadColor, 0.5));
+      ctx.fillStyle = 'rgba(150, 140, 160, 0.15)';
+      for (let k = 0; k < 3; k++) {
+        const yy = ty + 150 + k * 250;
+        ctx.fillRect(cx - 122, yy, 30, 40);
+        ctx.fillRect(cx + 92, yy, 30, 40);
+      }
+      if (Math.abs(c + r) % 2 === 0) {
+        ctx.fillStyle = 'rgba(60, 52, 66, 0.34)';
+        ctx.beginPath();
+        ctx.ellipse(cx + 330, cy - 160, 120, 70, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else if (style === 'city_wall') {
+      // 城垣：橫亙城牆與城門缺口（垛口間距 56px，整除格寬，跨格無縫）
+      drawSoftVerticalRoad(cx, ty, 130, st.roadColor, hexToRgba(st.roadColor, 0.45));
+      const wy = ty + 190;
+      ctx.fillStyle = 'rgba(92, 78, 60, 0.30)';
+      ctx.fillRect(tx - 1, wy, (cx - 84) - tx + 1, 34);
+      ctx.fillRect(cx + 84, wy, tx + TILE_W + 1 - (cx + 84), 34);
+      for (let x = tx; x < tx + TILE_W; x += 56) {
+        if (Math.abs(x + 14 - cx) > 96) ctx.fillRect(x, wy - 14, 28, 14);
+      }
+    } else if (style === 'steppe_grassland') {
+      // 草原：草甸、風吹草痕與氈帳
+      drawSoftHorizontalRoad(tx, cy, 110, st.roadColor, hexToRgba(st.roadColor, 0.4));
+      ctx.fillStyle = 'rgba(150, 170, 80, 0.15)';
+      for (let i = 0; i < 6; i++) {
+        const gx = tx + 170 + tileHash(c, r, 150 + i) * (TILE_W - 340);
+        const gy = ty + 150 + tileHash(c, r, 160 + i) * (TILE_H - 300);
+        if (Math.abs(gy - cy) < 95) continue;
+        ctx.beginPath();
+        ctx.ellipse(gx, gy, 70, 26, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      if (Math.abs(c + r) % 3 === 0) {
+        ctx.fillStyle = 'rgba(200, 190, 160, 0.13)';
+        ctx.beginPath();
+        ctx.arc(cx + 300, cy - 210, 34, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else if (style === 'salt_marsh') {
+      // 澤國：水窪與蘆葦叢
+      drawSoftHorizontalRoad(tx, cy, 100, st.roadColor, hexToRgba(st.roadColor, 0.4));
+      ctx.fillStyle = 'rgba(70, 110, 120, 0.20)';
+      ctx.strokeStyle = 'rgba(170, 160, 110, 0.18)';
+      ctx.lineWidth = 2;
+      for (let i = 0; i < 4; i++) {
+        const gx = tx + 190 + tileHash(c, r, 170 + i) * (TILE_W - 380);
+        const gy = ty + 160 + tileHash(c, r, 180 + i) * (TILE_H - 320);
+        if (Math.abs(gy - cy) < 100) continue;
+        ctx.beginPath();
+        ctx.ellipse(gx, gy, 80, 30, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        for (let k = -2; k <= 2; k++) {
+          ctx.moveTo(gx + 70 + k * 7, gy + 6);
+          ctx.lineTo(gx + 70 + k * 9, gy - 26);
+        }
+        ctx.stroke();
+      }
+    } else if (style === 'golden_palace') {
+      // 金殿：金磚大道、正中紅毯與兩側宮燈
+      drawSoftHorizontalRoad(tx, cy, 200, st.roadColor, hexToRgba(st.roadColor, 0.5));
+      drawSoftHorizontalRoad(tx, cy, 60, 'rgba(150, 30, 30, 0.38)', 'rgba(120, 20, 20, 0.22)');
+      ctx.fillStyle = 'rgba(255, 170, 60, 0.16)';
+      for (let k = 0; k < 4; k++) {
+        const px = tx + 140 + k * 280;
+        ctx.beginPath(); ctx.arc(px, cy - 140, 16, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(px, cy + 140, 16, 0, Math.PI * 2); ctx.fill();
+      }
+    } else if (style === 'river_ford') {
+      // 渡口：橫貫大河、沙岸與縱向浮橋
+      drawSoftHorizontalRoad(tx, cy, 240, 'rgba(56, 96, 120, 0.40)', 'rgba(120, 110, 80, 0.20)');
+      ctx.fillStyle = 'rgba(110, 84, 54, 0.28)';
+      for (let k = -3; k <= 3; k++) {
+        ctx.fillRect(cx - 40, cy + k * 34 - 10, 80, 20);
+      }
+    } else if (style === 'burning_camp') {
+      // 火營：連營帳篷、餘燼火光
+      drawSoftHorizontalRoad(tx, cy, 130, st.roadColor, hexToRgba(st.roadColor, 0.5));
+      for (let k = 0; k < 4; k++) {
+        const px = tx + 160 + k * 260;
+        [cy - 175, cy + 175].forEach((py, row) => {
+          if (tileHash(c, r, 190 + k * 2 + row) > 0.5) {
+            ctx.fillStyle = 'rgba(255, 120, 40, 0.09)';
+            ctx.beginPath(); ctx.arc(px, py, 58, 0, Math.PI * 2); ctx.fill();
+          }
+          ctx.fillStyle = 'rgba(120, 70, 40, 0.28)';
+          ctx.beginPath();
+          ctx.moveTo(px, py - 36);
+          ctx.lineTo(px - 44, py + 26);
+          ctx.lineTo(px + 44, py + 26);
+          ctx.closePath();
+          ctx.fill();
+        });
+      }
+    } else {
+      // Unknown style: plain road in the stage colour so the map never renders empty
+      drawSoftHorizontalRoad(tx, cy, 130, st.roadColor || '#3a3a3a', hexToRgba(st.roadColor, 0.45));
     }
 
     // 3. Subtle Carved Ground Landmark (only on spaced tiles so it never clutters or looks like an active AOE ring)
@@ -7463,7 +8343,7 @@
       ctx.textAlign = 'center';
       ctx.font = `900 ${cw < 480 ? 13.5 : 15.5}px "Noto Serif TC", serif`;
       ctx.fillStyle = st.accentColor || '#ffd740';
-      ctx.fillText(`🗺️ ${st.mapName} ｜ 👾 ${st.legionName}（敵軍戰力 ×${eff.hpMul}）`, 0, 22);
+      ctx.fillText(`🗺️ ${st.mapName} ｜ 👾 ${st.legionName}（敵軍戰力 ×${formatBigNumber(eff.hpMul)}）`, 0, 22);
 
       ctx.font = `700 ${cw < 480 ? 11 : 12.5}px "Noto Sans TC", sans-serif`;
       ctx.fillStyle = '#e8dfd1';
@@ -8165,7 +9045,7 @@
     if (state.boss) {
       const bPct = Math.max(0, (state.boss.hp / state.boss.maxHp) * 100);
       document.getElementById('bossHpFill').style.width = `${bPct}%`;
-      document.getElementById('bossHpText').textContent = `${Math.max(0, Math.ceil(state.boss.hp))} / ${state.boss.maxHp}`;
+      document.getElementById('bossHpText').textContent = `${formatBigNumber(Math.max(0, Math.ceil(state.boss.hp)))} / ${formatBigNumber(state.boss.maxHp)}`;
     }
 
     const mReady = state.musouGauge >= 100;
@@ -8214,7 +9094,7 @@
     state.gems = [];
 
     const w = WAVES[state.waveIdx] || WAVES[0];
-    const waveSoulGain = 8 + Math.floor(state.waveIdx * 0.8) + (w.boss ? (w.isMajorBoss ? 35 : 20) : 0);
+    const waveSoulGain = Math.round((8 + Math.floor(state.waveIdx * 0.8) + (w.boss ? (w.isMajorBoss ? 35 : 20) : 0)) * getNgMul());
     addMetaSouls(waveSoulGain);
     state.lastEarnedSouls = waveSoulGain;
 
@@ -8243,6 +9123,7 @@
       ? Math.max(0, Math.min(TOTAL_WAVES - 1, targetNextWaveIdx))
       : Math.min(TOTAL_WAVES - 1, state.waveIdx + 1);
     const refWave = WAVES[state.shopNextWaveIdx] || WAVES[state.waveIdx];
+    preloadUpcomingPortraits(state.shopNextWaveIdx);
     sfx.setBgmMode('title', refWave.chapIdx);
     state.rerollCost = 6 + Math.floor(state.shopNextWaveIdx * 1.4);
     state.lastAwakenMsg = earnedSoulsFromWave > 0
@@ -8343,7 +9224,7 @@
       ? state.shopNextWaveIdx
       : Math.min(TOTAL_WAVES - 1, state.waveIdx + 1);
     const nextWave = WAVES[nextIdx] || WAVES[state.waveIdx];
-    document.getElementById('shopTitle').textContent = `中軍鍛造營帳 — 備戰第 ${nextIdx + 1} / 100 陣（${nextWave.shortTitle}）`;
+    document.getElementById('shopTitle').textContent = `中軍鍛造營帳 — ${getRoundLabel()}備戰第 ${nextIdx + 1} / ${TOTAL_WAVES} 陣（${nextWave.shortTitle}）`;
     document.getElementById('shopJadeCount').textContent = state.jade;
     document.getElementById('btnReroll').textContent = `重鑄補給 (-${state.rerollCost} 玉)`;
     document.getElementById('arsenalCountText').textContent = `${state.weapons.length} / 6`;
@@ -8517,7 +9398,7 @@
     });
 
     document.getElementById('shopStatsStrip').innerHTML = `
-      <span>即將出征：<strong>${nextWave.chapterName}（第 ${nextIdx + 1} / 100 陣）</strong></span>
+      <span>即將出征：<strong>${nextWave.chapterName}（第 ${nextIdx + 1} / ${TOTAL_WAVES} 陣）</strong></span>
       <span>氣血上限：<strong>${state.maxHp}</strong></span>
       <span>傷害倍率：<strong>${Math.round(state.dmgMul * 100)}%</strong></span>
       <span>冷卻縮減：<strong>${Math.round(state.cdMul * 100)}%</strong></span>
@@ -8537,7 +9418,7 @@
     const st = w.stageSpec || STAGE_LEGIONS[0];
     const subEl = document.getElementById('pauseWaveSubtitle');
     if (subEl) {
-      subEl.textContent = `第 ${w.wave} / 100 陣｜${st.mapName}・${st.legionName}`;
+      subEl.textContent = `${getRoundLabel()}第 ${w.wave} / ${TOTAL_WAVES} 陣｜${st.mapName}・${st.legionName}`;
     }
 
     const statsEl = document.getElementById('pauseStatsGrid');
@@ -8645,10 +9526,22 @@
     sfx.playWarDrum();
 
     // Award Souls on Victory or Consolation Souls on Defeat
-    const earnedSouls = victory
+    const earnedSouls = Math.round((victory
       ? 120
-      : Math.max(6, Math.floor(state.kills * 0.25) + state.waveIdx * 2);
+      : Math.max(6, Math.floor(state.kills * 0.25) + state.waveIdx * 2)) * getNgMul());
     addMetaSouls(earnedSouls);
+
+    // Clearing wave 500 unlocks the next NG+ round (enemies and souls ×1.5 each round, no cap)
+    const clearedRound = state.ngRound || 1;
+    let unlockedRound = 0;
+    if (victory) {
+      if (clearedRound >= (metaState.ngMaxRound || 1)) {
+        metaState.ngMaxRound = clearedRound + 1;
+        unlockedRound = clearedRound + 1;
+      }
+      metaState.ngRound = Math.min(metaState.ngMaxRound, clearedRound + 1);
+      saveMetaState();
+    }
     state.lastEarnedSouls = earnedSouls;
     state.doubleSoulsClaimed = false;
 
@@ -8664,10 +9557,11 @@
 
     refreshTitleProgressUI();
     document.getElementById('resultOverlay').classList.remove('hidden');
-    document.getElementById('resultTitle').textContent = victory ? '百陣無雙！一統天下大捷' : '馬革裹屍・戰陣失守';
+    document.getElementById('resultTitle').textContent = victory ? `${getRoundLabel()}五百陣無雙！一統天下大捷` : '馬革裹屍・戰陣失守';
     document.getElementById('resultTitle').style.color = victory ? 'var(--gold-bright)' : 'var(--crimson-glow)';
     document.getElementById('resultSub').textContent = victory
-      ? `${state.hero.name} 成功突破全 100 陣、擊潰九天無雙魔神呂奉先，威震華夏！`
+      ? `${state.hero.name} 成功突破全 ${TOTAL_WAVES} 陣、擊潰九天無雙魔神呂奉先，威震華夏！` +
+        (unlockedRound ? `🔁 已開啟第 ${unlockedRound} 輪迴：敵軍強度與將魂收益 ×${formatBigNumber(getNgMul(unlockedRound))}！` : '')
       : `於【${WAVES[state.waveIdx].title}】力戰不支！您的神兵、翠玉與戰力已完整自動保存，可立即滿血原地復活或重整再戰！`;
 
     const soulTextEl = document.getElementById('resultSoulEarnedText');
@@ -8701,7 +9595,7 @@
     }
 
     document.getElementById('resultStats').innerHTML = `
-      <span>當前陣數：<strong>第 ${victory ? 100 : state.waveIdx + 1} / 100 陣</strong></span>
+      <span>當前陣數：<strong>${getRoundLabel()}第 ${victory ? TOTAL_WAVES : state.waveIdx + 1} / ${TOTAL_WAVES} 陣</strong></span>
       <span>斬獲敵首：<strong>${state.kills}</strong></span>
       <span>持有戰功翠玉：<strong>${state.jade}（累積 ${state.totalJadeEarned}）</strong></span>
     `;
@@ -8866,7 +9760,7 @@
         }
       });
       saveMetaState();
-      recordBestWave(100);
+      recordBestWave(TOTAL_WAVES, 1);
       sfx.init();
       sfx.playCutInFanfare(false);
       renderTalentPanel();
@@ -9055,7 +9949,7 @@
   }
 
   document.getElementById('btnHelp').addEventListener('click', () => {
-    alert('【無雙割草：三國奇兵 — 全面進化版兵法】\n1. 9 大名將與將星兵法閣：突破陣數或消耗「🔮將魂」可招募諸葛亮、夏侯惇、孫尚香、周瑜、曹操、呂布等傳奇名將，並可永久升級 6 大兵法天賦！\n2. 12 種神兵與超武覺醒：神兵升至 V 階解鎖【★鬼神覺醒】、X 階突破【👑神話超武】，彈幕與型態全面進化！營帳提供「⚡一鍵全自動合成」。\n3. 20 張戰場地圖與 BOSS 專屬兵團：每 5 關切換全新三國古戰場地貌與駐守 BOSS 軍團。\n4. 隨時暫停與自動存檔：按 ESC / 暫停鍵或手機返回鍵可隨時凍結戰場檢視戰況，切換背景自動靜音並保存進度！');
+    alert('【無雙割草：三國奇兵 — 全面進化版兵法】\n1. 9 大名將與將星兵法閣：突破陣數或消耗「🔮將魂」可招募諸葛亮、夏侯惇、孫尚香、周瑜、曹操、呂布等傳奇名將，並可永久升級 6 大兵法天賦！\n2. 12 種神兵與超武覺醒：神兵升至 V 階解鎖【★鬼神覺醒】、X 階突破【👑神話超武】，彈幕與型態全面進化！營帳提供「⚡一鍵全自動合成」。\n3. 500 陣三國史詩：十卷五十章、100 張戰場地圖與 100 大 BOSS 專屬兵團，每 5 關依史實切換地貌與駐守軍團；通關第 500 陣開啟輪迴，敵軍與將魂每輪 ×1.5。\n4. 隨時暫停與自動存檔：按 ESC / 暫停鍵或手機返回鍵可隨時凍結戰場檢視戰況，切換背景自動靜音並保存進度！');
   });
 })();
 </script>
