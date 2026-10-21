@@ -839,9 +839,15 @@
 
     .slot-actions {
       display: flex;
+      flex-wrap: wrap;
       gap: 4px;
       margin-top: 6px;
       width: 100%;
+    }
+
+    .slot-actions .btn-mini.upgrade {
+      flex: 1 1 100%;
+      white-space: nowrap;
     }
 
     .btn-mini {
@@ -866,6 +872,42 @@
       background: #331a18;
       border-color: #a94438;
       color: #f29b91;
+    }
+
+    .btn-mini.upgrade {
+      background: #2b1d3d;
+      border-color: #c084fc;
+      color: #f3e8ff;
+      font-weight: 800;
+    }
+
+    .btn-mini.upgrade:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .weapon-slot-mini.musou-armed { cursor: pointer; }
+    .weapon-slot-mini .wm-charge {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 0%;
+      background: linear-gradient(0deg, rgba(255, 215, 64, 0.55), rgba(255, 215, 64, 0.08));
+      pointer-events: none;
+    }
+    .weapon-slot-mini.musou-ready {
+      animation: wmReadyPulse 0.9s ease-in-out infinite alternate;
+    }
+    .weapon-slot-mini.musou-ready .wm-charge {
+      background: linear-gradient(0deg, rgba(255, 241, 118, 0.75), rgba(255, 215, 64, 0.25));
+    }
+    @keyframes wmReadyPulse {
+      from { transform: translateY(0); filter: brightness(1); }
+      to { transform: translateY(-3px); filter: brightness(1.35); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .weapon-slot-mini.musou-ready { animation: none; }
     }
 
     .shop-cards {
@@ -2457,9 +2499,42 @@
   function getWeaponDisplayName(id, tier) {
     const spec = WEAPON_CATALOG[id];
     if (!spec) return '無名神兵';
+    if (tier >= 15 && spec.awaken10) {
+      const prefix = tier >= 30 ? '☯️無上' : (tier >= 25 ? '💠天道' : (tier >= 20 ? '🔱鴻蒙' : '🌟太極'));
+      return `${prefix}・${spec.awaken10.split('・').pop()}`;
+    }
     if (tier >= 10 && spec.awaken10) return spec.awaken10;
     if (tier >= 5 && spec.awaken5) return spec.awaken5;
     return spec.name;
+  }
+
+  // 神兵無雙: unlocked at X, charged per weapon (40 s at X → 20 s at XXX), cast by tapping the weapon's HUD slot.
+  // Damage scales with the wave like the hero musou, plus a tier bonus (see castWeaponMusou), so XI–XXX matter;
+  // each late awakening (XV/XX/XXV/XXX, `evo`) adds more projectiles / zones.
+  const WEAPON_MUSOU = {
+    spear: { name: '七探盤龍・銀龍破陣', color: '#4fc3f7' },
+    halberd: { name: '青龍偃月・千里斬', color: '#5ce6a0' },
+    bow: { name: '元戎連弩・萬箭穿心', color: '#ffd740' },
+    thunder: { name: '九天玄雷・天罰', color: '#b388ff' },
+    bladeRing: { name: '三昧真火・乾坤焚天', color: '#ff9100' },
+    fangtian: { name: '方天滅世・鬼神亂舞', color: '#ff1744' },
+    serpentSpear: { name: '丈八蛇矛・長坂怒吼', color: '#ffab40' },
+    twinSwords: { name: '雌雄雙劍・萬劍歸宗', color: '#b388ff' },
+    fireFan: { name: '朱雀業火・赤壁燎原', color: '#ff6e40' },
+    poisonNeedles: { name: '暴雨梨花・漫天星雨', color: '#69f0ae' },
+    baguaArray: { name: '八門金鎖・七星續命', color: '#ffd740' },
+    cannon: { name: '麒麟神砲・轟天裂地', color: '#ff8a65' }
+  };
+
+  const WEAPON_MUSOU_POWER = 0.2; // pattern multipliers below are ×base; 0.2 puts one hit near a hero-musou hit
+  // Each cast adds this share of the boss's max HP to a budget that weapon-musou damage on the boss cannot exceed,
+  // so saving all six for a boss takes about a third of its HP instead of deleting it (DECISIONS #14).
+  const WEAPON_MUSOU_BOSS_SHARE = { major: 0.05, mid: 0.07 };
+  const HERO_MUSOU_BOSS_SHARE = 0.25; // same idea for the hero musou (sim: hero + 6 weapon musou killed wave-400 bosses in 3 s)
+  let activeDamageSource = ''; // set while a musou executes so its explosions/zones count against the boss budget
+
+  function getWeaponMusouChargeSeconds(tier) {
+    return Math.max(20, 40 - (tier - MERGE_MAX_TIER));
   }
 
   const TACTICS_CATALOG = [
@@ -3006,6 +3081,61 @@
   const NG_STRENGTH_STEP = 1.5; // every cleared 500-wave round: enemy HP/damage and souls ×1.5, uncapped
   const BOSS_MAX_COMBAT_SECONDS = { major: 60, mid: 40 }; // boss HP cap in seconds of estimated player DPS
 
+  // Weapon tiers: I–X come from merging two copies; XI–XXX are bought with 戰功翠玉 in the camp.
+  const MERGE_MAX_TIER = 10;
+  const MAX_WEAPON_TIER = 30;
+  const LATE_TIER_DMG_STEP = 1.25;                // XI–XXX: ×1.25 damage per tier
+  const LATE_AWAKEN_TIERS = [15, 20, 25, 30];     // 🌟太極 / 🔱鴻蒙 / 💠天道 / ☯️無上 awakenings
+  const LATE_AWAKEN_BONUS = 1.15;                 // each late awakening: another ×1.15
+  const WEAPON_UPGRADE_BASE_COST = 25000;         // jade for X → XI
+  const WEAPON_UPGRADE_COST_STEP = 1.25;          // ×1.25 per tier (XXIX → XXX ≈ 173 萬)
+  // Late mob HP assumes the player spends about half of the jade a wave pays (scripts/sim-waves.mjs measured
+  // ~170 × wave number per wave for a jump-in build) evenly on all 6 weapons, so jade upgrades are the main lever.
+  const EXPECTED_JADE_PER_WAVE = 170;
+  const EXPECTED_UPGRADE_SHARE = 0.5;
+
+  function weaponTierMul(tier) {
+    const t = Math.max(1, Math.min(MAX_WEAPON_TIER, tier || 1));
+    const early = Math.min(t, MERGE_MAX_TIER);
+    let mul = Math.pow(1.48, early - 1) * (early >= 10 ? 1.85 : (early >= 5 ? 1.35 : 1.0));
+    if (t > MERGE_MAX_TIER) {
+      mul *= Math.pow(LATE_TIER_DMG_STEP, t - MERGE_MAX_TIER);
+      mul *= Math.pow(LATE_AWAKEN_BONUS, getLateAwakenLevel(t));
+    }
+    return mul;
+  }
+
+  function getLateAwakenLevel(tier) {
+    return LATE_AWAKEN_TIERS.filter(a => tier >= a).length;
+  }
+
+  function getWeaponUpgradeCost(tier) {
+    if (tier < MERGE_MAX_TIER || tier >= MAX_WEAPON_TIER) return 0;
+    return Math.round(WEAPON_UPGRADE_BASE_COST * Math.pow(WEAPON_UPGRADE_COST_STEP, tier - MERGE_MAX_TIER));
+  }
+
+  function getWeaponUpgradeInvestment(tier) {
+    let total = 0;
+    for (let t = MERGE_MAX_TIER; t < tier; t++) total += getWeaponUpgradeCost(t);
+    return total;
+  }
+
+  function expectedExtraTiers(idx) {
+    if (idx <= CLASSIC_CURVE_END) return 0;
+    const w = idx + 1;
+    const spent = EXPECTED_UPGRADE_SHARE * EXPECTED_JADE_PER_WAVE * (w * w - 100 * 100) / 2;
+    const g = WEAPON_UPGRADE_COST_STEP;
+    const n = Math.log(1 + spent * (g - 1) / (6 * WEAPON_UPGRADE_BASE_COST)) / Math.log(g);
+    return Math.max(0, Math.min(MAX_WEAPON_TIER - MERGE_MAX_TIER, n));
+  }
+
+  // Late HP growth = smooth wave growth × the weapon power the expected upgrades give.
+  function lateHpFactor(idx) {
+    if (idx <= CLASSIC_CURVE_END) return 1;
+    const tierRatio = weaponTierMul(MERGE_MAX_TIER + expectedExtraTiers(idx)) / weaponTierMul(MERGE_MAX_TIER);
+    return lateGrowth(idx, LATE_HP_EXP) * tierRatio;
+  }
+
   function lateGrowth(idx, exponent) {
     return idx <= CLASSIC_CURVE_END ? 1 : Math.pow((idx + 1) / (CLASSIC_CURVE_END + 1), exponent);
   }
@@ -3014,7 +3144,7 @@
   // the classic exponential up to wave 100, then the same growth as mob HP, times the NG+ multiplier.
   function waveDamageScale(k, idx) {
     const i = Math.max(0, Math.floor(idx || 0));
-    return Math.pow(k, Math.min(i, CLASSIC_CURVE_END)) * lateGrowth(i, LATE_HP_EXP) * getNgMul();
+    return Math.pow(k, Math.min(i, CLASSIC_CURVE_END)) * lateHpFactor(i) * getNgMul();
   }
 
   function getNgMul(round) {
@@ -3492,7 +3622,7 @@
     const curveIdx = Math.min(idx, CLASSIC_CURVE_END);
     const curveStage = Math.floor(curveIdx / STAGE_WAVES);
     const curveSub = curveIdx % STAGE_WAVES;
-    const hpMul = +(Math.pow(1.118, curveIdx) * (1 + curveStage * 0.26) * (1 + curveSub * 0.08) * lateGrowth(idx, LATE_HP_EXP)).toFixed(2);
+    const hpMul = +(Math.pow(1.118, curveIdx) * (1 + curveStage * 0.26) * (1 + curveSub * 0.08) * lateHpFactor(idx)).toFixed(2);
     const speedMul = +(1.0 + Math.min(1.25, idx * 0.012 + stageIdx * 0.025 + stageSubIdx * 0.02)).toFixed(2);
     const dmgMul = +((1.0 + curveIdx * 0.08 + curveStage * 0.14 + curveSub * 0.05) * lateGrowth(idx, LATE_DMG_EXP)).toFixed(2);
     const spawnInterval = Math.max(0.085, +(0.54 * Math.pow(0.978, idx) * (1 - stageSubIdx * 0.025)).toFixed(3));
@@ -3526,7 +3656,6 @@
     };
   });
 
-  const MAX_WEAPON_TIER = 10;
   const TIER_NAMES = [
     '',
     '凡鐵 I',
@@ -3538,9 +3667,16 @@
     '★太古 VII',
     '★軒轅 VIII',
     '★混沌 IX',
-    '👑神話 X'
+    '👑神話 X',
+    // XI–XXX: upgraded with 戰功翠玉 in the camp (MERGE_MAX_TIER / MAX_WEAPON_TIER)
+    '👑破虛 XI', '👑凌霄 XII', '👑星辰 XIII', '👑日月 XIV', '🌟太極 XV',
+    '🌟兩儀 XVI', '🌟四象 XVII', '🌟八荒 XVIII', '🌟九霄 XIX', '🔱鴻蒙 XX',
+    '🔱造化 XXI', '🔱乾坤 XXII', '🔱寰宇 XXIII', '🔱永恆 XXIV', '💠天道 XXV',
+    '💠無極 XXVI', '💠混元 XXVII', '💠歸一 XXVIII', '💠至尊 XXIX', '☯️無上 XXX'
   ];
-  const TIER_SHORT = ['', 'I', 'II', 'III', 'IV', 'V★', 'VI', 'VII', 'VIII', 'IX', 'X👑'];
+  const TIER_SHORT = ['', 'I', 'II', 'III', 'IV', 'V★', 'VI', 'VII', 'VIII', 'IX', 'X👑',
+    'XI', 'XII', 'XIII', 'XIV', 'XV🌟', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX🔱',
+    'XXI', 'XXII', 'XXIII', 'XXIV', 'XXV💠', 'XXVI', 'XXVII', 'XXVIII', 'XXIX', 'XXX☯️'];
   const TIER_COLORS = [
     '',
     '#b0a89f',
@@ -3552,7 +3688,11 @@
     '#ffd740',
     '#ff4081',
     '#69f0ae',
-    '#ffffff'
+    '#ffffff',
+    '#ffe082', '#80d8ff', '#ea80fc', '#ffab40', '#40c4ff',
+    '#b2ff59', '#ff80ab', '#84ffff', '#ffd180', '#e040fb',
+    '#18ffff', '#ffff00', '#ff6e40', '#69f0ae', '#7c4dff',
+    '#00e676', '#ff9e80', '#f50057', '#ffd600', '#fff3b0'
   ];
 
   const SAVE_KEY = 'tk_survivor_save_v1';
@@ -3717,6 +3857,8 @@
     musouDomainTimer: 0,
     bossDomainTimer: 0,
     killBanner: null,
+    weaponMusouBanner: null,
+    wmHintWave: -1,
 
     shakeTime: 0,
     shakeMag: 0,
@@ -4282,8 +4424,10 @@
     state.musouGauge = Math.min(100, (boostWaves >= 4 ? 100 : 50) + tBonus.startMusouBonus);
     state.musouGainMul = tBonus.musouGainMul || 1.0;
 
-    const baseTier = Math.min(MAX_WEAPON_TIER, 1 + Math.floor(boostWaves / 11));
-    const subTier = Math.min(MAX_WEAPON_TIER, Math.max(1, baseTier - 1));
+    const baseTier = boostWaves <= CLASSIC_CURVE_END
+      ? Math.min(MERGE_MAX_TIER, 1 + Math.floor(boostWaves / 11))
+      : MERGE_MAX_TIER + Math.floor(expectedExtraTiers(boostWaves));
+    const subTier = Math.max(1, baseTier - 1);
     const wpnPool = Object.keys(WEAPON_CATALOG);
     const slotCount = Math.min(6, 2 + Math.floor(boostWaves / 9));
 
@@ -4415,7 +4559,9 @@
     const dpsRatio = Math.max(1.0, playerDps / 115);
     // The DPS floor stops growing at wave 100 so waves 101–500 are driven by the campaign curve (and talents matter).
     const floorIdx = Math.min(waveIdx, CLASSIC_CURVE_END);
-    const adaptiveHpFloor = dpsRatio * (0.78 + floorIdx * 0.055 + Math.floor(floorIdx / 5) * 0.18);
+    // After wave 100 the floor follows DPS^0.75 (ramped over 50 waves): an over-levelled build still kills faster.
+    const floorExp = waveIdx <= CLASSIC_CURVE_END ? 1 : 1 - 0.25 * Math.min(1, (waveIdx - CLASSIC_CURVE_END) / 50);
+    const adaptiveHpFloor = Math.pow(dpsRatio, floorExp) * (0.78 + floorIdx * 0.055 + Math.floor(floorIdx / 5) * 0.18);
     // NG+ scales the campaign HP, not the DPS floor: a stronger build (talents, weapons) can outgrow later rounds.
     const ngMul = getNgMul();
     const hpMul = +(Math.max(baseHpMul * ngMul, adaptiveHpFloor)).toFixed(2);
@@ -4921,8 +5067,7 @@
     for (const wSlot of state.weapons) {
       const spec = WEAPON_CATALOG[wSlot.id];
       if (!spec) continue;
-      const awakenBoost = wSlot.tier >= 10 ? 1.85 : (wSlot.tier >= 5 ? 1.35 : 1.0);
-      const tierMul = Math.pow(1.48, wSlot.tier - 1) * awakenBoost;
+      const tierMul = weaponTierMul(wSlot.tier);
       const multiHit = (wSlot.id === 'bow' || wSlot.id === 'poisonNeedles')
         ? Math.min(4.2, 1.5 + wSlot.tier * 0.35)
         : (wSlot.id === 'bladeRing' ? 2.5 : (wSlot.tier >= 5 ? 1.8 : 1.2));
@@ -5047,7 +5192,7 @@
     return best;
   }
 
-  function dealDamage(enemy, baseAmount, knockback = 18, elem = 'physical') {
+  function dealDamage(enemy, baseAmount, knockback = 18, elem = 'physical', source = activeDamageSource) {
     const isCrit = Math.random() < state.critChance;
     const extraCritBonus = Math.max(0, state.critChance - 1.0);
     const critMult = isCrit ? (2.0 + extraCritBonus) : 1.0;
@@ -5072,6 +5217,12 @@
       // Per-hit max HP cap (single hit cannot exceed 4.2% of Boss Max HP)
       const maxSingleHit = Math.max(20, Math.round(enemy.maxHp * (enemy.isMajorBoss ? 0.035 : 0.048)));
       dmg = Math.min(dmg, maxSingleHit);
+      if (source === 'wm' || source === 'hm') {
+        const key = source === 'wm' ? 'wmBudget' : 'hmBudget';
+        dmg = Math.min(dmg, Math.max(0, Math.floor(enemy[key] || 0)));
+        enemy[key] = Math.max(0, (enemy[key] || 0) - dmg);
+        if (dmg <= 0) return;
+      }
     }
 
     enemy.hp -= dmg;
@@ -5124,7 +5275,7 @@
     }
   }
 
-  function triggerExplosion(x, y, radius, dmg, isFriendly = true, color = '#ff6e40') {
+  function triggerExplosion(x, y, radius, dmg, isFriendly = true, color = '#ff6e40', source = activeDamageSource) {
     sfx.playFireBurst();
     if (!isFriendly && Math.hypot(state.x - x, state.y - y) < 420) {
       triggerShake(0.16, 6);
@@ -5171,7 +5322,7 @@
       const e = state.enemies[i];
       if (!e) continue;
       if (Math.hypot(e.x - x, e.y - y) <= radius + e.radius) {
-        dealDamage(e, dmg, 42, 'fire');
+        dealDamage(e, dmg, 42, 'fire', source);
       }
     }
     if (!isFriendly && Math.hypot(state.x - x, state.y - y) <= radius + state.radius - 6 && state.invulnTimer <= 0) {
@@ -5411,16 +5562,16 @@
   function fireWeapon(wSlot, slotIndex, totalSlots) {
     const spec = WEAPON_CATALOG[wSlot.id];
     if (!spec) return false;
-    // Awakening multiplier boost at Tier 5 (★鬼神) and Tier 10 (👑神話)
-    const awakenBoost = (wSlot.tier >= 10 ? 1.85 : (wSlot.tier >= 5 ? 1.35 : 1.0));
-    const tierMul = Math.pow(1.48, wSlot.tier - 1) * awakenBoost;
-    const dmg = spec.baseDmg * tierMul;
+    // Damage: ×1.48 per tier up to X (awakenings at V and X), then ×1.25 per tier with late awakenings (weaponTierMul)
+    const dmg = spec.baseDmg * weaponTierMul(wSlot.tier);
+    // Projectile counts, reach and radius stop growing at X so tiers XI–XXX add damage, not screen clutter
+    const shapeTier = Math.min(MERGE_MAX_TIER, wSlot.tier);
     const mount = getWeaponMountPosition(slotIndex, totalSlots);
     const wx = state.x + mount.ox;
     const wy = state.y + mount.oy;
     const target = getNearestEnemy(wx, wy, 640);
-    const isGuishen = wSlot.tier >= 5;
-    const isMythic = wSlot.tier >= 10;
+    const isGuishen = shapeTier >= 5;
+    const isMythic = shapeTier >= 10;
 
     // Also check if any explosive barrel is near when no enemy is close
     if (wSlot.id === 'spear') {
@@ -5437,9 +5588,9 @@
           y: wy + Math.sin(a) * 20,
           vx: Math.cos(a) * 740,
           vy: Math.sin(a) * 740,
-          radius: 12 + Math.min(16, wSlot.tier * 1.8),
+          radius: 12 + Math.min(16, shapeTier * 1.8),
           dmg,
-          pierce: 3 + wSlot.tier * 2,
+          pierce: 3 + shapeTier * 2,
           hitSet: new Set(),
           color: isMythic ? '#ffd740' : (isGuishen ? '#00e5ff' : '#4fc3f7'),
           life: 0.88,
@@ -5456,7 +5607,7 @@
       sfx.playSlash();
       wSlot.aimAngle = ang;
       wSlot.swingPhase = 1.0;
-      const reach = 135 + Math.min(185, wSlot.tier * 20);
+      const reach = 135 + Math.min(185, shapeTier * 20);
       const fullCircle = isGuishen;
       if (state.slashes.length < 24) {
         state.slashes.push({
@@ -5493,7 +5644,7 @@
       const baseAng = Math.atan2(target.y - wy, target.x - wx);
       wSlot.aimAngle = baseAng;
       wSlot.thrustOffset = -10;
-      const count = isMythic ? 14 : Math.min(10, wSlot.tier + 2);
+      const count = isMythic ? 14 : Math.min(10, shapeTier + 2);
       const spread = isMythic ? (Math.PI * 2 / count) : 0.13;
       for (let i = 0; i < count; i++) {
         const offset = isMythic ? (i * spread) : (i - (count - 1) / 2) * spread;
@@ -5522,7 +5673,7 @@
       sfx.playThunder();
       wSlot.aimAngle = Math.atan2(target.y - wy, target.x - wx);
       wSlot.swingPhase = 0.85;
-      const bounces = isMythic ? 16 : Math.min(12, 2 + wSlot.tier);
+      const bounces = isMythic ? 16 : Math.min(12, 2 + shapeTier);
       let curr = target;
       let prevX = wx;
       let prevY = wy;
@@ -5559,7 +5710,7 @@
 
     if (wSlot.id === 'bladeRing') {
       const rings = isGuishen ? [88, 142] : [92];
-      const bladeCount = Math.min(9, 2 + wSlot.tier);
+      const bladeCount = Math.min(9, 2 + shapeTier);
       let hitAny = false;
       rings.forEach((orbitR, rIdx) => {
         const dir = rIdx === 0 ? 1 : -1.3;
@@ -5585,7 +5736,7 @@
       sfx.playHeavyImpact();
       wSlot.aimAngle = ang;
       wSlot.swingPhase = 1.0;
-      const reach = 148 + wSlot.tier * 16;
+      const reach = 148 + shapeTier * 16;
       const axes = isMythic ? 4 : (isGuishen ? 2 : 1);
       for (let k = 0; k < axes; k++) {
         const a = ang + (k * Math.PI) / axes;
@@ -5606,7 +5757,7 @@
           vy: Math.sin(a) * 580,
           radius: 18,
           dmg: dmg * 0.85,
-          pierce: 4 + wSlot.tier,
+          pierce: 4 + shapeTier,
           hitSet: new Set(),
           color: '#ff1744',
           life: 0.65,
@@ -5640,7 +5791,7 @@
             state.slashes.push({
               x: sx, y: sy,
               ang: a,
-              radius: 52 + wSlot.tier * 3,
+              radius: 52 + shapeTier * 3,
               isFullCircle: true,
               color: '#ffab40',
               life: 0.26,
@@ -5699,7 +5850,7 @@
         state.groundZones.push({
           kind: 'fire_sea',
           x: zx, y: zy,
-          radius: 85 + wSlot.tier * 7,
+          radius: 85 + shapeTier * 7,
           dmg: dmg * 0.52,
           tickTimer: 0.1,
           life: 3.4,
@@ -5712,7 +5863,7 @@
 
     if (wSlot.id === 'poisonNeedles') {
       sfx.playArrow();
-      const count = isMythic ? 24 : (isGuishen ? 16 : 8 + wSlot.tier);
+      const count = isMythic ? 24 : (isGuishen ? 16 : 8 + shapeTier);
       for (let i = 0; i < count; i++) {
         const a = state.bladeAngle * 0.5 + (i * Math.PI * 2) / count;
         state.projectiles.push({
@@ -5740,7 +5891,7 @@
       state.groundZones.push({
         kind: 'bagua',
         x: bx, y: by,
-        radius: 105 + wSlot.tier * 9,
+        radius: 105 + shapeTier * 9,
         dmg: dmg * 0.65,
         tickTimer: 0.15,
         life: 3.2,
@@ -5772,7 +5923,7 @@
           shape: 'cannonball',
           ang: a,
           explodeOnHit: true,
-          explodeRadius: 110 + wSlot.tier * 8
+          explodeRadius: 110 + shapeTier * 8
         });
       }
       return true;
@@ -5800,6 +5951,127 @@
     };
   }
 
+  function castWeaponMusou(slotIdx) {
+    if (state.phase !== 'WAVE' || state.paused || state.cutIn || state.bossVictoryCutIn) return false;
+    const wSlot = state.weapons[slotIdx];
+    if (!wSlot || wSlot.tier < MERGE_MAX_TIER || (wSlot.musouCharge || 0) < 1) return false;
+    const spec = WEAPON_CATALOG[wSlot.id];
+    const skill = WEAPON_MUSOU[wSlot.id];
+    if (!spec || !skill) return false;
+    wSlot.musouCharge = 0;
+
+    // Same footing as the hero musou (scales with the wave so it never falls off), times √(this weapon's tier
+    // power ÷ the tier power the curve expects at this wave): upgrading beyond the curve makes it hit harder.
+    const expectedTierPower = weaponTierMul(MERGE_MAX_TIER + expectedExtraTiers(state.waveIdx));
+    const tierBonus = Math.max(0.35, Math.min(3, Math.sqrt(weaponTierMul(wSlot.tier) / expectedTierPower)));
+    const base = WEAPON_MUSOU_POWER * 215 * waveDamageScale(1.07, state.waveIdx) * tierBonus;
+    const evo = getLateAwakenLevel(wSlot.tier);
+    const hx = state.x;
+    const hy = state.y;
+    const radial = (count, speed, dmg, extra) => {
+      for (let i = 0; i < count; i++) {
+        const a = (i * Math.PI * 2) / count;
+        state.projectiles.push({
+          x: hx, y: hy, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed,
+          hitSet: new Set(), ang: a, ...extra(i, a), dmg, source: 'wm'
+        });
+      }
+    };
+    const nearest = (n) => state.enemies
+      .filter(Boolean)
+      .map(e => ({ e, d: Math.hypot(e.x - hx, e.y - hy) }))
+      .filter(o => o.d < 900)
+      .sort((p, q) => p.d - q.d)
+      .slice(0, n)
+      .map(o => o.e);
+
+    if (state.boss && state.boss.hp > 0) {
+      const share = state.boss.isMajorBoss ? WEAPON_MUSOU_BOSS_SHARE.major : WEAPON_MUSOU_BOSS_SHARE.mid;
+      state.boss.wmBudget = (state.boss.wmBudget || 0) + state.boss.maxHp * share;
+    }
+    sfx.playMusouCast();
+    triggerShake(0.3, 9);
+    state.impactRings.push({ x: hx, y: hy, radius: 24, maxRadius: 360 + evo * 40, color: skill.color, lineWidth: 6, life: 0.5, maxLife: 0.5 });
+
+    switch (wSlot.id) {
+      case 'spear':
+        [620, 760, 900].forEach((speed, ring) => radial(12 + evo * 4, speed, base * 4, (i) => ({
+          radius: 22, pierce: 99, color: (i + ring) % 2 === 0 ? '#4fc3f7' : '#ffffff', life: 1.05, shape: 'spear'
+        })));
+        break;
+      case 'halberd': {
+        const reach = 300 + evo * 40;
+        for (let k = 0; k < 4 + evo; k++) {
+          const a = (k * Math.PI * 2) / (4 + evo);
+          state.slashes.push({ x: hx + Math.cos(a) * 120, y: hy + Math.sin(a) * 120, ang: a, radius: reach * 0.8, isFullCircle: true, color: '#00e676', life: 0.5, maxLife: 0.5 });
+        }
+        state.enemies.forEach(e => { if (e && Math.hypot(e.x - hx, e.y - hy) <= reach + e.radius) dealDamage(e, base * 12, 30, 'physical', 'wm'); });
+        radial(12 + evo * 4, 640, base * 5, () => ({ radius: 24, pierce: 99, color: '#5ce6a0', life: 1.0, shape: 'crescent' }));
+        break;
+      }
+      case 'bow':
+        radial(40 + evo * 12, 780, base * 4, (i) => ({ radius: 12, pierce: 12, color: i % 2 === 0 ? '#ffd740' : '#fff8e1', life: 1.1, shape: 'arrow' }));
+        break;
+      case 'thunder':
+        nearest(10 + evo * 4).forEach(e => {
+          if (state.lightnings.length < 30) state.lightnings.push({ x1: e.x, y1: e.y - 300, x2: e.x, y2: e.y, color: '#b388ff', life: 0.34 });
+          triggerExplosion(e.x, e.y, 95, base * 10, true, '#b388ff', 'wm');
+        });
+        break;
+      case 'bladeRing':
+        radial(8 + evo * 2, 560, base * 6, () => ({ radius: 26, pierce: 99, color: '#ff9100', life: 1.6, shape: 'boomerang', returnToHero: true, age: 0 }));
+        break;
+      case 'fangtian':
+        radial(16 + evo * 4, 690, base * 7, () => ({ radius: 26, pierce: 99, color: '#ff1744', life: 1.0, shape: 'crescent' }));
+        triggerExplosion(hx, hy, 260, base * 10, true, '#ff1744', 'wm');
+        break;
+      case 'serpentSpear':
+        for (let k = 0; k < 8 + evo * 2; k++) {
+          const a = (k * Math.PI * 2) / (8 + evo * 2);
+          triggerExplosion(hx + Math.cos(a) * 200, hy + Math.sin(a) * 200, 140, base * 9, true, '#ffab40', 'wm');
+        }
+        break;
+      case 'twinSwords':
+        radial(24 + evo * 6, 600, base * 5, (i) => ({ radius: 20, pierce: 99, color: i % 2 === 0 ? '#b388ff' : '#ffd740', life: 1.55, shape: 'boomerang', returnToHero: true, age: 0 }));
+        break;
+      case 'fireFan':
+        for (let k = 0; k < 6 + evo; k++) {
+          const a = (k * Math.PI * 2) / (6 + evo);
+          state.groundZones.push({ kind: 'fire_sea', x: hx + Math.cos(a) * 190, y: hy + Math.sin(a) * 190, radius: 135 + evo * 10, dmg: base * 3, tickTimer: 0.1, life: 4.5, maxLife: 4.5, color: '#ff6e40', source: 'wm' });
+        }
+        break;
+      case 'poisonNeedles':
+        radial(60 + evo * 20, 820, base * 2.5, (i) => ({ radius: 9, pierce: 6, color: i % 3 === 0 ? '#69f0ae' : '#b9f6ca', life: 1.0, shape: 'arrow' }));
+        break;
+      case 'baguaArray':
+        state.groundZones.push({ kind: 'bagua', x: hx, y: hy, radius: 260 + evo * 20, dmg: base * 2.5, tickTimer: 0.1, life: 4.5, maxLife: 4.5, color: '#ffd740', source: 'wm' });
+        for (let k = 0; k < 4 + evo; k++) {
+          const a = (k * Math.PI * 2) / (4 + evo) + Math.PI / 4;
+          state.groundZones.push({ kind: 'bagua', x: hx + Math.cos(a) * 230, y: hy + Math.sin(a) * 230, radius: 140, dmg: base * 2, tickTimer: 0.12, life: 4.0, maxLife: 4.0, color: '#b388ff', source: 'wm' });
+        }
+        state.hp = Math.min(state.maxHp, Math.round(state.hp + state.maxHp * 0.15));
+        break;
+      case 'cannon':
+        nearest(6 + evo * 2).forEach(e => triggerExplosion(e.x, e.y, 170, base * 14, true, '#ff8a65', 'wm'));
+        triggerShake(0.45, 14);
+        break;
+      default:
+        break;
+    }
+
+    state.weaponMusouBanner = {
+      skillName: skill.name,
+      weaponName: getWeaponDisplayName(wSlot.id, wSlot.tier),
+      tierName: TIER_NAMES[wSlot.tier],
+      imgKey: spec.imgKey,
+      color: skill.color,
+      timer: 1.6,
+      maxTimer: 1.6
+    };
+    updateHud();
+    return true;
+  }
+
   function triggerMusou() {
     if (state.phase !== 'WAVE' || state.musouGauge < 100 || state.cutIn) return;
     state.musouGauge = 0;
@@ -5825,6 +6097,23 @@
   }
 
   function executeHeroMusou(h) {
+    if (state.boss && state.boss.hp > 0) {
+      state.boss.hmBudget = (state.boss.hmBudget || 0) + state.boss.maxHp * HERO_MUSOU_BOSS_SHARE;
+    }
+    const p0 = state.projectiles.length;
+    const z0 = state.groundZones.length;
+    activeDamageSource = 'hm';
+    try {
+      executeHeroMusouPattern(h);
+    } finally {
+      activeDamageSource = '';
+    }
+    // Projectiles and zones keep hitting after this call returns; tag them for the same budget
+    state.projectiles.slice(p0).forEach(p => { p.source = p.source || 'hm'; });
+    state.groundZones.slice(z0).forEach(z => { z.source = z.source || 'hm'; });
+  }
+
+  function executeHeroMusouPattern(h) {
     sfx.playMusouCast();
     triggerShake(0.60, 22);
     state.musouDomainTimer = 3.6;
@@ -6584,7 +6873,7 @@
   let lastTime = performance.now();
 
   function upgradeRandomWeaponInField() {
-    const upgradable = state.weapons.filter(w => w.tier < MAX_WEAPON_TIER);
+    const upgradable = state.weapons.filter(w => w.tier < MERGE_MAX_TIER);
     if (upgradable.length > 0) {
       const pick = upgradable[Math.floor(Math.random() * upgradable.length)];
       pick.tier += 1;
@@ -6638,6 +6927,10 @@
     if (state.killBanner) {
       state.killBanner.timer -= dt;
       if (state.killBanner.timer <= 0) state.killBanner = null;
+    }
+    if (state.weaponMusouBanner) {
+      state.weaponMusouBanner.timer -= dt;
+      if (state.weaponMusouBanner.timer <= 0) state.weaponMusouBanner = null;
     }
 
     // Freeze battlefield action during Hero Slays Boss Victory Cut-In ("擊破BOSS刷幕") until player clicks!
@@ -6796,7 +7089,7 @@
             const e = state.enemies[j];
             if (!e) continue;
             if (Math.hypot(e.x - gz.x, e.y - gz.y) <= gz.radius + e.radius) {
-              dealDamage(e, gz.dmg, gz.kind === 'bagua' ? -12 : 4, 'fire');
+              dealDamage(e, gz.dmg, gz.kind === 'bagua' ? -12 : 4, 'fire', gz.source || '');
             }
           }
         }
@@ -6856,6 +7149,22 @@
         const fired = fireWeapon(wSlot, idx, state.weapons.length);
         wSlot.cdTimer = fired ? spec.baseCd * state.cdMul : 0.12;
       }
+      if (wSlot.tier >= MERGE_MAX_TIER && (wSlot.musouCharge || 0) < 1) {
+        wSlot.musouCharge = Math.min(1, (wSlot.musouCharge || 0) + dt / getWeaponMusouChargeSeconds(wSlot.tier));
+        // Phones have no hover tooltips: say once per wave how to cast it
+        if (wSlot.musouCharge >= 1 && state.wmHintWave !== state.waveIdx) {
+          state.wmHintWave = state.waveIdx;
+          state.floatTexts.push({
+            x: state.x,
+            y: state.y - 96,
+            text: '💥 神兵無雙充滿！點下方發光的武器格施放',
+            color: '#fff176',
+            size: 17,
+            life: 2.2,
+            maxLife: 2.2
+          });
+        }
+      }
     });
 
     // Update Player Projectiles
@@ -6892,7 +7201,7 @@
         if (!e || p.hitSet.has(e)) continue;
         if (Math.hypot(e.x - p.x, e.y - p.y) <= e.radius + p.radius) {
           p.hitSet.add(e);
-          dealDamage(e, p.dmg, 18, p.elem || 'physical');
+          dealDamage(e, p.dmg, 18, p.elem || 'physical', p.source || '');
           if (p.explodeOnHit && !p.hasExploded) {
             p.hasExploded = true;
             triggerExplosion(p.x, p.y, p.explodeRadius || 85, p.dmg * 0.65, true, p.color);
@@ -8390,6 +8699,43 @@
       ctx.fillText(`${kb.title}｜${kb.sub}`, 16, 50);
       ctx.restore();
     }
+
+    // 神兵無雙 banner: slides in from the left, battle keeps running
+    if (state.weaponMusouBanner && state.phase === 'WAVE') {
+      const wb = state.weaponMusouBanner;
+      const elapsed = wb.maxTimer - wb.timer;
+      const slideIn = Math.min(1, elapsed / 0.16);
+      const fadeOut = Math.min(1, wb.timer / 0.3);
+      const bannerW = Math.min(320, cw * 0.78);
+      const bannerH = 64;
+      const bx = 14 - (1 - slideIn) * 160;
+      const by = Math.max(150, ch * 0.30);
+      ctx.save();
+      ctx.globalAlpha = fadeOut;
+      ctx.translate(bx, by);
+      const bg = ctx.createLinearGradient(0, 0, bannerW, 0);
+      bg.addColorStop(0, 'rgba(12, 10, 20, 0.94)');
+      bg.addColorStop(1, 'rgba(60, 30, 90, 0.88)');
+      ctx.fillStyle = bg;
+      ctx.strokeStyle = wb.color;
+      ctx.lineWidth = 2.5;
+      ctx.fillRect(0, 0, bannerW, bannerH);
+      ctx.strokeRect(0, 0, bannerW, bannerH);
+      const icon = IMAGES[wb.imgKey];
+      if (icon && icon.complete && icon.naturalWidth > 0) {
+        ctx.drawImage(icon, 8, 8, 48, 48);
+      }
+      ctx.font = `900 ${cw < 480 ? 17 : 20}px "Noto Serif TC", serif`;
+      ctx.fillStyle = wb.color;
+      ctx.shadowColor = wb.color;
+      ctx.shadowBlur = 10;
+      ctx.fillText(`💥 ${wb.skillName}`, 64, 28);
+      ctx.shadowBlur = 0;
+      ctx.font = '800 12px "Noto Sans TC", sans-serif';
+      ctx.fillStyle = '#fff8e1';
+      ctx.fillText(`神兵無雙｜${wb.weaponName}（${wb.tierName}）`, 64, 50);
+      ctx.restore();
+    }
   }
 
   function drawCutInBanner(ci) {
@@ -9065,9 +9411,18 @@
         if (wSlot) {
           const spec = WEAPON_CATALOG[wSlot.id];
           const dispName = getWeaponDisplayName(wSlot.id, wSlot.tier);
-          div.className = `weapon-slot-mini tier-${wSlot.tier}`;
-          div.title = `${dispName} (${TIER_NAMES[wSlot.tier]})`;
+          const armed = wSlot.tier >= MERGE_MAX_TIER && WEAPON_MUSOU[wSlot.id];
+          div.className = `weapon-slot-mini tier-${Math.min(wSlot.tier, MERGE_MAX_TIER)}${armed ? ' musou-armed' : ''}`;
+          div.dataset.slot = String(i);
+          if (wSlot.tier > MERGE_MAX_TIER) {
+            div.style.borderColor = TIER_COLORS[wSlot.tier];
+            div.style.boxShadow = `0 0 24px ${TIER_COLORS[wSlot.tier]}`;
+          }
+          div.title = armed
+            ? `${dispName} (${TIER_NAMES[wSlot.tier]})｜神兵無雙【${WEAPON_MUSOU[wSlot.id].name}】充滿後點擊施放（鍵盤 ${i + 1}）`
+            : `${dispName} (${TIER_NAMES[wSlot.tier]})`;
           div.innerHTML = `
+            ${armed ? '<div class="wm-charge"></div>' : ''}
             <img src="${spec.imgUrl}" alt="${dispName}" />
             <span class="tier-dot" style="color:${TIER_COLORS[wSlot.tier]}">${TIER_SHORT[wSlot.tier]}</span>
           `;
@@ -9077,6 +9432,16 @@
         }
         rack.appendChild(div);
       }
+    }
+    // Weapon musou charge (updated every frame without rebuilding the rack)
+    for (let i = 0; i < rack.children.length; i++) {
+      const wSlot = state.weapons[i];
+      const el = rack.children[i];
+      const bar = el.querySelector ? el.querySelector('.wm-charge') : null;
+      if (!wSlot || !bar) continue;
+      const charge = Math.min(1, wSlot.musouCharge || 0);
+      bar.style.height = `${Math.round(charge * 100)}%`;
+      el.classList.toggle('musou-ready', charge >= 1);
     }
   }
 
@@ -9153,7 +9518,7 @@
       const spec = WEAPON_CATALOG[wKey];
       // Match an existing weapon's tier if close, or roll highShopTier
       let tier = (Math.random() < 0.45) ? highShopTier : baseShopTier;
-      const matchingSlot = state.weapons.find(w => w.id === wKey && w.tier < MAX_WEAPON_TIER);
+      const matchingSlot = state.weapons.find(w => w.id === wKey && w.tier < MERGE_MAX_TIER);
       if (matchingSlot && Math.abs(matchingSlot.tier - baseShopTier) <= 2 && Math.random() < 0.65) {
         tier = matchingSlot.tier;
       }
@@ -9174,9 +9539,15 @@
     state.shopOffers = offers;
   }
 
+  // Melting refunds the v1.0 scrap value plus half of the jade spent on XI+ upgrades.
+  function getWeaponSellValue(tier) {
+    const early = Math.min(tier, MERGE_MAX_TIER);
+    return Math.round(7 * (1 + (early - 1) * 0.65)) + Math.round(getWeaponUpgradeInvestment(tier) * 0.5);
+  }
+
   function findMergePartnerIndex(slotIdx) {
     const target = state.weapons[slotIdx];
-    if (!target || target.tier >= MAX_WEAPON_TIER) return -1;
+    if (!target || target.tier >= MERGE_MAX_TIER) return -1;
     for (let i = 0; i < state.weapons.length; i++) {
       if (i !== slotIdx && state.weapons[i].id === target.id && state.weapons[i].tier === target.tier) {
         return i;
@@ -9255,12 +9626,21 @@
         const spec = WEAPON_CATALOG[wSlot.id];
         const partnerIdx = findMergePartnerIndex(i);
         if (partnerIdx !== -1) anyMergeable = true;
-        const sellVal = Math.round(7 * (1 + (wSlot.tier - 1) * 0.65));
+        const sellVal = getWeaponSellValue(wSlot.tier);
         const dispName = getWeaponDisplayName(wSlot.id, wSlot.tier);
-        const awakenBadge = wSlot.tier >= 10
-          ? `<span class="awaken-pill mythic">👑神話超武</span>`
-          : (wSlot.tier >= 5 ? `<span class="awaken-pill guishen">★鬼神覺醒</span>` : '');
+        const lateAwaken = getLateAwakenLevel(wSlot.tier);
+        const awakenBadge = lateAwaken > 0
+          ? `<span class="awaken-pill mythic">${TIER_NAMES[LATE_AWAKEN_TIERS[lateAwaken - 1]].split(' ')[0]}覺醒・神兵無雙</span>`
+          : (wSlot.tier >= 10
+            ? `<span class="awaken-pill mythic">👑神話超武・神兵無雙</span>`
+            : (wSlot.tier >= 5 ? `<span class="awaken-pill guishen">★鬼神覺醒</span>` : ''));
+        const upgradeCost = getWeaponUpgradeCost(wSlot.tier);
+        const canUpgrade = upgradeCost > 0 && state.jade >= upgradeCost;
         cell.className = `arsenal-slot tier-${wSlot.tier}`;
+        if (wSlot.tier > MERGE_MAX_TIER) {
+          cell.style.borderColor = TIER_COLORS[wSlot.tier];
+          cell.style.boxShadow = `0 0 18px ${TIER_COLORS[wSlot.tier]}88`;
+        }
         cell.innerHTML = `
           <span class="slot-tier" style="color:${TIER_COLORS[wSlot.tier]}">${TIER_NAMES[wSlot.tier]}</span>
           <img class="slot-art" src="${spec.imgUrl}" alt="${dispName}" />
@@ -9268,7 +9648,8 @@
           ${awakenBadge}
           <div class="slot-actions">
             ${partnerIdx !== -1 ? `<button class="btn-mini merge" data-merge="${i}">升階合成</button>` : ''}
-            ${state.weapons.length > 1 ? `<button class="btn-mini sell" data-sell="${i}">熔煉 +${sellVal}</button>` : ''}
+            ${upgradeCost > 0 ? `<button class="btn-mini upgrade" data-upgrade="${i}" ${canUpgrade ? '' : 'disabled'} title="用戰功翠玉升到 ${TIER_NAMES[wSlot.tier + 1]}">💎 升階 ${formatBigNumber(upgradeCost)} 玉</button>` : ''}
+            ${state.weapons.length > 1 ? `<button class="btn-mini sell" data-sell="${i}">熔煉 +${formatBigNumber(sellVal)}</button>` : ''}
           </div>
         `;
       } else {
@@ -9304,12 +9685,38 @@
       });
     });
 
+    arsenalGrid.querySelectorAll('[data-upgrade]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = Number(btn.dataset.upgrade);
+        const wSlot = state.weapons[idx];
+        if (!wSlot) return;
+        const cost = getWeaponUpgradeCost(wSlot.tier);
+        if (cost <= 0 || state.jade < cost) return;
+        state.jade -= cost;
+        wSlot.tier += 1;
+        const dispName = getWeaponDisplayName(wSlot.id, wSlot.tier);
+        const isAwaken = LATE_AWAKEN_TIERS.includes(wSlot.tier);
+        state.lastAwakenMsg = isAwaken
+          ? `🔥 神兵再覺醒：【${dispName}】（${TIER_NAMES[wSlot.tier]}）神兵無雙威力大進化！`
+          : `💎 神兵升階：${dispName} → ${TIER_NAMES[wSlot.tier]}（傷害 ×${LATE_TIER_DMG_STEP}）`;
+        sfx.playMergeClang(isAwaken);
+        saveCampaignProgress();
+        renderShopUI();
+        updateHud();
+      });
+    });
+
     arsenalGrid.querySelectorAll('[data-sell]').forEach(btn => {
       btn.addEventListener('click', () => {
         const idx = Number(btn.dataset.sell);
         if (state.weapons.length <= 1) return;
+        const target = state.weapons[idx];
+        if (target && target.tier > MERGE_MAX_TIER &&
+            !confirm(`熔煉【${getWeaponDisplayName(target.id, target.tier)}】（${TIER_NAMES[target.tier]}）只會退回 ${formatBigNumber(getWeaponSellValue(target.tier))} 玉（升階花費的一半），確定要熔煉嗎？`)) {
+          return;
+        }
         const removed = state.weapons.splice(idx, 1)[0];
-        state.jade += Math.round(7 * (1 + (removed.tier - 1) * 0.65));
+        state.jade += getWeaponSellValue(removed.tier);
         sfx.playGemPickup();
         saveCampaignProgress();
         renderShopUI();
@@ -9325,7 +9732,7 @@
       if (offer.kind === 'weapon') {
         const spec = WEAPON_CATALOG[offer.id];
         const dispName = getWeaponDisplayName(offer.id, offer.tier);
-        const canAutoMerge = state.weapons.some(w => w.id === offer.id && w.tier === offer.tier && w.tier < MAX_WEAPON_TIER);
+        const canAutoMerge = state.weapons.some(w => w.id === offer.id && w.tier === offer.tier && w.tier < MERGE_MAX_TIER);
         const canBuy = !offer.sold && state.jade >= offer.cost && (state.weapons.length < 6 || canAutoMerge);
         card.innerHTML = `
           <div class="shop-card-head">
@@ -9369,7 +9776,7 @@
         if (!offer || offer.sold || state.jade < offer.cost) return;
 
         if (offer.kind === 'weapon') {
-          const match = state.weapons.find(w => w.id === offer.id && w.tier === offer.tier && w.tier < MAX_WEAPON_TIER);
+          const match = state.weapons.find(w => w.id === offer.id && w.tier === offer.tier && w.tier < MERGE_MAX_TIER);
           if (match) {
             state.jade -= offer.cost;
             offer.sold = true;
@@ -9625,6 +10032,10 @@
       e.preventDefault();
       triggerMusou();
     }
+    const digit = /^Digit([1-6])$/.exec(e.code);
+    if (digit && state.phase === 'WAVE' && !state.paused) {
+      castWeaponMusou(Number(digit[1]) - 1);
+    }
   });
 
   window.addEventListener('keyup', (e) => {
@@ -9879,6 +10290,10 @@
   });
 
   document.getElementById('btnMusou').addEventListener('click', triggerMusou);
+  document.getElementById('hudWeaponRack').addEventListener('click', (e) => {
+    const slotEl = e.target && e.target.closest ? e.target.closest('[data-slot]') : null;
+    if (slotEl) castWeaponMusou(Number(slotEl.dataset.slot));
+  });
 
   function syncAudioButtons() {
     const hudBtn = document.getElementById('btnAudio');
@@ -9949,7 +10364,7 @@
   }
 
   document.getElementById('btnHelp').addEventListener('click', () => {
-    alert('【無雙割草：三國奇兵 — 全面進化版兵法】\n1. 9 大名將與將星兵法閣：突破陣數或消耗「🔮將魂」可招募諸葛亮、夏侯惇、孫尚香、周瑜、曹操、呂布等傳奇名將，並可永久升級 6 大兵法天賦！\n2. 12 種神兵與超武覺醒：神兵升至 V 階解鎖【★鬼神覺醒】、X 階突破【👑神話超武】，彈幕與型態全面進化！營帳提供「⚡一鍵全自動合成」。\n3. 500 陣三國史詩：十卷五十章、100 張戰場地圖與 100 大 BOSS 專屬兵團，每 5 關依史實切換地貌與駐守軍團；通關第 500 陣開啟輪迴，敵軍與將魂每輪 ×1.5。\n4. 隨時暫停與自動存檔：按 ESC / 暫停鍵或手機返回鍵可隨時凍結戰場檢視戰況，切換背景自動靜音並保存進度！');
+    alert('【無雙割草：三國奇兵 — 全面進化版兵法】\n1. 9 大名將與將星兵法閣：突破陣數或消耗「🔮將魂」可招募諸葛亮、夏侯惇、孫尚香、周瑜、曹操、呂布等傳奇名將，並可永久升級 6 大兵法天賦！\n2. 12 種神兵與超武覺醒：神兵升至 V 階解鎖【★鬼神覺醒】、X 階突破【👑神話超武】，彈幕與型態全面進化！營帳提供「⚡一鍵全自動合成」。X 階之後在營帳用戰功翠玉繼續升階到 ☯️無上 XXX，並解鎖每把神兵的「神兵無雙」：充滿後點下方發光的武器格（鍵盤 1～6）施放。\n3. 500 陣三國史詩：十卷五十章、100 張戰場地圖與 100 大 BOSS 專屬兵團，每 5 關依史實切換地貌與駐守軍團；通關第 500 陣開啟輪迴，敵軍與將魂每輪 ×1.5。\n4. 隨時暫停與自動存檔：按 ESC / 暫停鍵或手機返回鍵可隨時凍結戰場檢視戰況，切換背景自動靜音並保存進度！');
   });
 })();
 </script>
