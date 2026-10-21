@@ -1411,8 +1411,6 @@
             <span class="coin-count" id="shopJadeCount">0</span>
           </div>
           <button class="btn-automerge" id="btnAutoMerge" type="button">⚡ 一鍵全自動合成</button>
-          <button class="btn-reward" id="btnFreeRerollAd" type="button" style="padding:7px 12px;font-size:12.5px;">🎁 免費重鑄補給 (1次)</button>
-          <button class="btn-secondary" id="btnReroll" type="button">重鑄補給 (-8 玉)</button>
         </div>
       </div>
 
@@ -1424,7 +1422,13 @@
       </div>
       <div class="arsenal-grid" id="shopArsenalGrid"></div>
 
-      <div class="camp-section-title" style="margin-top:14px;">
+      <!-- Reroll buttons sit right above the supply cards they refresh -->
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px;">
+        <button class="btn-reward" id="btnFreeRerollAd" type="button" style="padding:7px 12px;font-size:12.5px;">🎁 免費重鑄補給 (1次)</button>
+        <button class="btn-secondary" id="btnReroll" type="button">重鑄補給 (-8 玉)</button>
+      </div>
+
+      <div class="camp-section-title" style="margin-top:8px;">
         <span>軍需補給（12 種三國神兵與兵法錦囊｜隨破陣進度直接刷出高階神兵）</span>
       </div>
       <div class="shop-cards" id="shopCardsGrid"></div>
