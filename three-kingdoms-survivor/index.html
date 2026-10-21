@@ -2508,22 +2508,23 @@
     return spec.name;
   }
 
-  // 神兵無雙: unlocked at X, charged per weapon (40 s at X → 20 s at XXX), cast by tapping the weapon's HUD slot.
+  // 神兵無雙: unlocked at X, charged per weapon (40 s at X → 20 s at XXX), cast by tapping the weapon's HUD slot;
+  // it plays the same full-screen cut-in as the hero musou, then fires.
   // Damage scales with the wave like the hero musou, plus a tier bonus (see castWeaponMusou), so XI–XXX matter;
   // each late awakening (XV/XX/XXV/XXX, `evo`) adds more projectiles / zones.
   const WEAPON_MUSOU = {
-    spear: { name: '七探盤龍・銀龍破陣', color: '#4fc3f7' },
-    halberd: { name: '青龍偃月・千里斬', color: '#5ce6a0' },
-    bow: { name: '元戎連弩・萬箭穿心', color: '#ffd740' },
-    thunder: { name: '九天玄雷・天罰', color: '#b388ff' },
-    bladeRing: { name: '三昧真火・乾坤焚天', color: '#ff9100' },
-    fangtian: { name: '方天滅世・鬼神亂舞', color: '#ff1744' },
-    serpentSpear: { name: '丈八蛇矛・長坂怒吼', color: '#ffab40' },
-    twinSwords: { name: '雌雄雙劍・萬劍歸宗', color: '#b388ff' },
-    fireFan: { name: '朱雀業火・赤壁燎原', color: '#ff6e40' },
-    poisonNeedles: { name: '暴雨梨花・漫天星雨', color: '#69f0ae' },
-    baguaArray: { name: '八門金鎖・七星續命', color: '#ffd740' },
-    cannon: { name: '麒麟神砲・轟天裂地', color: '#ff8a65' }
+    spear: { name: '七探盤龍・銀龍破陣', color: '#4fc3f7', quote: '「七探盤龍，銀槍所指，萬軍辟易！」' },
+    halberd: { name: '青龍偃月・千里斬', color: '#5ce6a0', quote: '「青龍偃月，一刀斷千里！」' },
+    bow: { name: '元戎連弩・萬箭穿心', color: '#ffd740', quote: '「元戎連弩，十矢齊發，箭雨無盡！」' },
+    thunder: { name: '九天玄雷・天罰', color: '#b388ff', quote: '「九天玄雷，聽吾號令——天罰降世！」' },
+    bladeRing: { name: '三昧真火・乾坤焚天', color: '#ff9100', quote: '「三昧真火輪轉乾坤，焚盡八荒！」' },
+    fangtian: { name: '方天滅世・鬼神亂舞', color: '#ff1744', quote: '「方天畫戟起，鬼神亦低頭！」' },
+    serpentSpear: { name: '丈八蛇矛・長坂怒吼', color: '#ffab40', quote: '「丈八蛇矛在此，誰敢與我決一死戰！」' },
+    twinSwords: { name: '雌雄雙劍・萬劍歸宗', color: '#b388ff', quote: '「雌雄雙劍，萬劍歸宗！」' },
+    fireFan: { name: '朱雀業火・赤壁燎原', color: '#ff6e40', quote: '「朱雀展翼，業火燎原！」' },
+    poisonNeedles: { name: '暴雨梨花・漫天星雨', color: '#69f0ae', quote: '「暴雨梨花，漫天星雨，避無可避！」' },
+    baguaArray: { name: '八門金鎖・七星續命', color: '#ffd740', quote: '「八門金鎖，七星續命，此陣無解！」' },
+    cannon: { name: '麒麟神砲・轟天裂地', color: '#ff8a65', quote: '「麒麟神砲，轟天裂地——放！」' }
   };
 
   const WEAPON_MUSOU_POWER = 0.2; // pattern multipliers below are ×base; 0.2 puts one hit near a hero-musou hit
@@ -3857,7 +3858,6 @@
     musouDomainTimer: 0,
     bossDomainTimer: 0,
     killBanner: null,
-    weaponMusouBanner: null,
     wmHintWave: -1,
 
     shakeTime: 0,
@@ -5960,6 +5960,30 @@
     const skill = WEAPON_MUSOU[wSlot.id];
     if (!spec || !skill) return false;
     wSlot.musouCharge = 0;
+    updateHud();
+
+    // Same full-screen cut-in as the hero musou (the battle freezes for about a second), then the skill fires
+    startCutIn({
+      isBoss: false,
+      actorName: getWeaponDisplayName(wSlot.id, wSlot.tier),
+      actorTitle: `💥神兵無雙・${TIER_NAMES[wSlot.tier]}`,
+      skillName: skill.name,
+      quote: skill.quote,
+      color: skill.color,
+      portraitKey: spec.imgKey,
+      bodyKey: state.hero.bodyKey,
+      wpnKey: spec.rigKey,
+      duration: 1.06,
+      onComplete: () => executeWeaponMusou(wSlot)
+    });
+    return true;
+  }
+
+  function executeWeaponMusou(wSlot) {
+    if (state.phase !== 'WAVE') return;
+    const spec = WEAPON_CATALOG[wSlot.id];
+    const skill = WEAPON_MUSOU[wSlot.id];
+    if (!spec || !skill) return;
 
     // Same footing as the hero musou (scales with the wave so it never falls off), times √(this weapon's tier
     // power ÷ the tier power the curve expects at this wave): upgrading beyond the curve makes it hit harder.
@@ -6060,17 +6084,16 @@
         break;
     }
 
-    state.weaponMusouBanner = {
-      skillName: skill.name,
-      weaponName: getWeaponDisplayName(wSlot.id, wSlot.tier),
-      tierName: TIER_NAMES[wSlot.tier],
-      imgKey: spec.imgKey,
+    state.floatTexts.push({
+      x: state.x,
+      y: state.y - 68,
+      text: `💥神兵無雙【${skill.name}】！`,
       color: skill.color,
-      timer: 1.6,
-      maxTimer: 1.6
-    };
+      size: 20,
+      life: 1.6,
+      maxLife: 1.6
+    });
     updateHud();
-    return true;
   }
 
   function triggerMusou() {
@@ -6928,10 +6951,6 @@
     if (state.killBanner) {
       state.killBanner.timer -= dt;
       if (state.killBanner.timer <= 0) state.killBanner = null;
-    }
-    if (state.weaponMusouBanner) {
-      state.weaponMusouBanner.timer -= dt;
-      if (state.weaponMusouBanner.timer <= 0) state.weaponMusouBanner = null;
     }
 
     // Freeze battlefield action during Hero Slays Boss Victory Cut-In ("擊破BOSS刷幕") until player clicks!
@@ -8698,43 +8717,6 @@
       ctx.font = '800 13px "Noto Sans TC", sans-serif';
       ctx.fillStyle = '#fff8e1';
       ctx.fillText(`${kb.title}｜${kb.sub}`, 16, 50);
-      ctx.restore();
-    }
-
-    // 神兵無雙 banner: slides in from the left, battle keeps running
-    if (state.weaponMusouBanner && state.phase === 'WAVE') {
-      const wb = state.weaponMusouBanner;
-      const elapsed = wb.maxTimer - wb.timer;
-      const slideIn = Math.min(1, elapsed / 0.16);
-      const fadeOut = Math.min(1, wb.timer / 0.3);
-      const bannerW = Math.min(320, cw * 0.78);
-      const bannerH = 64;
-      const bx = 14 - (1 - slideIn) * 160;
-      const by = Math.max(150, ch * 0.30);
-      ctx.save();
-      ctx.globalAlpha = fadeOut;
-      ctx.translate(bx, by);
-      const bg = ctx.createLinearGradient(0, 0, bannerW, 0);
-      bg.addColorStop(0, 'rgba(12, 10, 20, 0.94)');
-      bg.addColorStop(1, 'rgba(60, 30, 90, 0.88)');
-      ctx.fillStyle = bg;
-      ctx.strokeStyle = wb.color;
-      ctx.lineWidth = 2.5;
-      ctx.fillRect(0, 0, bannerW, bannerH);
-      ctx.strokeRect(0, 0, bannerW, bannerH);
-      const icon = IMAGES[wb.imgKey];
-      if (icon && icon.complete && icon.naturalWidth > 0) {
-        ctx.drawImage(icon, 8, 8, 48, 48);
-      }
-      ctx.font = `900 ${cw < 480 ? 17 : 20}px "Noto Serif TC", serif`;
-      ctx.fillStyle = wb.color;
-      ctx.shadowColor = wb.color;
-      ctx.shadowBlur = 10;
-      ctx.fillText(`💥 ${wb.skillName}`, 64, 28);
-      ctx.shadowBlur = 0;
-      ctx.font = '800 12px "Noto Sans TC", sans-serif';
-      ctx.fillStyle = '#fff8e1';
-      ctx.fillText(`神兵無雙｜${wb.weaponName}（${wb.tierName}）`, 64, 50);
       ctx.restore();
     }
   }
