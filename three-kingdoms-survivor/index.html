@@ -1349,7 +1349,6 @@
             </span>
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <button class="icon-btn" id="btnDevUnlockAll" type="button" style="padding:3px 9px;font-size:11px;border-color:#c084fc;color:#e9d5ff;" title="開發者測試捷徑：立即解鎖全部 9 位名將、500 陣地圖並獲得 +500 將魂">🛠️ 測試：全解鎖 / +500將魂</button>
             <button class="icon-btn" id="btnToggleTalentGrid" type="button" style="padding:3px 9px;font-size:11px;">收合兵法 ▲</button>
           </div>
         </div>
@@ -1382,7 +1381,7 @@
             <input id="customWaveInput" type="number" min="1" max="500" value="1" class="campaign-select-input" style="width:72px;text-align:center;" />
           </label>
         </div>
-        <span id="stageLockHint" style="font-size:11.5px;color:var(--text-muted);">※ 突破更多陣數即可解鎖後續戰區地圖（或點擊上方「🛠️ 測試：全解鎖」自由體驗全 100 張地圖）</span>
+        <span id="stageLockHint" style="font-size:11.5px;color:var(--text-muted);">※ 突破更多陣數即可解鎖後續戰區地圖</span>
       </div>
 
       <div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:12px;">
@@ -4158,8 +4157,8 @@
     }
     if (hintEl) {
       hintEl.textContent = metaState.devUnlockAll
-        ? `🛠️ 【全解鎖測試模式已啟用】可自由選擇全 1～${TOTAL_WAVES} 陣與 ${STAGE_LEGIONS.length} 張三國戰場地圖！`
-        : `※ ${getSelectedRound() > 1 ? `第${getSelectedRound()}輪` : '目前'}已解鎖至第 ${maxWave} 陣（突破更多陣數自動解鎖新戰區，或點擊上方「🛠️ 測試：全解鎖」自由選關）`;
+        ? `※ 已解鎖全部 1～${TOTAL_WAVES} 陣與 ${STAGE_LEGIONS.length} 張三國戰場地圖`
+        : `※ ${getSelectedRound() > 1 ? `第${getSelectedRound()}輪` : '目前'}已解鎖至第 ${maxWave} 陣（突破更多陣數自動解鎖新戰區）`;
     }
   }
 
@@ -10152,26 +10151,6 @@
       btnToggleTalentEl.textContent = isHidden ? '收合兵法 ▲' : '展開兵法 ▼';
     });
   }
-  const btnDevUnlockAllEl = document.getElementById('btnDevUnlockAll');
-  if (btnDevUnlockAllEl) {
-    btnDevUnlockAllEl.addEventListener('click', () => {
-      metaState.devUnlockAll = true;
-      metaState.souls = (metaState.souls || 0) + 500;
-      HEROES.forEach(h => {
-        if (!metaState.unlockedHeroes.includes(h.id)) {
-          metaState.unlockedHeroes.push(h.id);
-        }
-      });
-      saveMetaState();
-      recordBestWave(TOTAL_WAVES, 1);
-      sfx.init();
-      sfx.playCutInFanfare(false);
-      renderTalentPanel();
-      renderHeroSelect();
-      syncStartWaveButtonText();
-    });
-  }
-
   // 3 Golden Rewarded Action Hooks (connected via window.TK_AD_BRIDGE)
   const btnReviveAdEl = document.getElementById('btnReviveAd');
   if (btnReviveAdEl) {
